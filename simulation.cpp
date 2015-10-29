@@ -9,8 +9,7 @@ using namespace Eigen;
 
 #include <boost/algorithm/string.hpp> // string manipulation library
 #include <boost/program_options.hpp> // options parsing library
-using namespace boost::program_options;
-
+namespace po = boost::program_options;
 
 #include "nv-math.h"
 
@@ -32,27 +31,27 @@ int main(int arg_num, const char *arg_vec[]) {
   int seed;
 
   // define options
-  options_description options("allowed options");
+  po::options_description options("allowed options");
   options.add_options()
     ("help,h", "produce help message")
-    ("fast_decomposition,f", value<bool>(&fast_decomposition)->default_value(true),
+    ("fast_decomposition,f", po::value<bool>(&fast_decomposition)->default_value(true),
      "use fast, but less accurate algorithm for matrix decomposition")
-    ("cell_radius", value<int>(&cell_radius)->default_value(2),
+    ("cell_radius", po::value<int>(&cell_radius)->default_value(2),
      "number of unit cells to simulate out from the NV center")
-    ("c13_abundance", value<double>(&c13_abundance), "relative isotopic abundance of C13")
-    ("input_lattice", value<string>(&input_lattice), "input file definint initial system")
+    ("c13_abundance", po::value<double>(&c13_abundance), "relative isotopic abundance of C13")
+    ("input_lattice", po::value<string>(&input_lattice), "input file definint initial system")
     ("output_lattice",
-     value<string>(&output_lattice)->default_value("lattice-cr[cell_radius]-s[seed].txt"),
+     po::value<string>(&output_lattice)->default_value("lattice-cr[cell_radius]-s[seed].txt"),
      "name for output file defining initial system")
-    ("output_dir", value<string>(&output_dir)->default_value("data"),
+    ("output_dir", po::value<string>(&output_dir)->default_value("data"),
      "directory for storing data")
-    ("seed", value<int>(&seed)->default_value(1), "seed for random number generator")
+    ("seed", po::value<int>(&seed)->default_value(1), "seed for random number generator")
     ;
 
   // collect inputs
-  variables_map inputs;
-  store(parse_command_line(arg_num, arg_vec, options), inputs);
-  notify(inputs);
+  po::variables_map inputs;
+  po::store(parse_command_line(arg_num, arg_vec, options), inputs);
+  po::notify(inputs);
 
   // if requested, print help text
   if(inputs.count("help")){
