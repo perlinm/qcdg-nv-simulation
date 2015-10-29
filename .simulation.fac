@@ -1,0 +1,4 @@
+| time g++ -std=c++14 -I /usr/include/eigen3/ -lboost_program_options -o simulate simulation.cpp
+< nv-math.h
+< simulation.cpp
+> simulate
