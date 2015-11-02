@@ -9,10 +9,6 @@ using namespace Eigen;
 // State vectors
 //--------------------------------------------------------------------------------------------
 
-// spin up/down state vectors
-const VectorXcd up = (Vector2cd() << 1,0).finished();
-const VectorXcd dn = (Vector2cd() << 0,1).finished();
-
 // two qbit basis states
 const VectorXcd uu = tp(up,up);
 const VectorXcd ud = tp(up,dn);

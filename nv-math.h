@@ -99,6 +99,10 @@ void remove_phase(MatrixXcd &A){
 // Spin matrix and propagator methods
 //--------------------------------------------------------------------------------------------
 
+// spin up/down state vectors
+const VectorXcd up = (Vector2cd() << 1,0).finished();
+const VectorXcd dn = (Vector2cd() << 0,1).finished();
+
 // pauli spin matrices
 const MatrixXcd st = (Matrix2cd() << 1,0, 0,1).finished();
 const MatrixXcd sx = (Matrix2cd() << 0,1, 1,0).finished();
