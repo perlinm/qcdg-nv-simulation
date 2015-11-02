@@ -11,9 +11,9 @@ using namespace Eigen;
 #include <boost/program_options.hpp> // options parsing library
 namespace po = boost::program_options;
 
+#include "constants.h"
 #include "nv-math.h"
-
-inline double rn(){ return (double)rand()/(double)RAND_MAX; }
+#include "gates.h"
 
 int main(int arg_num, const char *arg_vec[]) {
 
@@ -23,29 +23,44 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // define parameters
   int cell_radius;
-  bool fast_decomposition;
-  string input_lattice;
-  string output_lattice;
-  string output_dir;
   double c13_abundance = c13_natural_abundance;
+  int max_cluster_size;
+  int ms;
+  string input_lattice;
+  string output_lattice = "lattice-cr[cell_radius]-s[seed].txt";
+  string output_dir = "data";
+  bool fast_decomposition;
   int seed;
+
+
+  double w_DD = 1e5;
+  double Bz = 1000;
 
   // define options
   po::options_description options("allowed options");
   options.add_options()
     ("help,h", "produce help message")
+    ("cell_radius", po::value<int>(&cell_radius)->default_value(6),
+     "number of unit cells to simulate out from the NV center")
+    ("c13_abundance", po::value<double>(&c13_abundance),
+     "relative isotopic abundance of C-13")
+    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(6),
+     "maximum allowable size of C-13 clusters")
+    ("ms", po::value<int>(&ms)->default_value(1),
+     "NV center spin used for effective two-level system (must be +/-1)")
+    ("input_lattice", po::value<string>(&input_lattice), "input file definint initial system")
+    ("output_lattice", po::value<string>(&output_lattice),
+     "name for output file defining initial system")
+    ("output_dir", po::value<string>(&output_dir), "directory for storing data")
     ("fast_decomposition,f", po::value<bool>(&fast_decomposition)->default_value(true),
      "use fast, but less accurate algorithm for matrix decomposition")
-    ("cell_radius", po::value<int>(&cell_radius)->default_value(2),
-     "number of unit cells to simulate out from the NV center")
-    ("c13_abundance", po::value<double>(&c13_abundance), "relative isotopic abundance of C13")
-    ("input_lattice", po::value<string>(&input_lattice), "input file definint initial system")
-    ("output_lattice",
-     po::value<string>(&output_lattice)->default_value("lattice-cr[cell_radius]-s[seed].txt"),
-     "name for output file defining initial system")
-    ("output_dir", po::value<string>(&output_dir)->default_value("data"),
-     "directory for storing data")
-    ("seed", po::value<int>(&seed)->default_value(1), "seed for random number generator")
+    ("seed,s", po::value<int>(&seed)->default_value(1), "seed for random number generator")
+
+
+    (",w", po::value<double>(&w_DD), "set w_DD (in kHz)")
+    (",B", po::value<double>(&Bz), "set Bz (in gauss)")
+
+
     ;
 
   // collect inputs
@@ -75,12 +90,13 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_cell_radius = !inputs["cell_radius"].defaulted();
   bool set_c13_abundance = inputs.count("c13_abundance");
   bool using_input_lattice = inputs.count("input_lattice");
-  bool set_output_lattice = !inputs["output_lattice"].defaulted();
-  bool set_output_dir = !inputs["output_dir"].defaulted();
+  bool set_output_lattice = inputs.count("output_lattice");
+  bool set_output_dir = inputs.count("output_dir");
 
   // run a sanity check on inputs
   assert(cell_radius > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
+  assert(ms == 1 || ms == -1);
   assert(seed > 0);
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
@@ -107,6 +123,9 @@ int main(int arg_num, const char *arg_vec[]) {
     cout << "using output lattice path: " << output_lattice_path << endl;
   }
 
+  cout << "total number of lattice sites: "
+       << int(pow(2*cell_radius,3)*cell_sites.size()) << endl;
+
   srand(seed); // initialize random number generator
   mkdir(output_dir.c_str(),0777); // create data directory
 
@@ -114,12 +133,12 @@ int main(int arg_num, const char *arg_vec[]) {
   // Construct spin lattice
   // -----------------------------------------------------------------------------------------
 
-  // positions of C-13 atoms with a0 = 1
-  vector<Vector3d> c13_pos;
+  // vector of C-13 nuclei
+  vector<spin> nuclei;
 
   if(!using_input_lattice){
 
-    // set positions of C-13 atoms at lattice sites
+    // set positions of C-13 nuclei at lattice sites
     Vector3d cell_pos; // position of unit cell indexed by i,j,k
     for(int i = -cell_radius; i < cell_radius; i++){ // loop over all unit cell indices
       cell_pos(0) = i;
@@ -128,8 +147,8 @@ int main(int arg_num, const char *arg_vec[]) {
         for(int k = -cell_radius; k < cell_radius; k++){
           cell_pos(2) = k;
           for(int ls = 0; ls < cell_sites.size(); ls++){ // loop over sites in unit cell
-            if(rn() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              c13_pos.push_back(cell_pos+cell_sites.at(ls));
+            if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
+              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13));
             }
           }
         }
@@ -137,16 +156,16 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // remove any C-13 atoms at the NV lattice sites
-    c13_pos.erase(remove(c13_pos.begin(), c13_pos.end(), n_pos), c13_pos.end());
-    c13_pos.erase(remove(c13_pos.begin(), c13_pos.end(), e_pos), c13_pos.end());
+    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(n.pos,gC13)), nuclei.end());
+    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(e.pos,gC13)), nuclei.end());
 
     // write cell radius and C-13 positions to file
     ofstream output(output_lattice_path);
     output << "cell_radius: " << cell_radius << endl;
-    for(int c = 0; c < c13_pos.size(); c++){
-      output << c13_pos.at(c)[0] << " "
-             << c13_pos.at(c)[1] << " "
-             << c13_pos.at(c)[2] << endl;
+    for(int c = 0; c < nuclei.size(); c++){
+      output << nuclei.at(c).pos[0] << " "
+             << nuclei.at(c).pos[1] << " "
+             << nuclei.at(c).pos[2] << endl;
     }
     output.close();
 
@@ -168,30 +187,57 @@ int main(int arg_num, const char *arg_vec[]) {
       y = stod(line);
       getline(input,line);
       z = stod(line);
-      c13_pos.push_back((Vector3d() << x,y,z).finished());
+      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13));
     }
     input.close();
 
   }
 
-  // assert that no C-13 atoms lie at the NV lattice sites
-  if((find(c13_pos.begin(), c13_pos.end(), n_pos) != c13_pos.end()) ||
-     (find(c13_pos.begin(), c13_pos.end(), e_pos) != c13_pos.end())){
-    cout << "we have a C-13 atom at one of the NV lattice sites!" << endl;
+  // assert that no C-13 spins lie at the NV lattice sites
+  if(in_vector(spin(n.pos,gC13),nuclei) || in_vector(spin(e.pos,gC13),nuclei)){
+    cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
     return 2;
   }
 
-  // print summary of C-13 atom placement
-  cout << "C-13 atoms occupy " << c13_pos.size() << " of "
-       << pow(2*cell_radius,3)*cell_sites.size() << " lattice sites" << endl;
-
-  int qbits = c13_pos.size()+1;
-
   // -----------------------------------------------------------------------------------------
-  //
+  // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
+  double cluster_coupling_guess = 100;
+  double dcc_cutoff = 1e-5;
 
+  // get cluster_coupling for which the largest cluster size is >= max_cluster_size
+  double cluster_coupling = find_target_coupling(nuclei,max_cluster_size,
+                                                 cluster_coupling_guess,dcc_cutoff);
+  vector<vector<spin>> clusters = get_clusters(nuclei,cluster_coupling);
+
+  // if largest cluster size > max_cluster_size,
+  //   which can occur because it is impossible to exactly match max_cluster_size,
+  //   find largest cluster_coupling for which the largest cluster size is < max_cluster_size
+  if(largest_cluster_size(clusters) > max_cluster_size){
+    int cluster_size_target
+      = largest_cluster_size(get_clusters(nuclei,cluster_coupling+dcc_cutoff));
+    cluster_coupling = find_target_coupling(nuclei,cluster_size_target,
+                                            cluster_coupling,dcc_cutoff);
+    clusters = get_clusters(nuclei,cluster_coupling);
+  }
+
+  cout << endl;
+  cout << nuclei.size() << " nuclei grouped into " << clusters.size() << " clusters" << endl;
+  cout << "largest cluster size: " << largest_cluster_size(clusters) << endl;
+  cout << "cluster coupling factor: " << cluster_coupling << " Hz" << endl;
+  cout << endl;
+
+  // -----------------------------------------------------------------------------------------
+  // Compute coherence
+  // -----------------------------------------------------------------------------------------
+
+  double f_DD = 0.06;
+  harmonic k_DD = first;
+
+  double coherence = compute_coherence(clusters, w_DD, k_DD, f_DD, Bz, ms);
+
+  cout << coherence << endl;
 
 }
 
