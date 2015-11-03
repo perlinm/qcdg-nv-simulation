@@ -28,7 +28,7 @@ const MatrixXcd I2 = MatrixXcd::Identity(2,2);
 const MatrixXcd I4 = MatrixXcd::Identity(4,4);
 
 // return unit vector in direction of vec
-inline Vector3d normed(Vector3d vec){ return vec/vec.norm(); }
+inline Vector3d hat(Vector3d vec){ return vec/vec.norm(); }
 
 // matrix functions
 inline complex<double> trace(const MatrixXcd M){ return M.trace(); }
@@ -118,8 +118,11 @@ inline bool int_bit(int num, int n){
   else return (num >> n) & 1;
 }
 
-// get state of qbit p (of N) from enumerated state s
-inline bool qbit_state(int p, int N, int s){ return int_bit(s,N-1-p); }
+// get state of qbit q (of N) from enumerated state s
+inline bool qbit_state(int q, int N, int s){ return int_bit(s,N-1-q); }
+
+// get integer corresponding to an 'on' state of bit p (of N)
+inline int bit_int(int q, int N){ return pow(2,N-1-q); }
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
 MatrixXcd act(const MatrixXcd A, const vector<int> qs_act, int qbits_new){
@@ -144,20 +147,20 @@ MatrixXcd act(const MatrixXcd A, const vector<int> qs_act, int qbits_new){
   for(int m = 0; m < A.rows(); m++){
     for(int n = 0; n < A.cols(); n++){
 
-      // contribution of m and n to indices of B
+      // get contribution of substates |m-><n-| to indices of B
       int b_m = 0, b_n = 0;
       for(int q = 0; q < qbits_old; q++){
-        if(qbit_state(q,qbits_old,m)) b_m += pow(2,qbits_new-1-qs_act.at(q));
-        if(qbit_state(q,qbits_old,n)) b_n += pow(2,qbits_new-1-qs_act.at(q));
+        if(qbit_state(q,qbits_old,m)) b_m += bit_int(qs_act.at(q),qbits_new);
+        if(qbit_state(q,qbits_old,n)) b_n += bit_int(qs_act.at(q),qbits_new);
       }
 
       // loop over all elements of the form |ms><ns| in B
       for(int s = 0; s < pow(2,qs_ignore.size()); s++){
         int b_out = b_m, b_in = b_n;
         for(int q = 0; q < qs_ignore.size(); q++){
-          if(int_bit(s,q)){
-            b_out += pow(2,qbits_new-1-qs_ignore.at(q));
-            b_in += pow(2,qbits_new-1-qs_ignore.at(q));
+          if(qbit_state(q,qs_ignore.size(),s)){
+            b_out += bit_int(qs_ignore.at(q),qbits_new);
+            b_in += bit_int(qs_ignore.at(q),qbits_new);
           }
         }
         B(b_out,b_in) = A(m,n);
@@ -189,20 +192,20 @@ MatrixXcd ptrace(const MatrixXcd A, const vector<int> qs_trace){
   for(int m = 0; m < B.rows(); m++){
     for(int n = 0; n < B.cols(); n++){
 
-      // contribution of m and n to indices of A
+      // get contribution of substates |m-><n-| to indices of A
       int a_m = 0, a_n = 0;
       for(int q = 0; q < qbits_new; q++){
-        if(qbit_state(q,qbits_new,m)) a_m += pow(2,qbits_old-1-qs_keep.at(q));
-        if(qbit_state(q,qbits_new,n)) a_n += pow(2,qbits_old-1-qs_keep.at(q));
+        if(qbit_state(q,qbits_new,m)) a_m += bit_int(qs_keep.at(q),qbits_old);
+        if(qbit_state(q,qbits_new,n)) a_n += bit_int(qs_keep.at(q),qbits_old);
       }
 
       // loop over all elements of the form |ms><ns| in A
       for(int s = 0; s < pow(2,qs_trace.size()); s++){
         int a_out = a_m, a_in = a_n;
         for(int q = 0; q < qs_trace.size(); q++){
-          if(int_bit(s,q)){
-            a_out += pow(2,qbits_old-1-qs_trace.at(q));
-            a_in += pow(2,qbits_old-1-qs_trace.at(q));
+          if(qbit_state(q,qs_trace.size(),s)){
+            a_out += bit_int(qs_trace.at(q),qbits_old);
+            a_in += bit_int(qs_trace.at(q),qbits_old);
           }
         }
         B(m,n) += A(a_out,a_in);
@@ -284,7 +287,7 @@ void state_print(const MatrixXcd psi){
     if(abs(psi(n)) != 0){
       cout << "|";
       for(int q = 0; q < qbits; q++){
-        cout << (qbit_state(n,qbits,q)?"d":"u");
+        cout << (qbit_state(q,qbits,n)?"d":"u");
       }
       cout << "> " << psi(n) << endl;
     }
@@ -324,24 +327,40 @@ const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 // vector of lattice sites in a diamond unit cell
 const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
 
+// equality operator for matrix vector
+bool operator==(const vector<MatrixXcd> lhs, const vector<MatrixXcd> rhs){
+  assert(lhs.size() == rhs.size());
+  for(int i = 0; i < lhs.size(); i++){
+    if(lhs.at(i) != rhs.at(i)) return false;
+  }
+  return true;
+};
+
 // struct for spins
 struct spin{
   Vector3d pos; // position
   double g; // gyromagnetic ratio
+  vector<MatrixXcd> S; // spin vector
 
-  spin(Vector3d pos, double g){
+  spin(Vector3d pos, double g, vector<MatrixXcd> S){
     this->pos = pos;
     this->g = g;
+    this->S = S;
+    assert(S.size() == 3);
   };
 
-  bool operator ==(const spin &s){ return ((pos == s.pos) && (g == s.g)); }
-  bool operator !=(const spin &s) { return !(*this == s); }
+  bool operator==(const spin &s){
+    return ((pos == s.pos) && (g == s.g) && (S == s.S));
+  }
+  bool operator!=(const spin &s) { return !(*this == s); }
 
 };
 
 // initialize nitrogen and vacancy centers
-const spin n(Vector3d::Zero(),0.);
-const spin e(ao,ge);
+const spin n(Vector3d::Zero(), 0., s_vec);
+spin e(int ms){
+  return spin(ao, ge, {sx/sqrt(2), ms*sy/sqrt(2), ms/2*(sz+I2)});
+}
 
 // unit vectors along lattice directions
 const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from N to V site
@@ -352,18 +371,11 @@ const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
 
-// coupling strength between two nuclei; assumes strong magnetic field in zhat
+// coupling strength between two spins; assumes strong magnetic field in zhat
 inline double coupling_strength(const spin s1, const spin s2){
   Vector3d r = s2.pos - s1.pos;
-  return s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*pow(normed(r).dot(zhat),2));
+  return s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*pow(hat(r).dot(zhat),2));
 }
-
-// hyperfine field experienced by nuclear spin s
-Vector3d A(const spin s){
-  Vector3d r = s.pos - e.pos;
-  return e.g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*normed(r).dot(zhat)*normed(r));
-}
-
 
 // group spins into clusters with intercoupling strengths >= min_coupling_strength
 vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_strength){
@@ -444,6 +456,16 @@ double find_target_coupling(vector<spin> spins, int cluster_size_target,
   return cluster_coupling;
 }
 
+//--------------------------------------------------------------------------------------------
+// AXY scanning methods
+//--------------------------------------------------------------------------------------------
+
+// hyperfine field experienced by nuclear spin s
+Vector3d A(const spin s, int ms){
+  Vector3d r = s.pos - e(ms).pos;
+  return e(ms).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*hat(r).dot(zhat)*hat(r));
+}
+
 // harmonic to target with AXY sequence
 enum harmonic { first, third };
 
@@ -476,9 +498,12 @@ vector<double> pulse_times(harmonic k, double f){
   return times;
 }
 
-// computer NV coherence at scanning frequency w_DD, harmonic k_DD, and fourier component f_DD
-double compute_coherence(vector<vector<spin>> clusters,
-                         double w_DD, harmonic k_DD, double f_DD, double Bz, int ms){
+// computer NV coherence at scanning frequency w_scan
+double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_DD,
+                      double f_DD, double Bz, int ms, double scan_time){
+
+  double w_DD = w_scan;
+  if(k_DD == third) w_DD /= 3;
 
   double t_DD = 2*pi/w_DD;
 
@@ -487,52 +512,54 @@ double compute_coherence(vector<vector<spin>> clusters,
   double t2 = ts.at(1)*t_DD;
   double t3 = t_DD/4;
 
-  MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
+  // initial (unnormalized) density matrix of NV center
+  MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
 
   double coherence = 1;
   for(int c = 0; c < clusters.size(); c++){
     vector<spin> cluster = clusters.at(c);
-    int spins = cluster.size()+1; // total number of spins
-    int D = pow(2,spins); // dimensionality of Hilbert space
+    int spins = cluster.size()+1; // total number of spins in NV+cluster system
+    int D = pow(2,spins); // dimensionality of NV+cluster Hilbert space
 
-    // density matrix of initial state
-    MatrixXcd rho_0 = act(rho_NV_0, {0}, spins);
-    rho_0 /= real(trace(rho_0));
+    // initial (unnormalized) density matrix of NV+cluster
+    MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
 
     // construct Hamiltonians
     MatrixXcd H_nn = MatrixXcd::Zero(D,D); // internuclear coupling Hamiltonian
-    MatrixXcd H_nZ_eff = MatrixXcd::Zero(D,D); // nuclear Zeeman Hamiltonian
-    MatrixXcd H_int = MatrixXcd::Zero(D,D); // interaction Hamiltonian with F(t) = 1
+    MatrixXcd H_nZ_eff = MatrixXcd::Zero(D,D); // effective nuclear Zeeman Hamiltonian
+    MatrixXcd H_int_eff = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
 
+    // loop over spins in cluster
     for(int s = 0; s < cluster.size(); s++){
       for(int r = 0; r < s; r++){
         MatrixXcd H_nn_sr = coupling_strength(cluster.at(s),cluster.at(r))
-          * (3*tp(dot(s_vec,zhat),dot(s_vec,zhat)) - dot(s_vec,s_vec));
+          * (3*tp(dot(cluster.at(s).S,zhat),dot(cluster.at(r).S,zhat))
+             - dot(cluster.at(s).S,cluster.at(r).S));
         H_nn += act(H_nn_sr, {s+1,r+1}, spins);
       }
-      const MatrixXcd AI = dot(A(cluster.at(s)), s_vec);
-      H_nZ_eff += act( -cluster.at(s).g*dot(Bz*zhat, s_vec) + ms/2*AI, {s+1}, spins);
-      H_int += ms/2 * act(tp(sz,AI), {0,s+1}, spins);
+      MatrixXcd AI = dot(A(cluster.at(s), ms), cluster.at(s).S);
+      H_nZ_eff += act( -cluster.at(s).g*dot(Bz*zhat, cluster.at(s).S) + ms/2.*AI,
+                       {s+1}, spins);
+      H_int_eff += ms/2. * act(tp(sz,AI), {0,s+1}, spins);
     }
 
     // compute propagator for AXY sequence
-    MatrixXcd U1 = exp(-j*(H_nn + H_nZ_eff + H_int) * (t1));
-    MatrixXcd U2 = exp(-j*(H_nn + H_nZ_eff - H_int) * (t2-t1));
-    MatrixXcd U3 = exp(-j*(H_nn + H_nZ_eff + H_int) * (t3-t2));
-    MatrixXcd U4 = exp(-j*(H_nn + H_nZ_eff - H_int) * (t3-t2));
-    MatrixXcd U5 = exp(-j*(H_nn + H_nZ_eff + H_int) * (t2-t1));
-    MatrixXcd U6 = exp(-j*(H_nn + H_nZ_eff - H_int) * (t1));
+    MatrixXcd U1 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t1));
+    MatrixXcd U2 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t2-t1));
+    MatrixXcd U3 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t3-t2));
+    MatrixXcd U4 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t3-t2));
+    MatrixXcd U5 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t2-t1));
+    MatrixXcd U6 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t1));
 
     MatrixXcd U = U1*U2*U3*U4*U5*U6 * U6*U5*U4*U3*U2*U1;
+
+    U = pow(U,int(scan_time/t_DD));
 
     // compute density matrix after a single AXY sequence
     MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
-    coherence *= pow(2,cluster.size())*real(trace(rho*rho_0));
-    cout << pow(2,cluster.size())*real(trace(rho_0*rho_0)) << "     "
-         << pow(2,cluster.size())*real(trace(rho*rho)) << "     "
-         << pow(2,cluster.size())*real(trace(rho*rho_0)) << endl;
+    coherence *= real(trace(rho*rho_0))/D-1;
   }
   return coherence;
 }

@@ -1,7 +1,9 @@
 #include <sys/stat.h>
+#include <float.h>
 
-#include <iostream>
-#include <fstream>
+#include <iostream> // for standard output
+#include <fstream> // for file input
+#include <iomanip> // some nice printing functions
 using namespace std;
 
 #include <eigen3/Eigen/Dense> // linear algebra library
@@ -23,44 +25,39 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // define parameters
   int cell_radius;
-  double c13_abundance = c13_natural_abundance;
+  double c13_abundance;
   int max_cluster_size;
   int ms;
+  double Bz_in_gauss;
+
   string input_lattice;
   string output_lattice = "lattice-cr[cell_radius]-s[seed].txt";
-  string output_dir = "data";
-  bool fast_decomposition;
+  string output_dir;
   int seed;
 
-
-  double w_DD = 1e5;
-  double Bz = 1000;
-
   // define options
-  po::options_description options("allowed options");
+  po::options_description options("allowed options", 90);
   options.add_options()
     ("help,h", "produce help message")
     ("cell_radius", po::value<int>(&cell_radius)->default_value(6),
-     "number of unit cells to simulate out from the NV center")
-    ("c13_abundance", po::value<double>(&c13_abundance),
+     "number of unit cells to simulate out from the NV center (along cell axes)")
+    ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
     ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("ms", po::value<int>(&ms)->default_value(1),
-     "NV center spin used for effective two-level system (must be +/-1)")
-    ("input_lattice", po::value<string>(&input_lattice), "input file definint initial system")
-    ("output_lattice", po::value<string>(&output_lattice),
-     "name for output file defining initial system")
-    ("output_dir", po::value<string>(&output_dir), "directory for storing data")
-    ("fast_decomposition,f", po::value<bool>(&fast_decomposition)->default_value(true),
-     "use fast, but less accurate algorithm for matrix decomposition")
-    ("seed,s", po::value<int>(&seed)->default_value(1), "seed for random number generator")
-
-
-    (",w", po::value<double>(&w_DD), "set w_DD (in kHz)")
-    (",B", po::value<double>(&Bz), "set Bz (in gauss)")
-
-
+     "NV center spin state used with |0> for an effective two-level system (must be +/-1)")
+    ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
+     "strength of static magnetic field along the NV axis (in gauss)")
+    ("input_lattice", po::value<string>(&input_lattice),
+     "input file defining system configuration")
+    ("output_lattice",
+     po::value<string>(&output_lattice),
+     "output file defining system configuration")
+    ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
+     "directory for storing data")
+    ("seed", po::value<int>(&seed)->default_value(1),
+     "seed for random number generator (must be >=1)")
     ;
 
   // collect inputs
@@ -88,7 +85,7 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   bool set_cell_radius = !inputs["cell_radius"].defaulted();
-  bool set_c13_abundance = inputs.count("c13_abundance");
+  bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
   bool using_input_lattice = inputs.count("input_lattice");
   bool set_output_lattice = inputs.count("output_lattice");
   bool set_output_dir = inputs.count("output_dir");
@@ -97,10 +94,11 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(cell_radius > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
   assert(ms == 1 || ms == -1);
-  assert(seed > 0);
+  assert(Bz_in_gauss >= 0);
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(!(using_input_lattice && set_output_lattice));
+  assert(seed > 0);
 
   if(using_input_lattice){
     // check that the given input file exists
@@ -114,6 +112,9 @@ int main(int arg_num, const char *arg_vec[]) {
     boost::replace_all(output_lattice, "[cell_radius]", to_string(cell_radius));
     boost::replace_all(output_lattice, "[seed]", to_string(seed));
   }
+
+  // set variables based on iputs
+  double Bz = Bz_in_gauss*gauss;
 
   string output_lattice_path = output_dir+"/"+output_lattice;
 
@@ -148,7 +149,7 @@ int main(int arg_num, const char *arg_vec[]) {
           cell_pos(2) = k;
           for(int ls = 0; ls < cell_sites.size(); ls++){ // loop over sites in unit cell
             if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13));
+              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13,s_vec));
             }
           }
         }
@@ -156,16 +157,18 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // remove any C-13 atoms at the NV lattice sites
-    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(n.pos,gC13)), nuclei.end());
-    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(e.pos,gC13)), nuclei.end());
+    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(n.pos,gC13,s_vec)),
+                 nuclei.end());
+    nuclei.erase(remove(nuclei.begin(), nuclei.end(), spin(e(ms).pos,gC13,s_vec)),
+                 nuclei.end());
 
     // write cell radius and C-13 positions to file
     ofstream output(output_lattice_path);
     output << "cell_radius: " << cell_radius << endl;
-    for(int c = 0; c < nuclei.size(); c++){
-      output << nuclei.at(c).pos[0] << " "
-             << nuclei.at(c).pos[1] << " "
-             << nuclei.at(c).pos[2] << endl;
+    for(int n = 0; n < nuclei.size(); n++){
+      output << nuclei.at(n).pos(0) << " "
+             << nuclei.at(n).pos(1) << " "
+             << nuclei.at(n).pos(2) << endl;
     }
     output.close();
 
@@ -187,14 +190,15 @@ int main(int arg_num, const char *arg_vec[]) {
       y = stod(line);
       getline(input,line);
       z = stod(line);
-      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13));
+      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec));
     }
     input.close();
 
   }
 
   // assert that no C-13 spins lie at the NV lattice sites
-  if(in_vector(spin(n.pos,gC13),nuclei) || in_vector(spin(e.pos,gC13),nuclei)){
+  if(in_vector(spin(n.pos,gC13,s_vec),nuclei)
+     || in_vector(spin(e(ms).pos,gC13,s_vec),nuclei)){
     cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
     return 2;
   }
@@ -234,10 +238,28 @@ int main(int arg_num, const char *arg_vec[]) {
 
   double f_DD = 0.06;
   harmonic k_DD = first;
+  double scan_time = 1e-3;
 
-  double coherence = compute_coherence(clusters, w_DD, k_DD, f_DD, Bz, ms);
+  double max_Ax = 0;
+  double max_w = 0, min_w = DBL_MAX;
+  for(int n = 0; n < nuclei.size(); n++){
+    spin s = nuclei.at(n);
+    double w = (s.g*Bz*zhat - ms/2.*A(s,ms)).norm();
 
-  cout << coherence << endl;
+    if(w < min_w) min_w = w;
+    if(w > max_w) max_w = w;
+  }
+
+  int scans = 100;
+
+  for(int i = 0; i < scans; i++){
+    double w_scan = min_w + i*(max_w-min_w)/scans;
+    cout << w_scan << "   "
+         << coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time) << endl;
+  }
+
+  // double coherence = compute_coherence(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
+  // cout << coherence << endl;
 
 }
 

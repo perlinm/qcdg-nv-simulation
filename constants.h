@@ -29,7 +29,6 @@ const double gauss = 1e-4*tesla; // one gauss (Hz^2)
 const double volt = 1/(qe*hbar_SI); // one volt (Hz)
 
 // NV system constants
-const double D = 2*pi*2.87e9; // NV center zero field splitting energy (Hz)
+const double NV_ZFS = 2*pi*2.87e9; // NV center zero field splitting energy (Hz)
 const double a0 = 0.35668 * nm; // diamond lattice parameter at 300 K
-const double c13_natural_abundance = 0.0107; // natural isotopic abundance of C-13
 
