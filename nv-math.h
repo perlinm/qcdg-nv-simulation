@@ -49,6 +49,15 @@ MatrixXcd tp(const initializer_list<MatrixXcd> list){
   return out;
 }
 
+// equality operator for matrix vector
+bool operator==(const vector<MatrixXcd> lhs, const vector<MatrixXcd> rhs){
+  assert(lhs.size() == rhs.size());
+  for(int i = 0; i < lhs.size(); i++){
+    if(lhs.at(i) != rhs.at(i)) return false;
+  }
+  return true;
+};
+
 // inner product of two matrix vectors
 inline MatrixXcd dot(const vector<MatrixXcd> v, const vector<MatrixXcd> w){
   assert(v.size() == w.size());
@@ -65,6 +74,22 @@ inline MatrixXcd dot(const vector<MatrixXcd> v, const Vector3d r){
   return v.at(0)*r(0) + v.at(1)*r(1) + v.at(2)*r(2);
 }
 inline MatrixXcd dot(const Vector3d r, const vector<MatrixXcd> v){ return dot(v,r); }
+
+// product between a matrix and a matrix vector
+vector<MatrixXcd> operator*(const MatrixXcd G, const vector<MatrixXcd> v){
+  vector<MatrixXcd> out;
+  for(int i = 0; i < v.size(); i++){
+    out.push_back(G*v.at(i));
+  }
+  return out;
+}
+vector<MatrixXcd> operator*(const vector<MatrixXcd> v, const MatrixXcd G){
+  vector<MatrixXcd> out;
+  for(int i = 0; i < v.size(); i++){
+    out.push_back(v.at(i)*G);
+  }
+  return out;
+}
 
 // remove numerical artifacts from a matrix
 void remove_artifacts(MatrixXcd &A, double threshold = 1e-12){
@@ -327,15 +352,6 @@ const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 // vector of lattice sites in a diamond unit cell
 const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
 
-// equality operator for matrix vector
-bool operator==(const vector<MatrixXcd> lhs, const vector<MatrixXcd> rhs){
-  assert(lhs.size() == rhs.size());
-  for(int i = 0; i < lhs.size(); i++){
-    if(lhs.at(i) != rhs.at(i)) return false;
-  }
-  return true;
-};
-
 // struct for spins
 struct spin{
   Vector3d pos; // position
@@ -343,23 +359,23 @@ struct spin{
   vector<MatrixXcd> S; // spin vector
 
   spin(Vector3d pos, double g, vector<MatrixXcd> S){
+    assert(S.size() == 3);
     this->pos = pos;
     this->g = g;
     this->S = S;
-    assert(S.size() == 3);
   };
 
   bool operator==(const spin &s){
     return ((pos == s.pos) && (g == s.g) && (S == s.S));
   }
-  bool operator!=(const spin &s) { return !(*this == s); }
+  bool operator!=(const spin &s){ return !(*this == s); }
 
 };
 
 // initialize nitrogen and vacancy centers
 const spin n(Vector3d::Zero(), 0., s_vec);
 spin e(int ms){
-  return spin(ao, ge, {sx/sqrt(2), ms*sy/sqrt(2), ms/2*(sz+I2)});
+  return spin(ao, ge, {sx/sqrt(2), ms*sy/sqrt(2), ms*(sz+I2)/2.});
 }
 
 // unit vectors along lattice directions
@@ -501,7 +517,6 @@ vector<double> pulse_times(harmonic k, double f){
 // computer NV coherence at scanning frequency w_scan
 double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_DD,
                       double f_DD, double Bz, int ms, double scan_time){
-
   double w_DD = w_scan;
   if(k_DD == third) w_DD /= 3;
 
@@ -524,10 +539,13 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
     // initial (unnormalized) density matrix of NV+cluster
     MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
 
+    // pi-pulse on NV center
+    MatrixXcd X = act(sx,{0},spins);
+
     // construct Hamiltonians
     MatrixXcd H_nn = MatrixXcd::Zero(D,D); // internuclear coupling Hamiltonian
     MatrixXcd H_nZ_eff = MatrixXcd::Zero(D,D); // effective nuclear Zeeman Hamiltonian
-    MatrixXcd H_int_eff = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
+    MatrixXcd H_int = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
 
     // loop over spins in cluster
     for(int s = 0; s < cluster.size(); s++){
@@ -540,26 +558,119 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
       MatrixXcd AI = dot(A(cluster.at(s), ms), cluster.at(s).S);
       H_nZ_eff += act( -cluster.at(s).g*dot(Bz*zhat, cluster.at(s).S) + ms/2.*AI,
                        {s+1}, spins);
-      H_int_eff += ms/2. * act(tp(sz,AI), {0,s+1}, spins);
+      H_int += ms/2. * act(tp(sz,AI), {0,s+1}, spins);
     }
 
-    // compute propagator for AXY sequence
-    MatrixXcd U1 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t1));
-    MatrixXcd U2 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t2-t1));
-    MatrixXcd U3 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t3-t2));
-    MatrixXcd U4 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t3-t2));
-    MatrixXcd U5 = exp(-j*(H_nn + H_nZ_eff + H_int_eff) * (t2-t1));
-    MatrixXcd U6 = exp(-j*(H_nn + H_nZ_eff - H_int_eff) * (t1));
+    MatrixXcd H = H_nn + H_nZ_eff + H_int;
 
-    MatrixXcd U = U1*U2*U3*U4*U5*U6 * U6*U5*U4*U3*U2*U1;
+    // propagators for sections of the AXY sequence
+    MatrixXcd U1 = exp(-j*H*(t1));
+    MatrixXcd U2 = exp(-j*H*(t2-t1));
+    MatrixXcd U3 = exp(-j*H*(t3-t2));
 
-    U = pow(U,int(scan_time/t_DD));
+    // AXY half-sequence propagator
+    MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
 
-    // compute density matrix after a single AXY sequence
+    // propagator for entire scan
+    U = pow(U,2*int(scan_time/t_DD));
+
+    // (unnormalized) NV+cluster density matrix after scanning
     MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
     coherence *= real(trace(rho*rho_0))/D-1;
+  }
+  return coherence;
+}
+
+// Hamiltoninan coupling two spins
+inline MatrixXcd H_ss(const spin s1, const spin s2){
+  Vector3d r = s2.pos-s1.pos;
+  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))* (dot(s1.S,s2.S)
+                                               - 3*tp(dot(s1.S,hat(r)), (dot(s2.S,hat(r)))));
+}
+
+// return spin-spin coupling Hamiltonian for NV center with cluster
+MatrixXcd H_int(const spin e, const vector<spin> cluster){
+  int spins = cluster.size()+1;
+  MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
+
+  for(int s = 0; s < cluster.size(); s++){
+    // interaction with NV center
+    H += act(H_ss(e, cluster.at(s)), {0,s+1}, spins);
+    for(int r = 0; r < s; r++){
+      // interaction with other spins
+      H += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
+    }
+  }
+  return H;
+}
+
+// return Zeeman Hamiltonian for NV center with cluster
+MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
+  int spins = cluster.size()+1;
+
+  MatrixXcd H = act(NV_ZFS*dot(e.S,zhat)*dot(e.S,zhat) - e.g*dot(B,e.S), {0}, spins);
+  for(int s = 0; s < cluster.size(); s++){
+    H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s+1}, spins);
+  }
+  return H;
+}
+
+// computer NV coherence at scanning frequency w_scan
+double exact_coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_DD,
+                            double f_DD, double Bz, int ms, double scan_time){
+  spin e_ms = e(ms);
+  Vector3d B = Bz*zhat;
+
+  double w_DD = w_scan;
+  if(k_DD == third) w_DD /= 3;
+
+  double t_DD = 2*pi/w_DD;
+
+  vector<double> ts = pulse_times(k_DD,f_DD);
+  double t1 = ts.at(0)*t_DD;
+  double t2 = ts.at(1)*t_DD;
+  double t3 = t_DD/4;
+
+  // initial (unnormalized) density matrix of NV center
+  MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
+
+  double coherence = 1;
+  for(int c = 0; c < clusters.size(); c++){
+    vector<spin> cluster = clusters.at(c);
+    int spins = cluster.size()+1;
+
+    // pi-pulse on NV center
+    MatrixXcd X = act(sx,{0},spins);
+
+    // initial (unnormalized) density matrix of NV+cluster
+    MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
+
+    // construct full Hamiltonian
+    MatrixXcd H = H_int(e_ms, cluster) + H_Z(e_ms, cluster, B);
+
+    cout << endl
+         << H - act(NV_ZFS*dot(e_ms.S,zhat)*dot(e_ms.S,zhat)-e_ms.g*dot(B,e_ms.S),{0},spins)
+         << endl;
+    return 1;
+
+    // propagators for sections of the AXY sequence
+    MatrixXcd U1 = exp(-j*H*(t1));
+    MatrixXcd U2 = exp(-j*H*(t2-t1));
+    MatrixXcd U3 = exp(-j*H*(t3-t2));
+
+    // AXY half-sequence propagator
+    MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
+
+    // propagator for entire scan
+    U = pow(U,2*int(scan_time/t_DD));
+
+    // (unnormalized) NV+cluster density matrix after scanning
+    MatrixXcd rho = U*rho_0*U.adjoint();
+
+    // update coherence
+    coherence *= real(trace(rho*rho_0))/pow(2,spins)-1;
   }
   return coherence;
 }

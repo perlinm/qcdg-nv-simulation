@@ -88,7 +88,7 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
   bool using_input_lattice = inputs.count("input_lattice");
   bool set_output_lattice = inputs.count("output_lattice");
-  bool set_output_dir = inputs.count("output_dir");
+  bool set_output_dir = !inputs["output_dir"].defaulted();
 
   // run a sanity check on inputs
   assert(cell_radius > 0);
@@ -254,12 +254,12 @@ int main(int arg_num, const char *arg_vec[]) {
 
   for(int i = 0; i < scans; i++){
     double w_scan = min_w + i*(max_w-min_w)/scans;
-    cout << w_scan << "   "
-         << coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time) << endl;
+    cout << w_scan;
+    cout << "   " << coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
+    // cout  << "   " << exact_coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
+    cout << endl;
+    // return 5;
   }
-
-  // double coherence = compute_coherence(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
-  // cout << coherence << endl;
 
 }
 
