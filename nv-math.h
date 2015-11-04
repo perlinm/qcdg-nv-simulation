@@ -6,6 +6,28 @@ using namespace Eigen;
 #include "qp-math.h"
 #include "constants.h"
 
+//--------------------------------------------------------------------------------------------
+// Diamond lattice parameters
+//--------------------------------------------------------------------------------------------
+
+// diamond lattice vectors scaled to a0
+const Vector3d ao = (Vector3d() << 1,1,1).finished()/4;
+const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
+const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
+const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
+
+// unit vectors along bonding axes
+const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from N to V site
+const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
+const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
+
+// vector of lattice sites in a diamond unit cell
+const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
+
+//--------------------------------------------------------------------------------------------
+// Spin states, matrices, vectors, and structs
+//--------------------------------------------------------------------------------------------
+
 // spin up/down state vectors
 const VectorXcd up = (Vector2cd() << 1,0).finished();
 const VectorXcd dn = (Vector2cd() << 0,1).finished();
@@ -18,15 +40,6 @@ const MatrixXcd sz = (Matrix2cd() << 1,0, 0,-1).finished();
 
 // spin vector for a spin-1/2 particle
 const mvec s_vec({ sx/2, sy/2, sz/2 });
-
-// diamond lattice vectors scaled to a0
-const Vector3d ao = (Vector3d() << 1,1,1).finished()/4;
-const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
-const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
-const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
-
-// vector of lattice sites in a diamond unit cell
-const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
 
 // struct for spins
 struct spin{
@@ -59,11 +72,6 @@ const spin n(Vector3d::Zero(), 0., s_vec);
 spin e(int ms){
   return spin(ao, ge, {sx/sqrt(2), ms*sy/sqrt(2), ms*(sz+I2)/2.});
 }
-
-// unit vectors along lattice directions
-const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from N to V site
-const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
-const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 
 //--------------------------------------------------------------------------------------------
 // Spin clustering methods
