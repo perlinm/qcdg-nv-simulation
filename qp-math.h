@@ -182,48 +182,45 @@ struct mvec{
   mvec(const vector<MatrixXcd> v){ this->v = v; };
   mvec(const MatrixXcd v_mat, const Vector3d v_vec){
     for(uint i = 0; i < v_vec.size(); i++){
-      v.push_back(v_vec(i)*v_mat);
+      v.push_back(v_mat*v_vec(i));
     }
   };
 
   uint size() const { return v.size(); }
   MatrixXcd at(uint i) const { return v.at(i); }
 
-  bool operator==(const mvec w) const {
+  bool operator==(const mvec &w) const {
     assert(v.size() == w.size());
     for(uint i = 0; i < v.size(); i++){
       if(v.at(i) != w.at(i)) return false;
     }
     return true;
   }
-  bool operator!=(const mvec w) const { return !(*this == w); }
+  bool operator!=(const mvec &w) const { return !(*this == w); }
 
-  mvec operator+(const mvec w) const {
+  mvec operator+(const mvec &w){
     assert(v.size() == w.size());
-    mvec out = v;
     for(uint i = 0; i < v.size(); i++){
-      out.at(i) += w.at(i);
+      v.at(i) += w.at(i);
     }
-    return out;
+    return *this;
   }
-  mvec operator-(const mvec w) const {
+  mvec operator-(const mvec &w){
     assert(v.size() == w.size());
-    mvec out = v;
     for(uint i = 0; i < v.size(); i++){
-      out.at(i) -= w.at(i);
+      v.at(i) -= w.at(i);
     }
-    return out;
+    return *this;
   }
-  mvec operator*(const double s) const {
-    mvec out = v;
-    for(uint i = 0; i < out.size(); i++){
-      out.at(i) *= s;
+  mvec operator*(const double s){
+    for(uint i = 0; i < v.size(); i++){
+      v.at(i) *= s;
     }
-    return out;
+    return *this;
   }
-  mvec operator/(const double s) const { return *this * (1/s); }
+  mvec operator/(const double s) { return *this * (1/s); }
 
-  MatrixXcd dot(const mvec w) const {
+  MatrixXcd dot(const mvec &w) const {
     assert(v.size() == w.size());
     MatrixXcd out = tp(v.at(0),w.at(0));
     for(uint i = 1; i < v.size(); i++){
