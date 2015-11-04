@@ -31,9 +31,9 @@ int main(int arg_num, const char *arg_vec[]) {
   // define parameters
   int cell_radius;
   double c13_abundance;
-  string lattice_file = "lattice-cr[cell_radius]-s[seed].txt";
+  string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
 
-  int max_cluster_size;
+  uint max_cluster_size;
   int ms;
   double Bz_in_gauss;
 
@@ -41,8 +41,8 @@ int main(int arg_num, const char *arg_vec[]) {
   int scan_bins;
   double f_DD;
   uint k_DD_int;
-  double scan_time_in_us;
-  string file_suffix = "-[ms]-cs[cluster_size]-cr[cell_radius]-s[seed].txt";
+  double scan_time_in_ms;
+  string file_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-[ms].txt";
 
   string output_dir;
   int seed;
@@ -51,21 +51,23 @@ int main(int arg_num, const char *arg_vec[]) {
   po::options_description options("Allowed options", 95);
   options.add_options()
     ("help,h", "produce help message")
-    ("cell_radius", po::value<int>(&cell_radius)->default_value(7),
+    ("cell_radius,r", po::value<int>(&cell_radius)->default_value(7),
      "number of unit cells to simulate out from the NV center (along cell axes)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
+    ("file_suffix", po::value<string>(&file_suffix),
+     "output file suffix (required if using input lattice)")
 
-    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(7),
+    ("max_cluster_size,c", po::value<uint>(&max_cluster_size)->default_value(7),
      "maximum allowable size of C-13 clusters")
-    ("ms", po::value<int>(&ms)->default_value(1),
+    ("ms,m", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
     ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
 
-    ("scan", po::value<bool>(&perform_scan)->default_value(false),
+    ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies?")
     ("scan_bins", po::value<int>(&scan_bins)->default_value(200),
      "number of bins in coherence scanning range")
@@ -73,12 +75,12 @@ int main(int arg_num, const char *arg_vec[]) {
      "magnitude of fourier component used in coherence scanning")
     ("k_DD", po::value<uint>(&k_DD_int)->default_value(1),
      "resonance harmonic used in coherence scanning (1 or 3)")
-    ("scan_time", po::value<double>(&scan_time_in_us)->default_value(100),
+    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
      "time for each coherence measurement (in microseconds)")
 
     ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
      "directory for storing data")
-    ("seed", po::value<int>(&seed)->default_value(1),
+    ("seed,s", po::value<int>(&seed)->default_value(1),
      "seed for random number generator (>=1)")
     ;
 
@@ -98,7 +100,7 @@ int main(int arg_num, const char *arg_vec[]) {
     cout << "------------------------------------------------------------------" << endl;
     cout << "running " << arg_vec[0] << " with parameters:" << endl;
     for(int i = 1; i < arg_num; i++) {
-      if(arg_vec[i][0] == '-') cout << endl;
+      if(arg_vec[i][1] == '-') cout << endl;
       cout << arg_vec[i] << " ";
     }
     cout << endl;
@@ -108,13 +110,15 @@ int main(int arg_num, const char *arg_vec[]) {
 
   bool set_cell_radius = !inputs["cell_radius"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
-  bool input_lattice = inputs.count("lattice_file");
+  bool using_input_lattice = inputs.count("lattice_file");
+  bool set_file_suffix = inputs.count("file_suffix");
 
   // run a sanity check on inputs
   assert(cell_radius > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
-  assert(!(input_lattice && set_cell_radius));
-  assert(!(input_lattice && set_c13_abundance));
+  assert(!(using_input_lattice && set_cell_radius));
+  assert(!(using_input_lattice && set_c13_abundance));
+  assert(using_input_lattice == set_file_suffix);
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
@@ -124,23 +128,27 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(scan_bins > 0);
     assert((f_DD > 0) && (f_DD < 1));
     assert((k_DD_int == 1) || (k_DD_int == 3));
-    assert(scan_time_in_us > 0);
+    assert(scan_time_in_ms > 0);
   }
 
   assert(seed > 0);
 
   string lattice_path;
-  if(input_lattice){
+  if(using_input_lattice){
     lattice_path = lattice_file;
-    // check that the given input file exists
     if(access(lattice_path.c_str(),F_OK) == -1){
       cout << "file does not exist: " << lattice_file << endl;
       return 1;
     }
-  } else{ // if !input_lattice
+  } else{ // if !using_input_lattice
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
     boost::replace_all(lattice_file, "[seed]", to_string(seed));
     lattice_path = output_dir+"/"+lattice_file;
+
+    boost::replace_all(file_suffix, "[ms]", (ms > 0)?"up":"dn");
+    boost::replace_all(file_suffix, "[cluster_size]", to_string(max_cluster_size));
+    boost::replace_all(file_suffix, "[cell_radius]", to_string(cell_radius));
+    boost::replace_all(file_suffix, "[seed]", to_string(seed));
   }
 
   cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size());
@@ -151,7 +159,7 @@ int main(int arg_num, const char *arg_vec[]) {
   harmonic k_DD;
   if(k_DD_int == 1) k_DD = first;
   if(k_DD_int == 3) k_DD = third;
-  double scan_time = scan_time_in_us*1e-6;
+  double scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
   mkdir(output_dir.c_str(),0777); // create data directory
@@ -163,7 +171,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // vector of C-13 nuclei
   vector<spin> nuclei;
 
-  if(!input_lattice){
+  if(!using_input_lattice){
 
     // set positions of C-13 nuclei at lattice sites
     Vector3d cell_pos; // position of unit cell indexed by i,j,k
@@ -190,7 +198,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // write cell radius and C-13 positions to file
     ofstream lattice(lattice_path);
-    lattice << "# cell_radius: " << cell_radius << endl;
+    lattice << "# cell radius: " << cell_radius << endl;
     for(uint n = 0; n < nuclei.size(); n++){
       lattice << nuclei.at(n).pos(0) << ' '
              << nuclei.at(n).pos(1) << ' '
@@ -198,12 +206,13 @@ int main(int arg_num, const char *arg_vec[]) {
     }
     lattice.close();
 
-  } else { // if input_lattice
+  } else { // if using_input_lattice
 
     string line;
     ifstream lattice(lattice_path);
 
     // get cell_radius
+    getline(lattice,line,' ');
     getline(lattice,line,' ');
     getline(lattice,line,' ');
     getline(lattice,line);
@@ -253,11 +262,18 @@ int main(int arg_num, const char *arg_vec[]) {
                                             cluster_coupling,dcc_cutoff);
     clusters = get_clusters(nuclei,cluster_coupling);
   }
+  cout << "Nuclei grouped into " << clusters.size() << " clusters"
+       << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
 
   max_cluster_size = largest_cluster_size(clusters);
-  cout << "Nuclei grouped into " << clusters.size() << " clusters" << endl;
-  cout << "Maximum cluster size: " << max_cluster_size << endl;
-  cout << "Cluster coupling factor: " << cluster_coupling << " Hz" << endl;
+  VectorXi size_hist = VectorXi::Zero(max_cluster_size);
+  for(uint i = 0; i < clusters.size(); i++){
+    size_hist(clusters.at(i).size()-1) += 1;
+  }
+  cout << "Cluster size histogram: " << endl;
+  for(uint i = 0; i < size_hist.size(); i++){
+    cout << "  " << i+1 << ": " << size_hist(i) << endl;
+  }
   cout << endl;
 
   // -----------------------------------------------------------------------------------------
@@ -266,13 +282,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(perform_scan){
 
-    boost::replace_all(file_suffix, "[ms]", (ms > 0)?"up":"dn");
-    boost::replace_all(file_suffix, "[cluster_size]", to_string(max_cluster_size));
-    boost::replace_all(file_suffix, "[cell_radius]", to_string(cell_radius));
-    boost::replace_all(file_suffix, "[seed]", to_string(seed));
-
-    string larmor_path = output_dir+"/larmor"+file_suffix;
-    string scan_path = output_dir+"/scan"+file_suffix;
+    string larmor_path = output_dir+"/larmor-"+file_suffix;
+    string scan_path = output_dir+"/scan-"+file_suffix;
 
     stringstream file_header;
     file_header << "# maxium cluster size: " << max_cluster_size << endl;
