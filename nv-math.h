@@ -79,14 +79,14 @@ inline double coupling_strength(const spin s1, const spin s2){
 vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_strength){
 
   vector<vector<spin>> clusters; // vector of all spin clusters
-  vector<int> clustered; // indices of spins we have already clustered
+  vector<uint> clustered; // indices of spins we have already clustered
 
   // loop over indices of all spins
-  for(int i = 0; i < spins.size(); i++){
+  for(uint i = 0; i < spins.size(); i++){
     if(!in_vector(i,clustered)){
 
       // initialize current cluster
-      vector<int> cluster_indices;
+      vector<uint> cluster_indices;
       vector<spin> cluster;
 
       cluster_indices.push_back(i);
@@ -94,10 +94,10 @@ vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_streng
       clustered.push_back(i);
 
       // loop over all indices of cluster
-      for(int ci = 0; ci < cluster_indices.size(); ci++) {
+      for(uint ci = 0; ci < cluster_indices.size(); ci++) {
 
         // loop over all spins indices greater than cluster_indices(ci)
-        for(int k = cluster_indices.at(ci)+1; k < spins.size(); k++){
+        for(uint k = cluster_indices.at(ci)+1; k < spins.size(); k++){
 
           // if cluster(ci) and spins(k) are interacting, add k to this cluster
           if(!in_vector(k,clustered) &&
@@ -115,16 +115,16 @@ vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_streng
 }
 
 // get size of largest spin cluster
-int largest_cluster_size(vector<vector<spin>> clusters){
-  int largest_size = 0;
-  for(int i = 0; i < clusters.size(); i++){
+uint largest_cluster_size(vector<vector<spin>> clusters){
+  uint largest_size = 0;
+  for(uint i = 0; i < clusters.size(); i++){
     if(clusters.at(i).size() > largest_size) largest_size = clusters.at(i).size();
   }
   return largest_size;
 }
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(vector<spin> spins, int cluster_size_target,
+double find_target_coupling(vector<spin> spins, uint cluster_size_target,
                             double initial_cluster_coupling, double dcc_cutoff){
 
   double cluster_coupling = initial_cluster_coupling;
@@ -221,7 +221,7 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
   MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
 
   double coherence = 1;
-  for(int c = 0; c < clusters.size(); c++){
+  for(uint c = 0; c < clusters.size(); c++){
     vector<spin> cluster = clusters.at(c);
     int spins = cluster.size()+1; // total number of spins in NV+cluster system
     int D = pow(2,spins); // dimensionality of NV+cluster Hilbert space
@@ -238,8 +238,8 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
     MatrixXcd H_int = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
 
     // loop over spins in cluster
-    for(int s = 0; s < cluster.size(); s++){
-      for(int r = 0; r < s; r++){
+    for(uint s = 0; s < cluster.size(); s++){
+      for(uint r = 0; r < s; r++){
         H_nn += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
       }
       MatrixXcd AI = dot(A(cluster.at(s), ms), cluster.at(s).S);
@@ -276,10 +276,10 @@ MatrixXcd H_int(const spin e, const vector<spin> cluster){
   int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
 
-  for(int s = 0; s < cluster.size(); s++){
+  for(uint s = 0; s < cluster.size(); s++){
     // interaction with NV center
     H += act(H_ss(e, cluster.at(s)), {0,s+1}, spins);
-    for(int r = 0; r < s; r++){
+    for(uint r = 0; r < s; r++){
       // interaction with other spins
       H += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
     }
@@ -292,7 +292,7 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
   int spins = cluster.size()+1;
 
   MatrixXcd H = act(NV_ZFS*dot(e.S,zhat)*dot(e.S,zhat) - e.g*dot(B,e.S), {0}, spins);
-  for(int s = 0; s < cluster.size(); s++){
+  for(uint s = 0; s < cluster.size(); s++){
     H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s+1}, spins);
   }
   return H;
@@ -318,7 +318,7 @@ double exact_coherence_scan(vector<vector<spin>> clusters, double w_scan, harmon
   MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
 
   double coherence = 1;
-  for(int c = 0; c < clusters.size(); c++){
+  for(uint c = 0; c < clusters.size(); c++){
     vector<spin> cluster = clusters.at(c);
     int spins = cluster.size()+1;
 

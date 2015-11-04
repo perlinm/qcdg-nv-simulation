@@ -31,7 +31,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // define parameters
   int cell_radius;
   double c13_abundance;
-  int max_cluster_size;
+  uint max_cluster_size;
   int ms;
   double Bz_in_gauss;
 
@@ -48,7 +48,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "number of unit cells to simulate out from the NV center (along cell axes)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
-    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(6),
+    ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (must be +/-1)")
@@ -152,7 +152,7 @@ int main(int arg_num, const char *arg_vec[]) {
         cell_pos(1) = j;
         for(int k = -cell_radius; k < cell_radius; k++){
           cell_pos(2) = k;
-          for(int ls = 0; ls < cell_sites.size(); ls++){ // loop over sites in unit cell
+          for(uint ls = 0; ls < cell_sites.size(); ls++){ // loop over sites in unit cell
             if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
               nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13,s_vec));
             }
@@ -170,7 +170,7 @@ int main(int arg_num, const char *arg_vec[]) {
     // write cell radius and C-13 positions to file
     ofstream output(output_lattice_path);
     output << "cell_radius: " << cell_radius << endl;
-    for(int n = 0; n < nuclei.size(); n++){
+    for(uint n = 0; n < nuclei.size(); n++){
       output << nuclei.at(n).pos(0) << " "
              << nuclei.at(n).pos(1) << " "
              << nuclei.at(n).pos(2) << endl;
@@ -246,7 +246,7 @@ int main(int arg_num, const char *arg_vec[]) {
   double scan_time = 1e-3;
 
   double max_w = 0, min_w = DBL_MAX;
-  for(int n = 0; n < nuclei.size(); n++){
+  for(uint n = 0; n < nuclei.size(); n++){
     double w = (nuclei.at(n).g*Bz*zhat - ms/2.*A(nuclei.at(n),ms)).norm();
     if(w < min_w) min_w = w;
     if(w > max_w) max_w = w;

@@ -39,8 +39,8 @@ MatrixXcd tp(const initializer_list<MatrixXcd> list){
 
 // remove numerical artifacts from a matrix
 void remove_artifacts(MatrixXcd &A, double threshold = 1e-12){
-  for(int m = 0; m < A.rows(); m++){
-    for(int n = 0; n < A.cols(); n++){
+  for(uint m = 0; m < A.rows(); m++){
+    for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n).real()) < threshold) A(m,n) -= A(m,n).real();
       if(abs(A(m,n).imag()) < threshold) A(m,n) -= A(m,n).imag()*j;
     }
@@ -49,8 +49,8 @@ void remove_artifacts(MatrixXcd &A, double threshold = 1e-12){
 
 // get global phase of matrix
 complex<double> get_phase(const MatrixXcd A){
-  for(int m = 0; m < A.rows(); m++){
-    for(int n = 0; n < A.cols(); n++){
+  for(uint m = 0; m < A.rows(); m++){
+    for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n)) != 0){
         complex<double> phase = A(m,n)/abs(A(m,n));
         if(phase.real() < 0) phase = -phase;
@@ -62,37 +62,35 @@ complex<double> get_phase(const MatrixXcd A){
 }
 
 // remove global phase from matrix
-void remove_phase(MatrixXcd &A){
-  A *= conj(get_phase(A));
-}
+void remove_phase(MatrixXcd &A){ A *= conj(get_phase(A)); }
 
 //--------------------------------------------------------------------------------------------
 // Operator rearrangement
 //--------------------------------------------------------------------------------------------
 
 // get the n-th bit of an integer num
-inline bool int_bit(int num, int n){
+inline bool int_bit(uint num, uint n){
   if(pow(2,n) > num) return 0;
   else return (num >> n) & 1;
 }
 
 // get state of qbit q (of N) from enumerated state s
-inline bool qbit_state(int q, int N, int s){ return int_bit(s,N-1-q); }
+inline bool qbit_state(uint q, uint N, uint s){ return int_bit(s,N-1-q); }
 
 // get integer corresponding to an 'on' state of bit p (of N)
-inline int bit_int(int q, int N){ return pow(2,N-1-q); }
+inline uint bit_int(uint q, int N){ return pow(2,N-1-q); }
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
-MatrixXcd act(const MatrixXcd A, const vector<int> qs_act, int qbits_new){
+MatrixXcd act(const MatrixXcd A, const vector<uint> qs_act, uint qbits_new){
   assert(A.rows() == A.cols()); // A should be square
 
   // number of qbits A acted on
-  const int qbits_old = qs_act.size();
+  const uint qbits_old = qs_act.size();
   assert(qbits_old == log2(A.rows()));
 
   // vector of qubits we are ignoring
-  vector<int> qs_ignore;
-  for(int i = 0; i < qbits_new; i++){
+  vector<uint> qs_ignore;
+  for(uint i = 0; i < qbits_new; i++){
     if(!in_vector(i,qs_act)){
       qs_ignore.push_back(i);
     }
@@ -102,20 +100,20 @@ MatrixXcd act(const MatrixXcd A, const vector<int> qs_act, int qbits_new){
   MatrixXcd B = MatrixXcd::Zero(pow(2,qbits_new),pow(2,qbits_new));
 
   // loop over all entries A(m,n)
-  for(int m = 0; m < A.rows(); m++){
-    for(int n = 0; n < A.cols(); n++){
+  for(uint m = 0; m < A.rows(); m++){
+    for(uint n = 0; n < A.cols(); n++){
 
       // get contribution of substates |m-><n-| to indices of B
-      int b_m = 0, b_n = 0;
-      for(int q = 0; q < qbits_old; q++){
+      uint b_m = 0, b_n = 0;
+      for(uint q = 0; q < qbits_old; q++){
         if(qbit_state(q,qbits_old,m)) b_m += bit_int(qs_act.at(q),qbits_new);
         if(qbit_state(q,qbits_old,n)) b_n += bit_int(qs_act.at(q),qbits_new);
       }
 
       // loop over all elements of the form |ms><ns| in B
-      for(int s = 0; s < pow(2,qs_ignore.size()); s++){
-        int b_out = b_m, b_in = b_n;
-        for(int q = 0; q < qs_ignore.size(); q++){
+      for(uint s = 0; s < pow(2,qs_ignore.size()); s++){
+        uint b_out = b_m, b_in = b_n;
+        for(uint q = 0; q < qs_ignore.size(); q++){
           if(qbit_state(q,qs_ignore.size(),s)){
             b_out += bit_int(qs_ignore.at(q),qbits_new);
             b_in += bit_int(qs_ignore.at(q),qbits_new);
@@ -129,16 +127,16 @@ MatrixXcd act(const MatrixXcd A, const vector<int> qs_act, int qbits_new){
 }
 
 // perform a partial trace over qbits qs_trace
-MatrixXcd ptrace(const MatrixXcd A, const vector<int> qs_trace){
+MatrixXcd ptrace(const MatrixXcd A, const vector<uint> qs_trace){
   assert(A.rows() == A.cols()); // A should be square
 
   // number of qbits A acted on
-  const int qbits_old = log2(A.rows());
-  const int qbits_new = qbits_old - qs_trace.size();
+  const uint qbits_old = log2(A.rows());
+  const uint qbits_new = qbits_old - qs_trace.size();
 
   // vector of qubits we are keeping
-  vector<int> qs_keep;
-  for(int i = 0; i < qbits_old; i++){
+  vector<uint> qs_keep;
+  for(uint i = 0; i < qbits_old; i++){
     if(!in_vector(i,qs_trace)) qs_keep.push_back(i);
   }
   assert(qbits_new == qs_keep.size());
@@ -147,20 +145,20 @@ MatrixXcd ptrace(const MatrixXcd A, const vector<int> qs_trace){
   MatrixXcd B = MatrixXcd::Zero(pow(2,qbits_new),pow(2,qbits_new));
 
   // loop over all entries B(m,n)
-  for(int m = 0; m < B.rows(); m++){
-    for(int n = 0; n < B.cols(); n++){
+  for(uint m = 0; m < B.rows(); m++){
+    for(uint n = 0; n < B.cols(); n++){
 
       // get contribution of substates |m-><n-| to indices of A
-      int a_m = 0, a_n = 0;
-      for(int q = 0; q < qbits_new; q++){
+      uint a_m = 0, a_n = 0;
+      for(uint q = 0; q < qbits_new; q++){
         if(qbit_state(q,qbits_new,m)) a_m += bit_int(qs_keep.at(q),qbits_old);
         if(qbit_state(q,qbits_new,n)) a_n += bit_int(qs_keep.at(q),qbits_old);
       }
 
       // loop over all elements of the form |ms><ns| in A
-      for(int s = 0; s < pow(2,qs_trace.size()); s++){
-        int a_out = a_m, a_in = a_n;
-        for(int q = 0; q < qs_trace.size(); q++){
+      for(uint s = 0; s < pow(2,qs_trace.size()); s++){
+        uint a_out = a_m, a_in = a_n;
+        for(uint q = 0; q < qs_trace.size(); q++){
           if(qbit_state(q,qs_trace.size(),s)){
             a_out += bit_int(qs_trace.at(q),qbits_old);
             a_in += bit_int(qs_trace.at(q),qbits_old);
@@ -184,12 +182,12 @@ struct mvec{
   mvec(){};
   mvec(const vector<MatrixXcd> v){ this->v = v; };
 
-  int size() const { return v.size(); }
-  MatrixXcd at(int i) const { return v.at(i); }
+  uint size() const { return v.size(); }
+  MatrixXcd at(uint i) const { return v.at(i); }
 
   bool operator==(const mvec w) {
     assert(v.size() == w.size());
-    for(int i = 0; i < v.size(); i++){
+    for(uint i = 0; i < v.size(); i++){
       if(v.at(i) != w.at(i)) return false;
     }
     return true;
@@ -199,7 +197,7 @@ struct mvec{
   MatrixXcd dot(const mvec w) const {
     assert(v.size() == w.size());
     MatrixXcd out = tp(v.at(0),w.at(0));
-    for(int i = 1; i < v.size(); i++){
+    for(uint i = 1; i < v.size(); i++){
       out += tp(v.at(i),w.at(i));
     }
     return out;
@@ -218,14 +216,14 @@ inline MatrixXcd dot(Vector3d r, mvec v){ return v.dot(r); }
 // product between matrix and matrix vector
 mvec operator*(MatrixXcd G, mvec v){
   vector<MatrixXcd> out;
-  for(int i = 0; i < v.size(); i++){
+  for(uint i = 0; i < v.size(); i++){
     out.push_back(G*v.at(i));
   }
   return mvec(out);
 }
 mvec operator*(mvec v, MatrixXcd G){
   vector<MatrixXcd> out;
-  for(int i = 0; i < v.size(); i++){
+  for(uint i = 0; i < v.size(); i++){
     out.push_back(v.at(i)*G);
   }
   return mvec(out);

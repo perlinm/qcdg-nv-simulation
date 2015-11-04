@@ -1,2 +1,2 @@
-| g++ -std=c++14 -I /usr/include/eigen3/ -lboost_program_options -o simulate simulation.cpp
+| g++ -Wall -Wextra -std=c++14 -I /usr/include/eigen3/ -lboost_program_options -o simulate simulation.cpp
 > simulate
