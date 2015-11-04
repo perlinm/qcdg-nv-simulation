@@ -14,8 +14,13 @@ using namespace Eigen;
 namespace po = boost::program_options;
 
 #include "constants.h"
+#include "qp-math.h"
 #include "nv-math.h"
+#include "printing.h"
 #include "gates.h"
+
+// random double from 0 to 1
+inline double rnd(){ return std::rand()/(double)RAND_MAX; }
 
 int main(int arg_num, const char *arg_vec[]) {
 
@@ -243,9 +248,7 @@ int main(int arg_num, const char *arg_vec[]) {
   double max_Ax = 0;
   double max_w = 0, min_w = DBL_MAX;
   for(int n = 0; n < nuclei.size(); n++){
-    spin s = nuclei.at(n);
-    double w = (s.g*Bz*zhat - ms/2.*A(s,ms)).norm();
-
+    double w = (nuclei.at(n).g*Bz*zhat - ms/2.*A(nuclei.at(n),ms)).norm();
     if(w < min_w) min_w = w;
     if(w > max_w) max_w = w;
   }
