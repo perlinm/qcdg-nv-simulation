@@ -41,25 +41,24 @@ int main(int arg_num, const char *arg_vec[]) {
   int scan_bins;
   double f_DD;
   uint k_DD_int;
-  double scan_time_in_ms;
-  string larmor_file = "larmor-cr[cell_radius]-s[seed]-[ms].txt";
-  string scan_file = "scan-cr[cell_radius]-s[seed]-[ms].txt";
+  double scan_time_in_us;
+  string file_suffix = "-[ms]-cs[cluster_size]-cr[cell_radius]-s[seed].txt";
 
   string output_dir;
   int seed;
 
   // define options
-  po::options_description options("allowed options", 95);
+  po::options_description options("Allowed options", 95);
   options.add_options()
     ("help,h", "produce help message")
-    ("cell_radius", po::value<int>(&cell_radius)->default_value(6),
+    ("cell_radius", po::value<int>(&cell_radius)->default_value(7),
      "number of unit cells to simulate out from the NV center (along cell axes)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
 
-    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(6),
+    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(7),
      "maximum allowable size of C-13 clusters")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
@@ -74,8 +73,8 @@ int main(int arg_num, const char *arg_vec[]) {
      "magnitude of fourier component used in coherence scanning")
     ("k_DD", po::value<uint>(&k_DD_int)->default_value(1),
      "resonance harmonic used in coherence scanning (1 or 3)")
-    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
-     "time for each coherence measurement (in milliseconds)")
+    ("scan_time", po::value<double>(&scan_time_in_us)->default_value(100),
+     "time for each coherence measurement (in microseconds)")
 
     ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
      "directory for storing data")
@@ -125,7 +124,7 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(scan_bins > 0);
     assert((f_DD > 0) && (f_DD < 1));
     assert((k_DD_int == 1) || (k_DD_int == 3));
-    assert(scan_time_in_ms > 0);
+    assert(scan_time_in_us > 0);
   }
 
   assert(seed > 0);
@@ -144,26 +143,15 @@ int main(int arg_num, const char *arg_vec[]) {
     lattice_path = output_dir+"/"+lattice_file;
   }
 
-  cout << "total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size());
+  cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size());
   cout << endl << endl;
-
-  boost::replace_all(larmor_file, "[cell_radius]", to_string(cell_radius));
-  boost::replace_all(larmor_file, "[seed]", to_string(seed));
-  boost::replace_all(larmor_file, "[ms]", (ms > 0)?"up":"dn");
-  string larmor_path = output_dir+"/"+larmor_file;
-
-  boost::replace_all(scan_file, "[cell_radius]", to_string(cell_radius));
-  boost::replace_all(scan_file, "[seed]", to_string(seed));
-  boost::replace_all(scan_file, "[ms]", (ms > 0)?"up":"dn");
-  string scan_path = output_dir+"/"+scan_file;
-
 
   // set variables based on iputs
   double Bz = Bz_in_gauss*gauss;
   harmonic k_DD;
   if(k_DD_int == 1) k_DD = first;
   if(k_DD_int == 3) k_DD = third;
-  double scan_time = scan_time_in_ms*1e-3;
+  double scan_time = scan_time_in_us*1e-6;
 
   srand(seed); // initialize random number generator
   mkdir(output_dir.c_str(),0777); // create data directory
@@ -246,6 +234,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
+  cout << "Clustering " << nuclei.size() << " nuclei" << endl;
   double cluster_coupling_guess = 100;
   double dcc_cutoff = 1e-5;
 
@@ -265,9 +254,10 @@ int main(int arg_num, const char *arg_vec[]) {
     clusters = get_clusters(nuclei,cluster_coupling);
   }
 
-  cout << nuclei.size() << " nuclei grouped into " << clusters.size() << " clusters" << endl;
-  cout << "largest cluster size: " << largest_cluster_size(clusters) << endl;
-  cout << "cluster coupling factor: " << cluster_coupling << " Hz" << endl;
+  max_cluster_size = largest_cluster_size(clusters);
+  cout << "Nuclei grouped into " << clusters.size() << " clusters" << endl;
+  cout << "Maximum cluster size: " << max_cluster_size << endl;
+  cout << "Cluster coupling factor: " << cluster_coupling << " Hz" << endl;
   cout << endl;
 
   // -----------------------------------------------------------------------------------------
@@ -275,6 +265,21 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(perform_scan){
+
+    boost::replace_all(file_suffix, "[ms]", (ms > 0)?"up":"dn");
+    boost::replace_all(file_suffix, "[cluster_size]", to_string(max_cluster_size));
+    boost::replace_all(file_suffix, "[cell_radius]", to_string(cell_radius));
+    boost::replace_all(file_suffix, "[seed]", to_string(seed));
+
+    string larmor_path = output_dir+"/larmor"+file_suffix;
+    string scan_path = output_dir+"/scan"+file_suffix;
+
+    stringstream file_header;
+    file_header << "# maxium cluster size: " << max_cluster_size << endl;
+    file_header << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
+    file_header << "# f_DD: " << f_DD << endl;
+    file_header << "# k_DD: " << k_DD_int << endl;
+    file_header << "# scan time: " << scan_time << endl;
 
     // idenfy effictive larmor frequencies and NV coupling strengths
     VectorXd w_larmor = VectorXd::Zero(nuclei.size());
@@ -291,23 +296,22 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     ofstream larmor(larmor_path);
-    larmor << "# f_DD: " << f_DD << endl;
-    larmor << "# k_DD: " << k_DD_int << endl;
-    larmor << "# w A_perp" << endl;
+    larmor << file_header.str();
+    larmor << endl << "# w_larmor A_perp" << endl;
     for(uint n = 0; n < nuclei.size(); n++){
       larmor << w_larmor(n) << " " << A_perp(n) << endl;
     }
     larmor.close();
 
     // perform coherence scan
-    cout << "beginning coherence scan" << endl;
+    cout << "Beginning coherence scan" << endl;
     VectorXd w_scan = VectorXd::Zero(scan_bins);
     VectorXd coherence = VectorXd::Zero(scan_bins);
 
     double w_range = w_max - w_min;
     double w_start = w_min - w_range/10;
     double w_end = w_max + w_range/10;
-    for(uint i = 0; i < scan_bins; i++){
+    for(int i = 0; i < scan_bins; i++){
       w_scan(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence(i) =
         coherence_measurement(ms, clusters, w_scan(i), k_DD, f_DD, Bz, scan_time);
@@ -316,11 +320,10 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     ofstream scan(scan_path);
-    scan << "# f_DD: " << f_DD << endl;
-    scan << "# k_DD: " << k_DD_int << endl;
-    scan << "# w L" << endl;
-    for(uint i = 0; i < scan_bins; i++){
-      scan << w_scan(i) << " " << coherence(i) << endl;
+    scan << file_header.str();
+    scan << endl << "# w_scan coherence" << endl;
+    for(int i = 0; i < scan_bins; i++){
+      scan << int(w_scan(i)) << " " << coherence(i) << endl;
     }
     scan.close();
 
