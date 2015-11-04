@@ -245,7 +245,6 @@ int main(int arg_num, const char *arg_vec[]) {
   harmonic k_DD = first;
   double scan_time = 1e-3;
 
-  double max_Ax = 0;
   double max_w = 0, min_w = DBL_MAX;
   for(int n = 0; n < nuclei.size(); n++){
     double w = (nuclei.at(n).g*Bz*zhat - ms/2.*A(nuclei.at(n),ms)).norm();

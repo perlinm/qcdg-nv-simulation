@@ -17,7 +17,7 @@ const MatrixXcd sy = (Matrix2cd() << 0,-j, j,0).finished();
 const MatrixXcd sz = (Matrix2cd() << 1,0, 0,-1).finished();
 
 // spin vector for a spin-1/2 particle
-const vector<MatrixXcd> s_vec = { sx/2, sy/2, sz/2 };
+const mvec s_vec({ sx/2, sy/2, sz/2 });
 
 // diamond lattice vectors scaled to a0
 const Vector3d ao = (Vector3d() << 1,1,1).finished()/4;
@@ -32,19 +32,25 @@ const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+
 struct spin{
   Vector3d pos; // position
   double g; // gyromagnetic ratio
-  vector<MatrixXcd> S; // spin vector
+  mvec S; // spin vector
 
   spin(Vector3d pos, double g, vector<MatrixXcd> S){
+    assert(S.size() == 3);
+    this->pos = pos;
+    this->g = g;
+    this->S = mvec(S);
+  };
+  spin(Vector3d pos, double g, mvec S){
     assert(S.size() == 3);
     this->pos = pos;
     this->g = g;
     this->S = S;
   };
 
-  bool operator==(const spin &s){
+  bool operator==(spin s){
     return ((pos == s.pos) && (g == s.g) && (S == s.S));
   }
-  bool operator!=(const spin &s){ return !(*this == s); }
+  bool operator!=(spin s){ return !(*this == s); }
 
 };
 
@@ -88,7 +94,7 @@ vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_streng
       clustered.push_back(i);
 
       // loop over all indices of cluster
-      for(vector<int>::size_type ci = 0; ci < cluster.size(); ci++) {
+      for(int ci = 0; ci < cluster_indices.size(); ci++) {
 
         // loop over all spins indices greater than cluster_indices(ci)
         for(int k = cluster_indices.at(ci)+1; k < spins.size(); k++){

@@ -177,44 +177,56 @@ MatrixXcd ptrace(const MatrixXcd A, const vector<int> qs_trace){
 // Matrix vectors
 //--------------------------------------------------------------------------------------------
 
-// equality operator for matrix vector
-bool operator==(const vector<MatrixXcd> lhs, const vector<MatrixXcd> rhs){
-  assert(lhs.size() == rhs.size());
-  for(int i = 0; i < lhs.size(); i++){
-    if(lhs.at(i) != rhs.at(i)) return false;
+// matrix vector object
+struct mvec{
+  vector<MatrixXcd> v;
+
+  mvec(){};
+  mvec(const vector<MatrixXcd> v){ this->v = v; };
+
+  int size() const { return v.size(); }
+  MatrixXcd at(int i) const { return v.at(i); }
+
+  bool operator==(const mvec w) {
+    assert(v.size() == w.size());
+    for(int i = 0; i < v.size(); i++){
+      if(v.at(i) != w.at(i)) return false;
+    }
+    return true;
   }
-  return true;
+  bool operator!=(const mvec w){ return !(*this == w); }
+
+  MatrixXcd dot(const mvec w) const {
+    assert(v.size() == w.size());
+    MatrixXcd out = tp(v.at(0),w.at(0));
+    for(int i = 1; i < v.size(); i++){
+      out += tp(v.at(i),w.at(i));
+    }
+    return out;
+  }
+
+  MatrixXcd dot(const Vector3d r) const {
+    assert(v.size() == 3);
+    return v.at(0)*r(0) + v.at(1)*r(1) + v.at(2)*r(2);
+  }
 };
 
-// inner product of two matrix vectors
-inline MatrixXcd dot(const vector<MatrixXcd> v, const vector<MatrixXcd> w){
-  assert(v.size() == w.size());
-  MatrixXcd out = tp(v.at(0),w.at(0));
-  for(int i = 1; i < v.size(); i++){
-    out += tp(v.at(i),w.at(i));
-  }
-  return out;
-}
+inline MatrixXcd dot(mvec v, mvec w){ return v.dot(w); }
+inline MatrixXcd dot(mvec v, Vector3d r){ return v.dot(r); }
+inline MatrixXcd dot(Vector3d r, mvec v){ return v.dot(r); }
 
-// inner product of a matrix vector and a spacial vector
-inline MatrixXcd dot(const vector<MatrixXcd> v, const Vector3d r){
-  assert(v.size() == 3);
-  return v.at(0)*r(0) + v.at(1)*r(1) + v.at(2)*r(2);
-}
-inline MatrixXcd dot(const Vector3d r, const vector<MatrixXcd> v){ return dot(v,r); }
-
-// product between a matrix and a matrix vector
-vector<MatrixXcd> operator*(const MatrixXcd G, const vector<MatrixXcd> v){
+// product between matrix and matrix vector
+mvec operator*(MatrixXcd G, mvec v){
   vector<MatrixXcd> out;
   for(int i = 0; i < v.size(); i++){
     out.push_back(G*v.at(i));
   }
-  return out;
+  return mvec(out);
 }
-vector<MatrixXcd> operator*(const vector<MatrixXcd> v, const MatrixXcd G){
+mvec operator*(mvec v, MatrixXcd G){
   vector<MatrixXcd> out;
   for(int i = 0; i < v.size(); i++){
     out.push_back(v.at(i)*G);
   }
-  return out;
+  return mvec(out);
 }
