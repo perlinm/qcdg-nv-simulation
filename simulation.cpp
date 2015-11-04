@@ -259,21 +259,9 @@ int main(int arg_num, const char *arg_vec[]) {
 
   for(int i = 0; i < scans; i++){
     double w_scan = min_w + i*(max_w-min_w)/scans;
-    double coherence = coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
-    // cout << w_scan << "   " << coherence << endl;
+    double coherence = coherence_measurement(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
+    cout << w_scan << "   " << coherence << endl;
   }
 
-  cout << scans << " approximate scans took "
-       << ( clock() - start ) / (double) CLOCKS_PER_SEC << "seconds" << endl;
-  start = clock();
-
-  for(int i = 0; i < scans; i++){
-    double w_scan = min_w + i*(max_w-min_w)/scans;
-    double coherence = coherence_scan(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
-    // cout << w_scan << "   " << coherence << endl;
-  }
-
-  cout << scans << " exact scans took "
-       << ( clock() - start ) / (double) CLOCKS_PER_SEC << "seconds" << endl;
 }
 

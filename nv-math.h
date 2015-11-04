@@ -199,76 +199,6 @@ vector<double> pulse_times(harmonic k, double f){
   return times;
 }
 
-// perform approxmate NV coherence measurement
-double approximate_coherence_measurement(vector<vector<spin>> clusters, double w_scan,
-                                         harmonic k_DD, double f_DD, double Bz, int ms,
-                                         double scan_time){
-  double w_DD = w_scan;
-  if(k_DD == third) w_DD /= 3;
-
-  double t_DD = 2*pi/w_DD;
-
-  vector<double> ts = pulse_times(k_DD,f_DD);
-  double t1 = ts.at(0)*t_DD;
-  double t2 = ts.at(1)*t_DD;
-  double t3 = t_DD/4;
-
-  // initial state of NV center
-  MatrixXcd psi_NV_0 = up+dn;
-  MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
-  rho_NV_0 /= real(trace(rho_NV_0));
-
-  double coherence = 1;
-  for(uint c = 0; c < clusters.size(); c++){
-    vector<spin> cluster = clusters.at(c);
-    uint spins = cluster.size()+1; // total number of spins in NV+cluster system
-
-    // initial (unnormalized) density matrix of NV+cluster
-    MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
-
-    // pi-pulse on NV center
-    MatrixXcd X = act(sx,{0},spins);
-
-    // construct Hamiltonians
-    uint D = pow(2,spins); // dimensionality of NV+cluster Hilbert space
-    MatrixXcd H_nn = MatrixXcd::Zero(D,D); // internuclear coupling Hamiltonian
-    MatrixXcd H_nZ = MatrixXcd::Zero(D,D); // effective nuclear Zeeman Hamiltonian
-    MatrixXcd H_hf = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
-
-    // loop over spins in cluster
-    for(uint s = 0; s < cluster.size(); s++){
-      for(uint r = 0; r < s; r++){
-        H_nn += coupling_strength(cluster.at(s), cluster.at(r))
-          * act(3*tp( dot(cluster.at(s).S,zhat), dot(cluster.at(r).S,zhat) )
-                - dot(cluster.at(s).S, cluster.at(r).S), {s+1,r+1}, spins);
-      }
-      H_nZ -= act(cluster.at(s).g*Bz * dot(cluster.at(s).S,zhat), {s+1}, spins);
-      H_hf += act(tp(dot(e(ms).S,zhat), dot(A(cluster.at(s),ms), cluster.at(s).S)),
-                  {0,s+1}, spins);
-    }
-
-    MatrixXcd H = H_nn + H_nZ + H_hf;
-
-    // propagators for sections of the AXY sequence
-    MatrixXcd U1 = exp(-j*H*(t1));
-    MatrixXcd U2 = exp(-j*H*(t2-t1));
-    MatrixXcd U3 = exp(-j*H*(t3-t2));
-
-    // AXY half-sequence propagator
-    MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
-
-    // propagator for entire scan
-    U = pow(U,2*uint(scan_time/t_DD));
-
-    // (unnormalized) NV+cluster density matrix after scanning
-    MatrixXcd rho = U*rho_0*U.adjoint();
-
-    // update coherence
-    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size())-1;
-  }
-  return coherence;
-}
-
 // Hamiltoninan coupling two spins
 inline MatrixXcd H_ss(const spin s1, const spin s2){
   Vector3d r = s2.pos-s1.pos;
@@ -303,8 +233,7 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
   return H;
 }
 
-
-// perform approxmate NV coherence measurement
+// perform NV coherence measurement
 double coherence_measurement(vector<vector<spin>> clusters, double w_scan,
                              harmonic k_DD, double f_DD, double Bz, int ms, double scan_time){
   spin e_ms = e(ms);
