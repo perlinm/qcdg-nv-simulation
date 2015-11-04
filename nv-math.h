@@ -234,8 +234,8 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
 }
 
 // perform NV coherence measurement
-double coherence_measurement(vector<vector<spin>> clusters, double w_scan,
-                             harmonic k_DD, double f_DD, double Bz, int ms, double scan_time){
+double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
+                             harmonic k_DD, double f_DD, double Bz, double scan_time){
   spin e_ms = e(ms);
   Vector3d B = Bz*zhat;
 

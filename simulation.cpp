@@ -32,12 +32,18 @@ int main(int arg_num, const char *arg_vec[]) {
   int cell_radius;
   double c13_abundance;
   uint max_cluster_size;
+
   int ms;
   double Bz_in_gauss;
+
+  double f_DD;
+  int k_DD_int;
+  double scan_time_in_ms;
 
   string input_lattice;
   string output_lattice = "lattice-cr[cell_radius]-s[seed].txt";
   string output_dir;
+
   int seed;
 
   // define options
@@ -54,6 +60,12 @@ int main(int arg_num, const char *arg_vec[]) {
      "NV center spin state used with |0> for an effective two-level system (must be +/-1)")
     ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
+    ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
+     "magnitude of fourier component used in coherence scanning")
+    ("k_DD", po::value<int>(&k_DD_int)->default_value(1),
+     "resonance harmonic used in coherence scanning (must be 1 or 3)")
+    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1,"1"),
+     "time for each coherence measurement (in milliseconds)")
     ("input_lattice", po::value<string>(&input_lattice),
      "input file defining system configuration")
     ("output_lattice",
@@ -100,6 +112,9 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(c13_abundance >= 0 && c13_abundance <= 1);
   assert(ms == 1 || ms == -1);
   assert(Bz_in_gauss >= 0);
+  assert((f_DD > 0) && (f_DD < 1));
+  assert((k_DD_int == 1) || (k_DD_int == 3));
+  assert(scan_time_in_ms > 0);
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(!(using_input_lattice && set_output_lattice));
@@ -120,6 +135,10 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // set variables based on iputs
   double Bz = Bz_in_gauss*gauss;
+  harmonic k_DD;
+  if(k_DD_int == 1) k_DD = first;
+  if(k_DD_int == 3) k_DD = third;
+  double scan_time = scan_time_in_ms*1e-3;
 
   string output_lattice_path = output_dir+"/"+output_lattice;
 
@@ -241,10 +260,6 @@ int main(int arg_num, const char *arg_vec[]) {
   // Compute coherence
   // -----------------------------------------------------------------------------------------
 
-  double f_DD = 0.06;
-  harmonic k_DD = first;
-  double scan_time = 1e-3;
-
   double max_w = 0, min_w = DBL_MAX;
   for(uint n = 0; n < nuclei.size(); n++){
     double w = (nuclei.at(n).g*Bz*zhat - ms/2.*A(nuclei.at(n),ms)).norm();
@@ -252,14 +267,11 @@ int main(int arg_num, const char *arg_vec[]) {
     if(w > max_w) max_w = w;
   }
 
-  int scans = 30;
-
-  clock_t start;
-  start = clock();
+  int scans = 100;
 
   for(int i = 0; i < scans; i++){
     double w_scan = min_w + i*(max_w-min_w)/scans;
-    double coherence = coherence_measurement(clusters, w_scan, k_DD, f_DD, Bz, ms, scan_time);
+    double coherence = coherence_measurement(ms, clusters, w_scan, k_DD, f_DD, Bz, scan_time);
     cout << w_scan << "   " << coherence << endl;
   }
 
