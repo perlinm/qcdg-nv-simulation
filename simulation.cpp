@@ -33,12 +33,12 @@ int main(int arg_num, const char *arg_vec[]) {
   double c13_abundance;
   string lattice_file = "lattice-cr[cell_radius]-s[seed].txt";
 
-  uint max_cluster_size;
+  int max_cluster_size;
   int ms;
   double Bz_in_gauss;
 
   bool perform_scan;
-  uint scan_bins;
+  int scan_bins;
   double f_DD;
   uint k_DD_int;
   double scan_time_in_ms;
@@ -49,7 +49,7 @@ int main(int arg_num, const char *arg_vec[]) {
   int seed;
 
   // define options
-  po::options_description options("allowed options", 90);
+  po::options_description options("allowed options", 95);
   options.add_options()
     ("help,h", "produce help message")
     ("cell_radius", po::value<int>(&cell_radius)->default_value(6),
@@ -59,28 +59,28 @@ int main(int arg_num, const char *arg_vec[]) {
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
 
-    ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
+    ("max_cluster_size", po::value<int>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("ms", po::value<int>(&ms)->default_value(1),
-     "NV center spin state used with |0> for an effective two-level system (must be +/-1)")
+     "NV center spin state used with |0> for an effective two-level system (+/-1)")
     ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
 
-    ("scan", po::value<bool>(&perform_scan)->default_value(true),
+    ("scan", po::value<bool>(&perform_scan)->default_value(false),
      "perform coherence scan of effective larmor frequencies?")
-    ("scan_bins", po::value<uint>(&scan_bins)->default_value(200),
+    ("scan_bins", po::value<int>(&scan_bins)->default_value(200),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
     ("k_DD", po::value<uint>(&k_DD_int)->default_value(1),
-     "resonance harmonic used in coherence scanning (must be 1 or 3)")
-    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1,"1"),
+     "resonance harmonic used in coherence scanning (1 or 3)")
+    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
      "time for each coherence measurement (in milliseconds)")
 
     ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
      "directory for storing data")
     ("seed", po::value<int>(&seed)->default_value(1),
-     "seed for random number generator (must be >=1)")
+     "seed for random number generator (>=1)")
     ;
 
   // collect inputs
@@ -96,13 +96,15 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // print summary of inputs
   if(arg_num > 1){
-    printf("------------------------------------------------------------------\n");
-    printf("running %s with parameters:\n", arg_vec[0]);
+    cout << "------------------------------------------------------------------" << endl;
+    cout << "running " << arg_vec[0] << " with parameters:" << endl;
     for(int i = 1; i < arg_num; i++) {
-      if(arg_vec[i][0] == '-') printf("\n");
-      printf("%s ", arg_vec[i]);
+      if(arg_vec[i][0] == '-') cout << endl;
+      cout << arg_vec[i] << " ";
     }
-    printf("\n------------------------------------------------------------------\n\n");
+    cout << endl;
+    cout << "------------------------------------------------------------------" << endl;
+    cout << endl;
   }
 
   bool set_cell_radius = !inputs["cell_radius"].defaulted();
@@ -112,7 +114,10 @@ int main(int arg_num, const char *arg_vec[]) {
   // run a sanity check on inputs
   assert(cell_radius > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
+  assert(!(input_lattice && set_cell_radius));
+  assert(!(input_lattice && set_c13_abundance));
 
+  assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert(Bz_in_gauss >= 0);
 
@@ -123,9 +128,6 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(scan_time_in_ms > 0);
   }
 
-  assert(!(input_lattice && set_cell_radius));
-  assert(!(input_lattice && set_c13_abundance));
-
   assert(seed > 0);
 
   string lattice_path;
@@ -133,7 +135,7 @@ int main(int arg_num, const char *arg_vec[]) {
     lattice_path = lattice_file;
     // check that the given input file exists
     if(access(lattice_path.c_str(),F_OK) == -1){
-      printf("file does not exist: %s\n",lattice_file.c_str());
+      cout << "file does not exist: " << lattice_file << endl;
       return 1;
     }
   } else{ // if !input_lattice
@@ -142,7 +144,8 @@ int main(int arg_num, const char *arg_vec[]) {
     lattice_path = output_dir+"/"+lattice_file;
   }
 
-  printf("total number of lattice sites: %d\n", int(pow(2*cell_radius,3)*cell_sites.size()));
+  cout << "total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size());
+  cout << endl << endl;
 
   boost::replace_all(larmor_file, "[cell_radius]", to_string(cell_radius));
   boost::replace_all(larmor_file, "[seed]", to_string(seed));
@@ -235,7 +238,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // assert that no C-13 spins lie at the NV lattice sites
   if(in_vector(spin(n.pos,gC13,s_vec),nuclei)
      || in_vector(spin(e(ms).pos,gC13,s_vec),nuclei)){
-    printf("we have a C-13 nucleus at one of the NV lattice sites!\n");
+    cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
     return 2;
   }
 
@@ -262,11 +265,10 @@ int main(int arg_num, const char *arg_vec[]) {
     clusters = get_clusters(nuclei,cluster_coupling);
   }
 
-  printf("\n");
-  printf("%d nuclei grouped into %d clusters\n",nuclei.size(),clusters.size());
-  printf("largest cluster size: %d\n",largest_cluster_size(clusters));
-  printf("cluster coupling factor: %g Hz\n\n",cluster_coupling);
-  printf("\n");
+  cout << nuclei.size() << " nuclei grouped into " << clusters.size() << " clusters" << endl;
+  cout << "largest cluster size: " << largest_cluster_size(clusters) << endl;
+  cout << "cluster coupling factor: " << cluster_coupling << " Hz" << endl;
+  cout << endl;
 
   // -----------------------------------------------------------------------------------------
   // Coherence scan
@@ -298,7 +300,7 @@ int main(int arg_num, const char *arg_vec[]) {
     larmor.close();
 
     // perform coherence scan
-    printf("beginning coherence scan\n");
+    cout << "beginning coherence scan" << endl;
     VectorXd w_scan = VectorXd::Zero(scan_bins);
     VectorXd coherence = VectorXd::Zero(scan_bins);
 
@@ -309,7 +311,8 @@ int main(int arg_num, const char *arg_vec[]) {
       w_scan(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence(i) =
         coherence_measurement(ms, clusters, w_scan(i), k_DD, f_DD, Bz, scan_time);
-      printf("(%d/%d) %g %g\n",i+1,scan_bins,w_scan(i),coherence(i));
+      cout << "(" << i+1 << "/" << scan_bins << ") "
+           << w_scan(i) << " " << coherence(i) << endl;
     }
 
     ofstream scan(scan_path);
@@ -320,6 +323,7 @@ int main(int arg_num, const char *arg_vec[]) {
       scan << w_scan(i) << " " << coherence(i) << endl;
     }
     scan.close();
+
   }
 
 }
