@@ -31,19 +31,21 @@ int main(int arg_num, const char *arg_vec[]) {
   // define parameters
   int cell_radius;
   double c13_abundance;
-  uint max_cluster_size;
+  string lattice_file = "lattice-cr[cell_radius]-s[seed].txt";
 
+  uint max_cluster_size;
   int ms;
   double Bz_in_gauss;
 
+  bool perform_scan;
+  uint scan_bins;
   double f_DD;
-  int k_DD_int;
+  uint k_DD_int;
   double scan_time_in_ms;
+  string larmor_file = "larmor-cr[cell_radius]-s[seed]-[ms].txt";
+  string scan_file = "scan-cr[cell_radius]-s[seed]-[ms].txt";
 
-  string input_lattice;
-  string output_lattice = "lattice-cr[cell_radius]-s[seed].txt";
   string output_dir;
-
   int seed;
 
   // define options
@@ -54,23 +56,27 @@ int main(int arg_num, const char *arg_vec[]) {
      "number of unit cells to simulate out from the NV center (along cell axes)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
+    ("lattice_file", po::value<string>(&lattice_file),
+     "specify file defining system configuration")
+
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (must be +/-1)")
     ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
+
+    ("scan", po::value<bool>(&perform_scan)->default_value(true),
+     "perform coherence scan of effective larmor frequencies?")
+    ("scan_bins", po::value<uint>(&scan_bins)->default_value(200),
+     "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("k_DD", po::value<int>(&k_DD_int)->default_value(1),
+    ("k_DD", po::value<uint>(&k_DD_int)->default_value(1),
      "resonance harmonic used in coherence scanning (must be 1 or 3)")
     ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1,"1"),
      "time for each coherence measurement (in milliseconds)")
-    ("input_lattice", po::value<string>(&input_lattice),
-     "input file defining system configuration")
-    ("output_lattice",
-     po::value<string>(&output_lattice),
-     "output file defining system configuration")
+
     ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
      "directory for storing data")
     ("seed", po::value<int>(&seed)->default_value(1),
@@ -90,48 +96,64 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // print summary of inputs
   if(arg_num > 1){
-    cout << "------------------------------------------------------------------" << endl;
-    cout << "running " << arg_vec[0] << " with parameters" << endl;
+    printf("------------------------------------------------------------------\n");
+    printf("running %s with parameters:\n", arg_vec[0]);
     for(int i = 1; i < arg_num; i++) {
-      if(arg_vec[i][0] == '-') cout << endl;
-      cout << arg_vec[i] << " ";
+      if(arg_vec[i][0] == '-') printf("\n");
+      printf("%s ", arg_vec[i]);
     }
-    cout << endl;
-    cout << "------------------------------------------------------------------" << endl;
-    cout << endl;
+    printf("\n------------------------------------------------------------------\n\n");
   }
 
   bool set_cell_radius = !inputs["cell_radius"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
-  bool using_input_lattice = inputs.count("input_lattice");
-  bool set_output_lattice = inputs.count("output_lattice");
-  bool set_output_dir = !inputs["output_dir"].defaulted();
+  bool input_lattice = inputs.count("lattice_file");
 
   // run a sanity check on inputs
   assert(cell_radius > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
+
   assert(ms == 1 || ms == -1);
   assert(Bz_in_gauss >= 0);
-  assert((f_DD > 0) && (f_DD < 1));
-  assert((k_DD_int == 1) || (k_DD_int == 3));
-  assert(scan_time_in_ms > 0);
-  assert(!(using_input_lattice && set_cell_radius));
-  assert(!(using_input_lattice && set_c13_abundance));
-  assert(!(using_input_lattice && set_output_lattice));
+
+  if(perform_scan){
+    assert(scan_bins > 0);
+    assert((f_DD > 0) && (f_DD < 1));
+    assert((k_DD_int == 1) || (k_DD_int == 3));
+    assert(scan_time_in_ms > 0);
+  }
+
+  assert(!(input_lattice && set_cell_radius));
+  assert(!(input_lattice && set_c13_abundance));
+
   assert(seed > 0);
 
-  if(using_input_lattice){
+  string lattice_path;
+  if(input_lattice){
+    lattice_path = lattice_file;
     // check that the given input file exists
-    if(access(input_lattice.c_str(),F_OK) == -1){
-      cout << "file does not exist: " << input_lattice << endl;
+    if(access(lattice_path.c_str(),F_OK) == -1){
+      printf("file does not exist: %s\n",lattice_file.c_str());
       return 1;
     }
+  } else{ // if !input_lattice
+    boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
+    boost::replace_all(lattice_file, "[seed]", to_string(seed));
+    lattice_path = output_dir+"/"+lattice_file;
   }
 
-  if(!using_input_lattice && !set_output_lattice){
-    boost::replace_all(output_lattice, "[cell_radius]", to_string(cell_radius));
-    boost::replace_all(output_lattice, "[seed]", to_string(seed));
-  }
+  printf("total number of lattice sites: %d\n", int(pow(2*cell_radius,3)*cell_sites.size()));
+
+  boost::replace_all(larmor_file, "[cell_radius]", to_string(cell_radius));
+  boost::replace_all(larmor_file, "[seed]", to_string(seed));
+  boost::replace_all(larmor_file, "[ms]", (ms > 0)?"up":"dn");
+  string larmor_path = output_dir+"/"+larmor_file;
+
+  boost::replace_all(scan_file, "[cell_radius]", to_string(cell_radius));
+  boost::replace_all(scan_file, "[seed]", to_string(seed));
+  boost::replace_all(scan_file, "[ms]", (ms > 0)?"up":"dn");
+  string scan_path = output_dir+"/"+scan_file;
+
 
   // set variables based on iputs
   double Bz = Bz_in_gauss*gauss;
@@ -139,17 +161,6 @@ int main(int arg_num, const char *arg_vec[]) {
   if(k_DD_int == 1) k_DD = first;
   if(k_DD_int == 3) k_DD = third;
   double scan_time = scan_time_in_ms*1e-3;
-
-  string output_lattice_path = output_dir+"/"+output_lattice;
-
-  if(!set_output_lattice && !set_output_dir){
-    cout << "using default output lattice path: " << output_lattice_path << endl;
-  } else {
-    cout << "using output lattice path: " << output_lattice_path << endl;
-  }
-
-  cout << "total number of lattice sites: "
-       << int(pow(2*cell_radius,3)*cell_sites.size()) << endl;
 
   srand(seed); // initialize random number generator
   mkdir(output_dir.c_str(),0777); // create data directory
@@ -161,7 +172,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // vector of C-13 nuclei
   vector<spin> nuclei;
 
-  if(!using_input_lattice){
+  if(!input_lattice){
 
     // set positions of C-13 nuclei at lattice sites
     Vector3d cell_pos; // position of unit cell indexed by i,j,k
@@ -187,43 +198,44 @@ int main(int arg_num, const char *arg_vec[]) {
                  nuclei.end());
 
     // write cell radius and C-13 positions to file
-    ofstream output(output_lattice_path);
-    output << "cell_radius: " << cell_radius << endl;
+    ofstream lattice(lattice_path);
+    lattice << "# cell_radius: " << cell_radius << endl;
     for(uint n = 0; n < nuclei.size(); n++){
-      output << nuclei.at(n).pos(0) << " "
-             << nuclei.at(n).pos(1) << " "
+      lattice << nuclei.at(n).pos(0) << ' '
+             << nuclei.at(n).pos(1) << ' '
              << nuclei.at(n).pos(2) << endl;
     }
-    output.close();
+    lattice.close();
 
-  } else { // if using_input_lattice
+  } else { // if input_lattice
 
     string line;
-    ifstream input(input_lattice);
+    ifstream lattice(lattice_path);
 
     // get cell_radius
-    getline(input,line,' ');
-    getline(input,line);
+    getline(lattice,line,' ');
+    getline(lattice,line,' ');
+    getline(lattice,line);
     cell_radius = stoi(line);
 
     // get C-13 positions
     double x,y,z;
-    while(getline(input,line,' ')){
+    while(getline(lattice,line,' ')){
       x = stod(line);
-      getline(input,line,' ');
+      getline(lattice,line,' ');
       y = stod(line);
-      getline(input,line);
+      getline(lattice,line);
       z = stod(line);
       nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec));
     }
-    input.close();
+    lattice.close();
 
   }
 
   // assert that no C-13 spins lie at the NV lattice sites
   if(in_vector(spin(n.pos,gC13,s_vec),nuclei)
      || in_vector(spin(e(ms).pos,gC13,s_vec),nuclei)){
-    cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
+    printf("we have a C-13 nucleus at one of the NV lattice sites!\n");
     return 2;
   }
 
@@ -250,29 +262,64 @@ int main(int arg_num, const char *arg_vec[]) {
     clusters = get_clusters(nuclei,cluster_coupling);
   }
 
-  cout << endl;
-  cout << nuclei.size() << " nuclei grouped into " << clusters.size() << " clusters" << endl;
-  cout << "largest cluster size: " << largest_cluster_size(clusters) << endl;
-  cout << "cluster coupling factor: " << cluster_coupling << " Hz" << endl;
-  cout << endl;
+  printf("\n");
+  printf("%d nuclei grouped into %d clusters\n",nuclei.size(),clusters.size());
+  printf("largest cluster size: %d\n",largest_cluster_size(clusters));
+  printf("cluster coupling factor: %g Hz\n\n",cluster_coupling);
+  printf("\n");
 
   // -----------------------------------------------------------------------------------------
-  // Compute coherence
+  // Coherence scan
   // -----------------------------------------------------------------------------------------
 
-  double max_w = 0, min_w = DBL_MAX;
-  for(uint n = 0; n < nuclei.size(); n++){
-    double w = (nuclei.at(n).g*Bz*zhat - ms/2.*A(nuclei.at(n),ms)).norm();
-    if(w < min_w) min_w = w;
-    if(w > max_w) max_w = w;
-  }
+  if(perform_scan){
 
-  int scans = 100;
+    // idenfy effictive larmor frequencies and NV coupling strengths
+    VectorXd w_larmor = VectorXd::Zero(nuclei.size());
+    VectorXd A_perp = VectorXd::Zero(nuclei.size());
 
-  for(int i = 0; i < scans; i++){
-    double w_scan = min_w + i*(max_w-min_w)/scans;
-    double coherence = coherence_measurement(ms, clusters, w_scan, k_DD, f_DD, Bz, scan_time);
-    cout << w_scan << "   " << coherence << endl;
+    double w_max = 0, w_min = DBL_MAX;
+    for(uint n = 0; n < nuclei.size(); n++){
+      Vector3d A_n = A(nuclei.at(n),ms);
+      w_larmor(n) = effective_larmor(nuclei.at(n),Bz*zhat,A_n,ms);
+      A_perp(n) = (A_n-dot(A_n,zhat)*zhat).norm();
+
+      if(w_larmor(n) < w_min) w_min = w_larmor(n);
+      if(w_larmor(n) > w_max) w_max = w_larmor(n);
+    }
+
+    ofstream larmor(larmor_path);
+    larmor << "# f_DD: " << f_DD << endl;
+    larmor << "# k_DD: " << k_DD_int << endl;
+    larmor << "# w A_perp" << endl;
+    for(uint n = 0; n < nuclei.size(); n++){
+      larmor << w_larmor(n) << " " << A_perp(n) << endl;
+    }
+    larmor.close();
+
+    // perform coherence scan
+    printf("beginning coherence scan\n");
+    VectorXd w_scan = VectorXd::Zero(scan_bins);
+    VectorXd coherence = VectorXd::Zero(scan_bins);
+
+    double w_range = w_max - w_min;
+    double w_start = w_min - w_range/10;
+    double w_end = w_max + w_range/10;
+    for(uint i = 0; i < scan_bins; i++){
+      w_scan(i) = w_start + i*(w_end-w_start)/scan_bins;
+      coherence(i) =
+        coherence_measurement(ms, clusters, w_scan(i), k_DD, f_DD, Bz, scan_time);
+      printf("(%d/%d) %g %g\n",i+1,scan_bins,w_scan(i),coherence(i));
+    }
+
+    ofstream scan(scan_path);
+    scan << "# f_DD: " << f_DD << endl;
+    scan << "# k_DD: " << k_DD_int << endl;
+    scan << "# w L" << endl;
+    for(uint i = 0; i < scan_bins; i++){
+      scan << w_scan(i) << " " << coherence(i) << endl;
+    }
+    scan.close();
   }
 
 }

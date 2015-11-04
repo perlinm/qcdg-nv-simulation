@@ -189,6 +189,7 @@ struct mvec{
   uint size() const { return v.size(); }
   MatrixXcd at(uint i) const { return v.at(i); }
 
+  // comparison operators
   bool operator==(const mvec &w) const {
     assert(v.size() == w.size());
     for(uint i = 0; i < v.size(); i++){
@@ -198,6 +199,7 @@ struct mvec{
   }
   bool operator!=(const mvec &w) const { return !(*this == w); }
 
+  // addition, subtraction, and scalar multiplication
   mvec operator+(const mvec &w){
     assert(v.size() == w.size());
     for(uint i = 0; i < v.size(); i++){
@@ -220,6 +222,11 @@ struct mvec{
   }
   mvec operator/(const double s) { return *this * (1/s); }
 
+  // inner product with vectors and matrix vectors
+  MatrixXcd dot(const Vector3d r) const {
+    assert(v.size() == 3);
+    return v.at(0)*r(0) + v.at(1)*r(1) + v.at(2)*r(2);
+  }
   MatrixXcd dot(const mvec &w) const {
     assert(v.size() == w.size());
     MatrixXcd out = tp(v.at(0),w.at(0));
@@ -228,16 +235,12 @@ struct mvec{
     }
     return out;
   }
-
-  MatrixXcd dot(const Vector3d r) const {
-    assert(v.size() == 3);
-    return v.at(0)*r(0) + v.at(1)*r(1) + v.at(2)*r(2);
-  }
 };
 
 inline MatrixXcd dot(mvec v, mvec w){ return v.dot(w); }
 inline MatrixXcd dot(mvec v, Vector3d r){ return v.dot(r); }
 inline MatrixXcd dot(Vector3d r, mvec v){ return v.dot(r); }
+inline double dot(Vector3d v, Vector3d w){ return v.dot(w); }
 
 mvec operator*(double s, mvec v){ return v*s; }
 
@@ -256,3 +259,4 @@ mvec operator*(mvec v, MatrixXcd G){
   }
   return mvec(out);
 }
+

@@ -161,10 +161,15 @@ double find_target_coupling(vector<spin> spins, uint cluster_size_target,
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
-// hyperfine field experienced by nuclear spin s
+// hyperfine field experienced by spin s
 Vector3d A(const spin s, int ms){
   Vector3d r = s.pos - e(ms).pos;
   return e(ms).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*hat(r).dot(zhat)*hat(r));
+}
+
+// effective larmor frequency of spin s
+inline double effective_larmor(const spin s, const Vector3d B, const Vector3d A, int ms){
+  return (s.g*B - ms/2.*A).norm();
 }
 
 // harmonic to target with AXY sequence
