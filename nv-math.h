@@ -33,13 +33,13 @@ const VectorXcd up = (Vector2cd() << 1,0).finished();
 const VectorXcd dn = (Vector2cd() << 0,1).finished();
 
 // pauli spin matrices
-const MatrixXcd st = (Matrix2cd() << 1,0, 0,1).finished();
-const MatrixXcd sx = (Matrix2cd() << 0,1, 1,0).finished();
-const MatrixXcd sy = (Matrix2cd() << 0,-j, j,0).finished();
-const MatrixXcd sz = (Matrix2cd() << 1,0, 0,-1).finished();
+const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
+const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
+const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
+const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
 
 // spin vector for a spin-1/2 particle
-const mvec s_vec({ sx/2, sy/2, sz/2 });
+const mvec s_vec = mvec(sx/2,xhat) + mvec(sy/2,yhat) + mvec(sz/2,zhat);
 
 // struct for spins
 struct spin{
@@ -47,30 +47,25 @@ struct spin{
   double g; // gyromagnetic ratio
   mvec S; // spin vector
 
-  spin(Vector3d pos, double g, vector<MatrixXcd> S){
-    assert(S.size() == 3);
-    this->pos = pos;
-    this->g = g;
-    this->S = mvec(S);
-  };
-  spin(Vector3d pos, double g, mvec S){
+  spin(const Vector3d pos, double g, const mvec S){
     assert(S.size() == 3);
     this->pos = pos;
     this->g = g;
     this->S = S;
   };
 
-  bool operator==(spin s){
+  bool operator==(const spin &s) const {
     return ((pos == s.pos) && (g == s.g) && (S == s.S));
   }
-  bool operator!=(spin s){ return !(*this == s); }
+  bool operator!=(const spin &s) const { return !(*this == s); }
 
 };
 
 // initialize nitrogen and vacancy centers
 const spin n(Vector3d::Zero(), 0., s_vec);
 spin e(int ms){
-  return spin(ao, ge, {sx/sqrt(2), ms*sy/sqrt(2), ms*(sz+I2)/2.});
+  return spin(ao, ge,
+              mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
 }
 
 //--------------------------------------------------------------------------------------------
@@ -204,16 +199,10 @@ vector<double> pulse_times(harmonic k, double f){
   return times;
 }
 
-// Hamiltoninan coupling two spins
-inline MatrixXcd H_ss(const spin s1, const spin s2){
-  Vector3d r = s2.pos-s1.pos;
-  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))* (dot(s1.S,s2.S)
-                                               - 3*tp(dot(s1.S,hat(r)), (dot(s2.S,hat(r)))));
-}
-
-// computer NV coherence at scanning frequency w_scan
-double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_DD,
-                      double f_DD, double Bz, int ms, double scan_time){
+// perform approxmate NV coherence measurement
+double approximate_coherence_measurement(vector<vector<spin>> clusters, double w_scan,
+                                         harmonic k_DD, double f_DD, double Bz, int ms,
+                                         double scan_time){
   double w_DD = w_scan;
   if(k_DD == third) w_DD /= 3;
 
@@ -224,15 +213,15 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
   double t2 = ts.at(1)*t_DD;
   double t3 = t_DD/4;
 
-  // initial (unnormalized) density matrix of NV center
-  // todo: do this in the NV z-axis basis
-  MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
+  // initial state of NV center
+  MatrixXcd psi_NV_0 = up+dn;
+  MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
+  rho_NV_0 /= real(trace(rho_NV_0));
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
     vector<spin> cluster = clusters.at(c);
-    int spins = cluster.size()+1; // total number of spins in NV+cluster system
-    int D = pow(2,spins); // dimensionality of NV+cluster Hilbert space
+    uint spins = cluster.size()+1; // total number of spins in NV+cluster system
 
     // initial (unnormalized) density matrix of NV+cluster
     MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
@@ -241,23 +230,24 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
     MatrixXcd X = act(sx,{0},spins);
 
     // construct Hamiltonians
+    uint D = pow(2,spins); // dimensionality of NV+cluster Hilbert space
     MatrixXcd H_nn = MatrixXcd::Zero(D,D); // internuclear coupling Hamiltonian
-    MatrixXcd H_nZ_eff = MatrixXcd::Zero(D,D); // effective nuclear Zeeman Hamiltonian
-    MatrixXcd H_int = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
+    MatrixXcd H_nZ = MatrixXcd::Zero(D,D); // effective nuclear Zeeman Hamiltonian
+    MatrixXcd H_hf = MatrixXcd::Zero(D,D); // NV-cluster interaction Hamiltonian
 
     // loop over spins in cluster
     for(uint s = 0; s < cluster.size(); s++){
       for(uint r = 0; r < s; r++){
-        H_nn += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
+        H_nn += coupling_strength(cluster.at(s), cluster.at(r))
+          * act(3*tp( dot(cluster.at(s).S,zhat), dot(cluster.at(r).S,zhat) )
+                - dot(cluster.at(s).S, cluster.at(r).S), {s+1,r+1}, spins);
       }
-      MatrixXcd AI = dot(A(cluster.at(s), ms), cluster.at(s).S);
-      H_nZ_eff += act( -cluster.at(s).g*dot(Bz*zhat, cluster.at(s).S) + ms/2.*AI,
-                       {s+1}, spins);
-      /* H_int += ms/2. * act(tp(dot(e(ms).S,zhat), AI), {0,s+1}, spins); */
-      H_int += ms/2. * act(tp(sz, AI), {0,s+1}, spins);
+      H_nZ -= act(cluster.at(s).g*Bz * dot(cluster.at(s).S,zhat), {s+1}, spins);
+      H_hf += act(tp(dot(e(ms).S,zhat), dot(A(cluster.at(s),ms), cluster.at(s).S)),
+                  {0,s+1}, spins);
     }
 
-    MatrixXcd H = H_nn + H_nZ_eff + H_int;
+    MatrixXcd H = H_nn + H_nZ + H_hf;
 
     // propagators for sections of the AXY sequence
     MatrixXcd U1 = exp(-j*H*(t1));
@@ -268,15 +258,22 @@ double coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_D
     MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
 
     // propagator for entire scan
-    U = pow(U,2*int(scan_time/t_DD));
+    U = pow(U,2*uint(scan_time/t_DD));
 
     // (unnormalized) NV+cluster density matrix after scanning
     MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
-    coherence *= real(trace(rho*rho_0))/D-1;
+    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size())-1;
   }
   return coherence;
+}
+
+// Hamiltoninan coupling two spins
+inline MatrixXcd H_ss(const spin s1, const spin s2){
+  Vector3d r = s2.pos-s1.pos;
+  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))* (dot(s1.S,s2.S)
+                                               - 3*tp(dot(s1.S,hat(r)), (dot(s2.S,hat(r)))));
 }
 
 // return spin-spin coupling Hamiltonian for NV center with cluster
@@ -306,9 +303,10 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
   return H;
 }
 
-// computer NV coherence at scanning frequency w_scan
-double exact_coherence_scan(vector<vector<spin>> clusters, double w_scan, harmonic k_DD,
-                            double f_DD, double Bz, int ms, double scan_time){
+
+// perform approxmate NV coherence measurement
+double coherence_measurement(vector<vector<spin>> clusters, double w_scan,
+                             harmonic k_DD, double f_DD, double Bz, int ms, double scan_time){
   spin e_ms = e(ms);
   Vector3d B = Bz*zhat;
 
@@ -322,19 +320,20 @@ double exact_coherence_scan(vector<vector<spin>> clusters, double w_scan, harmon
   double t2 = ts.at(1)*t_DD;
   double t3 = t_DD/4;
 
-  // initial (unnormalized) density matrix of NV center
-  MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint();
+  // initial state of NV center
+  MatrixXcd psi_NV_0 = up+dn;
+  MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
+  rho_NV_0 /= real(trace(rho_NV_0));
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
     vector<spin> cluster = clusters.at(c);
-    int spins = cluster.size()+1;
 
     // pi-pulse on NV center
-    MatrixXcd X = act(sx,{0},spins);
+    MatrixXcd X = act(sx, {0}, cluster.size()+1);
 
     // initial (unnormalized) density matrix of NV+cluster
-    MatrixXcd rho_0 = act(rho_NV_0,{0},spins);
+    MatrixXcd rho_0 = act(rho_NV_0, {0}, cluster.size()+1);
 
     // construct full Hamiltonian
     MatrixXcd H = H_int(e_ms, cluster) + H_Z(e_ms, cluster, B);
@@ -354,7 +353,7 @@ double exact_coherence_scan(vector<vector<spin>> clusters, double w_scan, harmon
     MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
-    coherence *= real(trace(rho*rho_0))/pow(2,spins)-1;
+    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size())-1;
   }
   return coherence;
 }
