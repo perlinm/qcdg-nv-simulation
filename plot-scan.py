@@ -26,11 +26,11 @@ f_larmor = w_larmor/(2*np.pi*1e3) # in kHz
 f_scan = w_scan/(2*np.pi*1e3) # in kHz
 A_perp /= max(A_perp)
 
+plt.plot(f_scan,coherence,'k-',linewidth=2)
 for i in range(len(f_larmor)):
-    dot = 1-1.5*A_perp[i]
+    dot = 1-A_perp[i]
     plt.plot([f_larmor[i],f_larmor[i]],[1,dot],'b-',linewidth=2)
     plt.plot(f_larmor[i],dot,'bo',markersize=8)
-plt.plot(f_scan,coherence,'k-',linewidth=2)
 
 plt.xlim(f_scan[0],f_scan[-1])
 plt.ylim(-1,1)

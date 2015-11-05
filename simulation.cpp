@@ -10,6 +10,8 @@ using namespace std;
 using namespace Eigen;
 
 #include <boost/algorithm/string.hpp> // string manipulation library
+#include <boost/filesystem.hpp> // filesystem path manipulation library
+namespace fs = boost::filesystem;
 #include <boost/program_options.hpp> // options parsing library
 namespace po = boost::program_options;
 
@@ -41,18 +43,18 @@ int main(int arg_num, const char *arg_vec[]) {
   bool perform_scan;
   int scan_bins;
   double f_DD;
-  harmonic k_DD;
-  uint k_DD_int;
+  uint k_DD;
   double scan_time;
   double scan_time_in_ms;
 
-  string output_dir;
+  fs::path output_dir;
   int seed;
 
-  string lattice_path;
-  string larmor_path;
-  string scan_path;
+  fs::path lattice_path;
+  fs::path larmor_path;
+  fs::path scan_path;
   string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
+  string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
 
   // define input options
   po::options_description options("Allowed options", 95);
@@ -76,16 +78,16 @@ int main(int arg_num, const char *arg_vec[]) {
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies?")
-    ("scan_bins", po::value<int>(&scan_bins)->default_value(100),
+    ("scan_bins", po::value<int>(&scan_bins)->default_value(200),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("k_DD,k", po::value<uint>(&k_DD_int)->default_value(1),
+    ("k_DD,k", po::value<uint>(&k_DD)->default_value(1),
      "resonance harmonic used in coherence scanning (1 or 3)")
     ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
      "time for each coherence measurement (in microseconds)")
 
-    ("output_dir", po::value<string>(&output_dir)->default_value("./data"),
+    ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
      "directory for storing data")
     ("seed,s", po::value<int>(&seed)->default_value(1),
      "seed for random number generator (>=1)")
@@ -113,7 +115,6 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(c13_abundance >= 0 && c13_abundance <= 1);
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
-  assert(using_input_lattice == set_output_suffix);
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
@@ -122,7 +123,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(perform_scan){
     assert(scan_bins > 0);
     assert((f_DD > 0) && (f_DD < 1));
-    assert((k_DD_int == 1) || (k_DD_int == 3));
+    assert((k_DD == 1) || (k_DD == 3));
     assert(scan_time_in_ms > 0);
   }
 
@@ -130,25 +131,28 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // define path of input or output file defining system configuration
   if(using_input_lattice){
-    lattice_path = lattice_file;
-    if(access(lattice_path.c_str(),F_OK) == -1){
+    if(!fs::exists(lattice_file)){
       cout << "file does not exist: " << lattice_file << endl;
       return 1;
     }
+    lattice_path = lattice_file;
+
+    if(!set_output_suffix){
+      output_suffix = lattice_path.stem().string() + "-" + output_suffix_with_input_lattice;
+    }
+
   } else{ // if !using_input_lattice
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
     boost::replace_all(lattice_file, "[seed]", to_string(seed));
-    lattice_path = output_dir+"/"+lattice_file;
+    lattice_path = output_dir/fs::path(lattice_file);
   }
 
   // set some variables based on iputs
   Bz = Bz_in_gauss*gauss;
-  if(k_DD_int == 1) k_DD = first;
-  if(k_DD_int == 3) k_DD = third;
   scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
-  mkdir(output_dir.c_str(),0777); // create data directory
+  fs::create_directory(output_dir); // create data directory
 
   // -----------------------------------------------------------------------------------------
   // Construct spin lattice
@@ -187,7 +191,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // write cell radius and nucleus positions to file
-    ofstream lattice(lattice_path);
+    ofstream lattice(lattice_path.string());
     lattice << "# cell radius: " << cell_radius << endl;
     for(uint i = 0; i < nuclei.size(); i++){
       lattice << nuclei.at(i).pos(0) << ' '
@@ -199,7 +203,7 @@ int main(int arg_num, const char *arg_vec[]) {
   } else { // if using_input_lattice, read in the lattice
 
     string line;
-    ifstream lattice(lattice_path);
+    ifstream lattice(lattice_path.string());
 
     // get cell_radius
     getline(lattice,line,' ');
@@ -246,7 +250,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // if (largest cluster size > max_cluster_size),
   //   which can occur when (largest cluster size == max_cluster_size) is impossible,
   //   find largest cluster_coupling for which (largest cluster size < max_cluster_size)
-  if(largest_cluster_size(clusters) > max_cluster_size){
+  while(largest_cluster_size(clusters) > max_cluster_size){
     int cluster_size_target
       = largest_cluster_size(get_clusters(nuclei,cluster_coupling+dcc_cutoff));
     cluster_coupling = find_target_coupling(nuclei,cluster_size_target,
@@ -272,7 +276,7 @@ int main(int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[cell_radius]", to_string(cell_radius));
   boost::replace_all(output_suffix, "[seed]", to_string(seed));
   boost::replace_all(output_suffix, "[cluster_size]", to_string(max_cluster_size));
-  boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD_int));
+  boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD));
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
 
   // -----------------------------------------------------------------------------------------
@@ -282,14 +286,14 @@ int main(int arg_num, const char *arg_vec[]) {
   if(perform_scan){
 
     // define paths of output files
-    larmor_path = output_dir+"/larmor-"+output_suffix;
-    scan_path = output_dir+"/scan-"+output_suffix;
+    larmor_path = output_dir/fs::path("larmor-"+output_suffix);
+    scan_path = output_dir/fs::path("scan-"+output_suffix);
 
     // define header to output files
     stringstream file_header;
     file_header << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
     file_header << "# f_DD: " << f_DD << endl;
-    file_header << "# scan time: " << scan_time << endl;
+    file_header << "# scan time: " << scan_time << endl << endl;
 
     // identify effictive larmor frequencies and NV coupling strengths
     VectorXd w_larmor = VectorXd::Zero(nuclei.size());
@@ -297,7 +301,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nuclei.size(); i++){
-      Vector3d A_i = A(nuclei.at(i),ms);
+      Vector3d A_i = A(nuclei.at(i));
       w_larmor(i) = effective_larmor(nuclei.at(i),Bz*zhat,A_i,ms);
       A_perp(i) = (A_i-dot(A_i,zhat)*zhat).norm();
 
@@ -306,9 +310,9 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // print effective larmor frequencies and NV couping strengths to output file
-    ofstream larmor(larmor_path);
+    ofstream larmor(larmor_path.string());
     larmor << file_header.str();
-    larmor << endl << "# w_larmor A_perp" << endl;
+    larmor << "# w_larmor A_perp\n";
     for(uint i = 0; i < nuclei.size(); i++){
       larmor << w_larmor(i) << " " << A_perp(i) << endl;
     }
@@ -332,9 +336,9 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // print coherence scan results to output file
-    ofstream scan(scan_path);
+    ofstream scan(scan_path.string());
     scan << file_header.str();
-    scan << endl << "# w_scan coherence" << endl;
+    scan << "# w_scan coherence\n";
     for(int i = 0; i < scan_bins; i++){
       scan << int(w_scan(i)) << " " << coherence(i) << endl;
     }

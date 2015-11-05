@@ -10,14 +10,14 @@ using namespace Eigen;
 // Diamond lattice parameters
 //--------------------------------------------------------------------------------------------
 
-// diamond lattice vectors scaled to a0
+// diamond lattice vectors, scaled to the lattice parameter (i.e. the unit cell side length)
 const Vector3d ao = (Vector3d() << 1,1,1).finished()/4;
 const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
 const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
 const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 
 // unit vectors along bonding axes
-const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from N to V site
+const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from V to N
 const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
 const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 
@@ -62,9 +62,9 @@ struct spin{
 };
 
 // initialize nitrogen and vacancy centers
-const spin n(Vector3d::Zero(), 0., s_vec);
+const spin n(ao, 0., s_vec);
 spin e(int ms){
-  return spin(ao, ge,
+  return spin(Vector3d::Zero(), ge,
               mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
 }
 
@@ -162,9 +162,9 @@ double find_target_coupling(vector<spin> spins, uint cluster_size_target,
 //--------------------------------------------------------------------------------------------
 
 // hyperfine field experienced by spin s
-Vector3d A(const spin s, int ms){
-  Vector3d r = s.pos - e(ms).pos;
-  return e(ms).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*hat(r).dot(zhat)*hat(r));
+Vector3d A(const spin s){
+  Vector3d r = s.pos - e(1).pos;
+  return e(1).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
 }
 
 // effective larmor frequency of spin s
@@ -172,15 +172,12 @@ inline double effective_larmor(const spin s, const Vector3d B, const Vector3d A,
   return (s.g*B - ms/2.*A).norm();
 }
 
-// harmonic to target with AXY sequence
-enum harmonic { first, third };
-
 // pulse times for harmonic h and fourier component f
-vector<double> pulse_times(harmonic k, double f){
-
+vector<double> pulse_times(uint k, double f){
+  assert((k == 1) || (k == 3));
   double fp = f*pi;
   double t1,t2;
-  if(k == first){
+  if(k == 1){
     assert(abs(fp) < 8*cos(pi/9)-4);
     double w1 = 4 - fp;
     double w2 = w1 * (960 - 144*fp - 12*fp*fp + fp*fp*fp);
@@ -240,13 +237,11 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
 
 // perform NV coherence measurement
 double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
-                             harmonic k_DD, double f_DD, double Bz, double scan_time){
+                             uint k_DD, double f_DD, double Bz, double scan_time){
   spin e_ms = e(ms);
   Vector3d B = Bz*zhat;
 
-  double w_DD = w_scan;
-  if(k_DD == third) w_DD /= 3;
-
+  double w_DD = w_scan/k_DD;
   double t_DD = 2*pi/w_DD;
 
   vector<double> ts = pulse_times(k_DD,f_DD);
