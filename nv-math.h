@@ -3,8 +3,8 @@
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
-#include "qp-math.h"
 #include "constants.h"
+#include "qp-math.h"
 
 //--------------------------------------------------------------------------------------------
 // Diamond lattice parameters

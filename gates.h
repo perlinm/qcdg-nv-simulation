@@ -3,6 +3,7 @@
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
+#include "qp-math.h"
 #include "nv-math.h"
 
 //--------------------------------------------------------------------------------------------

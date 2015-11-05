@@ -1,6 +1,9 @@
 #pragma once
 
-const complex<double> j(0.0,1.0);
+#include <math.h>
+#include <complex.h>
+
+const std::complex<double> j(0.0,1.0);
 const double pi = M_PI;
 
 // physical constants in SI

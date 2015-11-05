@@ -1,4 +1,5 @@
 *\~
 *.tum
+*.gch
 simulate
 data

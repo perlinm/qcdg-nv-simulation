@@ -1,9 +1,13 @@
 #pragma once
 
+using namespace std;
+
 #include <eigen3/Eigen/Dense> // linear algebra library
 #include <eigen3/unsupported/Eigen/KroneckerProduct> // provides tensor product
 #include <eigen3/unsupported/Eigen/MatrixFunctions> // provides matrix functions
 using namespace Eigen;
+
+#include "constants.h"
 
 // check whether value val is in vector vec
 inline bool in_vector(auto val, vector<auto> vec){

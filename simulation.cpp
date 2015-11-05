@@ -78,7 +78,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies?")
-    ("scan_bins", po::value<int>(&scan_bins)->default_value(200),
+    ("scan_bins", po::value<int>(&scan_bins)->default_value(100),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
