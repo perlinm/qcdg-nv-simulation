@@ -235,58 +235,6 @@ MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
   return H;
 }
 
-// perform (exact) NV coherence measurement
-double exact_coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
-                                   uint k_DD, double f_DD, double Bz, double scan_time){
-  spin e_ms = e(ms); // electron spin
-  Vector3d B = Bz*zhat; // static magnetic field
-
-  double w_DD = w_scan/k_DD; // AXY protocol angular frequency
-  double t_DD = 2*pi/w_DD; // AXY protocol period
-
-  vector<double> ts = pulse_times(k_DD,f_DD);  // AXY protocol pulse times
-  double t1 = ts.at(0)*t_DD;
-  double t2 = ts.at(1)*t_DD;
-  double t3 = t_DD/4;
-
-  // initial state of NV center
-  MatrixXcd psi_NV_0 = up+dn;
-  MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
-  rho_NV_0 /= real(trace(rho_NV_0));
-
-  double coherence = 1;
-  for(uint c = 0; c < clusters.size(); c++){
-    vector<spin> cluster = clusters.at(c);
-
-    // pi-pulse on NV center
-    MatrixXcd X = act(sx, {0}, cluster.size()+1);
-
-    // initial (unnormalized) density matrix of NV+cluster
-    MatrixXcd rho_0 = act(rho_NV_0, {0}, cluster.size()+1);
-
-    // construct full Hamiltonian
-    MatrixXcd H = H_int(e_ms, cluster) + H_Z(e_ms, cluster, B);
-
-    // propagators for sections of the AXY sequence
-    MatrixXcd U1 = exp(-j*H*(t1));
-    MatrixXcd U2 = exp(-j*H*(t2-t1));
-    MatrixXcd U3 = exp(-j*H*(t3-t2));
-
-    // AXY half-sequence propagator
-    MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
-
-    // propagator for entire scan
-    U = pow(U,2*int(scan_time/t_DD));
-
-    // (unnormalized) NV+cluster density matrix after scanning
-    MatrixXcd rho = U*rho_0*U.adjoint();
-
-    // update coherence
-    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size()) - 1;
-  }
-  return coherence;
-}
-
 // perform NV coherence measurement
 double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
                              uint k_DD, double f_DD, double Bz, double scan_time){
