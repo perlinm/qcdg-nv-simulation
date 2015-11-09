@@ -1,12 +1,2 @@
-| g++ -Wall -Wextra -std=c++14 constants.h
-
-| g++ -Wall -Wextra -std=c++14 -I /usr/include/eigen3/ qp-math.h
-
-| g++ -Wall -Wextra -std=c++14 -I /usr/include/eigen3/ nv-math.h
-
-| g++ -std=c++14 -I /usr/include/eigen3/ gates.h
-
-| g++ -std=c++14 -I /usr/include/eigen3/ printing.h
-
 | g++ -Wall -Wextra -std=c++14 -I /usr/include/eigen3/ -lboost_program_options -lboost_system -lboost_filesystem -o simulate simulation.cpp
 > simulate

@@ -22,7 +22,7 @@ namespace po = boost::program_options;
 #include "gates.h"
 
 // random double from 0 to 1
-inline double rnd(){ return std::rand()/(double)RAND_MAX; }
+inline double rnd(){ return rand()/(double)RAND_MAX; }
 
 int main(int arg_num, const char *arg_vec[]) {
 
@@ -299,6 +299,7 @@ int main(int arg_num, const char *arg_vec[]) {
     VectorXd w_larmor = VectorXd::Zero(nuclei.size());
     VectorXd A_perp = VectorXd::Zero(nuclei.size());
 
+
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nuclei.size(); i++){
       Vector3d A_i = A(nuclei.at(i));
@@ -324,13 +325,12 @@ int main(int arg_num, const char *arg_vec[]) {
     VectorXd coherence = VectorXd::Zero(scan_bins);
 
     double w_range = w_max - w_min;
-    double w_start = w_min - w_range/10;
+    double w_start = max(w_min - w_range/10, 0.);
     double w_end = w_max + w_range/10;
     for(int i = 0; i < scan_bins; i++){
       w_scan(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence(i) =
         coherence_measurement(ms, clusters, w_scan(i), k_DD, f_DD, Bz, scan_time);
-      // print status text
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan(i)/(2*pi*1e3) << " " << coherence(i) << endl;
     }
@@ -340,7 +340,7 @@ int main(int arg_num, const char *arg_vec[]) {
     scan << file_header.str();
     scan << "# w_scan coherence\n";
     for(int i = 0; i < scan_bins; i++){
-      scan << int(w_scan(i)) << " " << coherence(i) << endl;
+      scan << w_scan(i) << " " << coherence(i) << endl;
     }
     scan.close();
 

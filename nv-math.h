@@ -186,7 +186,7 @@ vector<double> pulse_times(uint k, double f){
                            sqrt(6)*sqrt(w2 - 96*fp*w1 + w1*w1*sqrt(3*w2)));
     t2 = 1/(2*pi) * atan2(-(3*fp-12)*w1 + sqrt(3*w2),
                           sqrt(6)*sqrt(w2 - 96*fp*w1 - w1*w1*sqrt(3*w2)));
-  } else{ // if harmonic == third
+  } else{ // if k == 3
     assert(abs(fp) < 4);
     double q1 = 4/(sqrt(5+fp)-1);
     double q2 = 4/(sqrt(5+fp)+1);
@@ -204,20 +204,19 @@ vector<double> pulse_times(uint k, double f){
 // Hamiltoninan coupling two spins
 inline MatrixXcd H_ss(const spin s1, const spin s2){
   Vector3d r = s2.pos-s1.pos;
-  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))* (dot(s1.S,s2.S)
-                                               - 3*tp(dot(s1.S,hat(r)), (dot(s2.S,hat(r)))));
+  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))
+    * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), (dot(s2.S,hat(r)))));
 }
 
 // return spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const spin e, const vector<spin> cluster){
   int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
-
   for(uint s = 0; s < cluster.size(); s++){
-    // interaction with NV center
+    // interaction between NV center and spin s
     H += act(H_ss(e, cluster.at(s)), {0,s+1}, spins);
     for(uint r = 0; r < s; r++){
-      // interaction with other spins
+      // interaction betwen spin r and spin s
       H += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
     }
   }
@@ -227,24 +226,25 @@ MatrixXcd H_int(const spin e, const vector<spin> cluster){
 // return Zeeman Hamiltonian for NV center with cluster
 MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B){
   int spins = cluster.size()+1;
-
+  // zero-field splitting and interaction of NV center with magnetic field
   MatrixXcd H = act(NV_ZFS*dot(e.S,zhat)*dot(e.S,zhat) - e.g*dot(B,e.S), {0}, spins);
   for(uint s = 0; s < cluster.size(); s++){
+    // interactoin of spin s with magnetic field
     H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s+1}, spins);
   }
   return H;
 }
 
-// perform NV coherence measurement
-double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
-                             uint k_DD, double f_DD, double Bz, double scan_time){
-  spin e_ms = e(ms);
-  Vector3d B = Bz*zhat;
+// perform (exact) NV coherence measurement
+double exact_coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
+                                   uint k_DD, double f_DD, double Bz, double scan_time){
+  spin e_ms = e(ms); // electron spin
+  Vector3d B = Bz*zhat; // static magnetic field
 
-  double w_DD = w_scan/k_DD;
-  double t_DD = 2*pi/w_DD;
+  double w_DD = w_scan/k_DD; // AXY protocol angular frequency
+  double t_DD = 2*pi/w_DD; // AXY protocol period
 
-  vector<double> ts = pulse_times(k_DD,f_DD);
+  vector<double> ts = pulse_times(k_DD,f_DD);  // AXY protocol pulse times
   double t1 = ts.at(0)*t_DD;
   double t2 = ts.at(1)*t_DD;
   double t3 = t_DD/4;
@@ -282,7 +282,67 @@ double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_sca
     MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
-    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size())-1;
+    coherence *= 2*real(trace(rho*rho_0))/pow(2,cluster.size()) - 1;
+  }
+  return coherence;
+}
+
+// perform NV coherence measurement
+double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
+                             uint k_DD, double f_DD, double Bz, double scan_time){
+  spin e_ms = e(ms); // electron spin
+  Vector3d B = Bz*zhat; // static magnetic field
+
+  double w_DD = w_scan/k_DD; // AXY protocol angular frequency
+  double t_DD = 2*pi/w_DD; // AXY protocol period
+
+  vector<double> ts = pulse_times(k_DD,f_DD); // AXY protocol pulse times
+  double t1 = ts.at(0)*t_DD;
+  double t2 = ts.at(1)*t_DD;
+  double t3 = t_DD/4;
+
+  double coherence = 1;
+  for(uint c = 0; c < clusters.size(); c++){
+    vector<spin> cluster = clusters.at(c);
+
+    // projections onto |ms> and |0> NV states
+    MatrixXcd proj_m = act(up*up.adjoint(), {0}, cluster.size()+1); // |ms><ms|
+    MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, cluster.size()+1); // |0><0|
+
+    // construct full Hamiltonian
+    MatrixXcd H = H_int(e_ms, cluster) + H_Z(e_ms, cluster, B);
+
+    // extract sub-system Hamiltonians
+    MatrixXcd H_m = ptrace(H*proj_m, {0});
+    MatrixXcd H_0 = ptrace(H*proj_0, {0});
+
+    // propagators for sections of the AXY sequence
+    MatrixXcd U1_m = exp(-j*H_m*(t1));
+    MatrixXcd U2_m = exp(-j*H_0*(t2-t1));
+    MatrixXcd U3_m = exp(-j*H_m*(t3-t2));
+
+    MatrixXcd U1_0 = exp(-j*H_0*(t1));
+    MatrixXcd U2_0 = exp(-j*H_m*(t2-t1));
+    MatrixXcd U3_0 = exp(-j*H_0*(t3-t2));
+
+    MatrixXcd U4_m = U3_0;
+    MatrixXcd U5_m = U2_0;
+    MatrixXcd U6_m = U1_0;
+
+    MatrixXcd U4_0 = U3_m;
+    MatrixXcd U5_0 = U2_m;
+    MatrixXcd U6_0 = U1_m;
+
+    // single AXY sequence propagators
+    MatrixXcd U_m = U1_m*U2_m*U3_m*U4_m*U5_m*U6_m * U6_m*U5_m*U4_m*U3_m*U2_m*U1_m;
+    MatrixXcd U_0 = U1_0*U2_0*U3_0*U4_0*U5_0*U6_0 * U6_0*U5_0*U4_0*U3_0*U2_0*U1_0;
+
+    // propagators for entire scan
+    U_m = pow(U_m, int(scan_time/t_DD));
+    U_0 = pow(U_0, int(scan_time/t_DD));
+
+    // update coherence
+    coherence *= real(trace(U_0.adjoint()*U_m)) / pow(2,cluster.size());
   }
   return coherence;
 }
