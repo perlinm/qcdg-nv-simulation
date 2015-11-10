@@ -3,24 +3,19 @@ import sys, matplotlib, numpy
 import matplotlib.pyplot as plt
 import numpy as np
 
-if len(sys.argv) != 2:
-    print('useage: %s file' % sys.argv[0])
+if len(sys.argv) not in [2,3]:
+    print('useage: %s file [show]' % sys.argv[0])
     exit(1)
 
-fname = sys.argv[1]
+scan_fname = sys.argv[1]
+show = (len(sys.argv) == 3)
 
-if 'larmor' in fname:
-    larmor_fname = fname
-    scan_fname = fname.replace('larmor','scan')
-elif 'scan' in fname:
-    scan_fname = fname
-    larmor_fname = fname.replace('scan','larmor')
-else:
-    print('invalid data file')
+if 'scan' not in scan_fname:
+    print('invalid input file')
     exit(1)
 
-w_larmor, A_perp = np.loadtxt(larmor_fname,unpack=True)
 w_scan, coherence = np.loadtxt(scan_fname,unpack=True)
+w_larmor, A_perp = np.loadtxt(scan_fname.replace('scan','larmor'),unpack=True)
 
 f_larmor = w_larmor/(2*np.pi*1e3) # in kHz
 f_scan = w_scan/(2*np.pi*1e3) # in kHz
@@ -39,4 +34,7 @@ plt.xlabel(r'$f_{\mathrm{scan}}$ (kHz)')
 plt.ylabel('Coherence')
 
 plt.tight_layout()
-plt.show()
+plt.savefig(scan_fname.replace('.txt','.pdf'))
+
+if show:
+    plt.show()
