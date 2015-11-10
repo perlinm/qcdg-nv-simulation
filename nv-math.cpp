@@ -110,31 +110,31 @@ double effective_larmor(const spin s, const Vector3d B, const Vector3d A, int ms
 }
 
 // pulse times for harmonic h and fourier component f
-vector<double> pulse_times(uint k, double f){
+vector<double> pulse_spacings(uint k, double f){
   assert((k == 1) || (k == 3));
   double fp = f*pi;
-  double t1,t2;
+  double x1,x2;
   if(k == 1){
     assert(abs(fp) < 8*cos(pi/9)-4);
     double w1 = 4 - fp;
     double w2 = w1 * (960 - 144*fp - 12*fp*fp + fp*fp*fp);
 
-    t1 = 1/(2*pi) * atan2( (3*fp-12)*w1 + sqrt(3*w2),
+    x1 = 1/(2*pi) * atan2( (3*fp-12)*w1 + sqrt(3*w2),
                            sqrt(6)*sqrt(w2 - 96*fp*w1 + w1*w1*sqrt(3*w2)));
-    t2 = 1/(2*pi) * atan2(-(3*fp-12)*w1 + sqrt(3*w2),
+    x2 = 1/(2*pi) * atan2(-(3*fp-12)*w1 + sqrt(3*w2),
                           sqrt(6)*sqrt(w2 - 96*fp*w1 - w1*w1*sqrt(3*w2)));
   } else{ // if k == 3
     assert(abs(fp) < 4);
     double q1 = 4/(sqrt(5+fp)-1);
     double q2 = 4/(sqrt(5+fp)+1);
 
-    t1 = 1/4 - 1/(2*pi)*atan(sqrt(q1*q1-1));
-    t2 = 1/4 - 1/(2*pi)*atan(sqrt(q2*q2-1));
+    x1 = 1./4 - 1/(2*pi)*atan(sqrt(q1*q1-1));
+    x2 = 1./4 - 1/(2*pi)*atan(sqrt(q2*q2-1));
   }
 
   vector<double> times;
-  times.push_back(t1);
-  times.push_back(t2);
+  times.push_back(x1);
+  times.push_back(x2);
   return times;
 }
 
@@ -181,9 +181,9 @@ double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_sca
   double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   double t_DD = 2*pi/w_DD; // AXY protocol period
 
-  vector<double> ts = pulse_times(k_DD,f_DD); // AXY protocol pulse times
-  double t1 = ts.at(0)*t_DD;
-  double t2 = ts.at(1)*t_DD;
+  vector<double> xs = pulse_spacings(k_DD,f_DD); // AXY protocol pulse times
+  double t1 = xs.at(0)*t_DD;
+  double t2 = xs.at(1)*t_DD;
   double t3 = t_DD/4;
 
   double coherence = 1;
