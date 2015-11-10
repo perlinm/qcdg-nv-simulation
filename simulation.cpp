@@ -66,8 +66,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "relative isotopic abundance of C-13")
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
-    ("output_suffix", po::value<string>(&output_suffix),
-     "output file suffix (required if using input lattice)")
+    ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
 
     ("max_cluster_size,c", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
@@ -262,13 +261,13 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // collect and print histogram of cluster sizes
   max_cluster_size = largest_cluster_size(clusters);
-  VectorXi size_hist = VectorXi::Zero(max_cluster_size);
+  vector<uint> size_hist(max_cluster_size);
   for(uint i = 0; i < clusters.size(); i++){
-    size_hist(clusters.at(i).size()-1) += 1;
+    size_hist.at(clusters.at(i).size()-1) += 1;
   }
   cout << "Cluster size histogram: " << endl;
   for(uint i = 0; i < size_hist.size(); i++){
-    cout << "  " << i+1 << ": " << size_hist(i) << endl;
+    cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
   }
   cout << endl;
 
