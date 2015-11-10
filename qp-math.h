@@ -18,7 +18,7 @@ const MatrixXcd I2 = MatrixXcd::Identity(2,2);
 const MatrixXcd I4 = MatrixXcd::Identity(4,4);
 
 // return unit vector in direction of vec
-inline Vector3d hat(Vector3d vec){ return vec/vec.norm(); }
+inline Vector3d hat(Vector3d vec){ return vec.normalized(); }
 
 // matrix functions
 inline complex<double> trace(const MatrixXcd M){ return M.trace(); }
