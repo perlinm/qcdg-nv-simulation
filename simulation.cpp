@@ -38,7 +38,7 @@ int main(int arg_num, const char *arg_vec[]) {
   uint max_cluster_size;
   int ms;
   Vector3d B_static;
-  double Bz_in_gauss;
+  double B_static_norm_in_gauss;
 
   bool perform_scan;
   int scan_bins;
@@ -72,7 +72,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "maximum allowable size of C-13 clusters")
     ("ms,m", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
-    ("Bz", po::value<double>(&Bz_in_gauss)->default_value(140.1,"140.1"),
+    ("B_static,B", po::value<double>(&B_static_norm_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
@@ -117,7 +117,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
-  assert(Bz_in_gauss >= 0);
+  assert(B_static_norm_in_gauss >= 0);
 
   if(perform_scan){
     assert(scan_bins > 0);
@@ -147,7 +147,7 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   // set some variables based on iputs
-  B_static = Bz_in_gauss*gauss*zhat;
+  B_static = B_static_norm_in_gauss*gauss*zhat;
   scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
@@ -230,7 +230,6 @@ int main(int arg_num, const char *arg_vec[]) {
         return 2;
       }
     }
-
   }
 
   // -----------------------------------------------------------------------------------------
@@ -283,7 +282,6 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(perform_scan){
-
     // define paths of output files
     larmor_path = output_dir/fs::path("larmor-"+output_suffix);
     scan_path = output_dir/fs::path("scan-"+output_suffix);
@@ -327,8 +325,8 @@ int main(int arg_num, const char *arg_vec[]) {
     double w_end = w_max + w_range/10;
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) =
-        coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD, B_static, scan_time);
+      coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
+                                              scan_time, B_static);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -341,7 +339,6 @@ int main(int arg_num, const char *arg_vec[]) {
       scan << w_scan.at(i) << " " << coherence.at(i) << endl;
     }
     scan.close();
-
   }
 
 }

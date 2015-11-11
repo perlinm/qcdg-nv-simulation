@@ -106,9 +106,10 @@ MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
 // return Zeeman Hamiltonian for NV center with cluster
 MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
-// perform NV coherence measurement
-double coherence_measurement(int ms, const vector<vector<spin>>& clusters, double w_scan,
-                             uint k_DD, double f_DD, const Vector3d& B, double scan_time);
+// perform NV coherence measurement with a static magnetic field
+double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
+                             double w_scan, uint k_DD, double f_DD,
+                             double scan_time, const Vector3d& B);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning
@@ -116,21 +117,30 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters, doubl
 
 struct control_fields{
   vector<Vector3d> Bs;
-  vector<double> ws;
+  vector<double> freqs;
+  vector<double> phases;
 
   control_fields(){};
-  control_fields(const Vector3d& B, const double w){
-    Bs.push_back(B);
-    ws.push_back(w);
+  control_fields(const Vector3d& B, const double w, const double phase){
+    this->add(B,w,phase);
   };
-  control_fields(const vector<Vector3d>& Bs, const vector<double>& ws){
-    assert(Bs.size() == ws.size());
+  control_fields(const vector<Vector3d>& Bs, const vector<double>& freqs,
+                 const vector<double>& phases){
+    assert((Bs.size() == freqs.size()) && (Bs.size() == phases.size()));
     this->Bs = Bs;
-    this->ws = ws;
+    this->freqs = freqs;
+    this->phases = phases;
   };
 
-  void add(const Vector3d& B, const double w){
+  void add(const Vector3d& B, double w, double phase){
     Bs.push_back(B);
-    ws.push_back(w);
+    freqs.push_back(w);
+    phases.push_back(phase);
+  };
+  void remove(uint i){
+    assert(i < Bs.size());
+    Bs.erase(Bs.begin() + i);
+    freqs.erase(freqs.begin() + i);
+    phases.erase(phases.begin() + i);
   };
 };

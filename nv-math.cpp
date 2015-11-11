@@ -174,9 +174,10 @@ MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B){
   return H;
 }
 
-// perform NV coherence measurement
-double coherence_measurement(int ms, const vector<vector<spin>>& clusters, double w_scan,
-                             uint k_DD, double f_DD, const Vector3d& B, double scan_time){
+// perform NV coherence measurement with a static magnetic field
+double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
+                             double w_scan, uint k_DD, double f_DD,
+                             double scan_time, const Vector3d& B){
   spin e_ms = e(ms); // electron spin
 
   double w_DD = w_scan/k_DD; // AXY protocol angular frequency
