@@ -1,3 +1,5 @@
+using namespace std;
+
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 

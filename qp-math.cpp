@@ -18,7 +18,7 @@ MatrixXcd tp(const initializer_list<MatrixXcd> list){
 }
 
 // remove numerical artifacts from a matrix
-void remove_artifacts(MatrixXcd &A, double threshold){
+void remove_artifacts(MatrixXcd& A, double threshold){
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n).real()) < threshold) A(m,n) -= A(m,n).real();
@@ -28,7 +28,7 @@ void remove_artifacts(MatrixXcd &A, double threshold){
 }
 
 // get global phase of matrix
-complex<double> get_phase(const MatrixXcd A){
+complex<double> get_phase(const MatrixXcd& A){
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n)) != 0){
@@ -46,7 +46,7 @@ complex<double> get_phase(const MatrixXcd A){
 //--------------------------------------------------------------------------------------------
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
-MatrixXcd act(const MatrixXcd A, const vector<uint> qs_act, uint qbits_new){
+MatrixXcd act(const MatrixXcd& A, const vector<uint> qs_act, uint qbits_new){
   assert(A.rows() == A.cols()); // A should be square
 
   // number of qbits A acted on
@@ -92,7 +92,7 @@ MatrixXcd act(const MatrixXcd A, const vector<uint> qs_act, uint qbits_new){
 }
 
 // perform a partial trace over qbits qs_trace
-MatrixXcd ptrace(const MatrixXcd A, const vector<uint> qs_trace){
+MatrixXcd ptrace(const MatrixXcd& A, const vector<uint> qs_trace){
   assert(A.rows() == A.cols()); // A should be square
 
   // number of qbits A acted on
@@ -140,7 +140,7 @@ MatrixXcd ptrace(const MatrixXcd A, const vector<uint> qs_trace){
 // Matrix vectors
 //--------------------------------------------------------------------------------------------
 
-mvec operator*(MatrixXcd G, mvec v){
+mvec operator*(const MatrixXcd& G, const mvec& v){
   vector<MatrixXcd> out;
   for(uint i = 0; i < v.size(); i++){
     out.push_back(G*v.at(i));

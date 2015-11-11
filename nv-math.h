@@ -1,5 +1,7 @@
 #pragma once
 
+using namespace std;
+
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
@@ -51,10 +53,10 @@ struct spin{
     this->S = S;
   };
 
-  bool operator==(const spin &s) const {
-    return ((pos == s.pos) && (g == s.g) && (S == s.S));
+  bool operator==(const spin& s) const {
+    return ((pos == s.pos)& & (g == s.g)& & (S == s.S));
   }
-  bool operator!=(const spin &s) const { return !(*this == s); }
+  bool operator!=(const spin& s) const { return !(*this == s); }
 
 };
 
