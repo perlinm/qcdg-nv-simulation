@@ -54,7 +54,7 @@ struct spin{
   };
 
   bool operator==(const spin& s) const {
-    return ((pos == s.pos)& & (g == s.g)& & (S == s.S));
+    return ((pos == s.pos) && (g == s.g) && (S == s.S));
   }
   bool operator!=(const spin& s) const { return !(*this == s); }
 
