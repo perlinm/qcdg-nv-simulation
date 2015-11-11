@@ -46,7 +46,7 @@ struct spin{
   double g; // gyromagnetic ratio
   mvec S; // spin vector
 
-  spin(const Vector3d pos, double g, const mvec S){
+  spin(const Vector3d& pos, double g, const mvec& S){
     assert(S.size() == 3);
     this->pos = pos;
     this->g = g;
@@ -104,8 +104,33 @@ MatrixXcd H_ss(const spin& s1, const spin& s2);
 MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
 
 // return Zeeman Hamiltonian for NV center with cluster
-MantrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
+MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters, double w_scan,
                              uint k_DD, double f_DD, const Vector3d& B, double scan_time);
+
+//--------------------------------------------------------------------------------------------
+// Control field scanning
+//--------------------------------------------------------------------------------------------
+
+struct control_fields{
+  vector<Vector3d> Bs;
+  vector<double> ws;
+
+  control_fields(){};
+  control_fields(const Vector3d& B, const double w){
+    Bs.push_back(B);
+    ws.push_back(w);
+  };
+  control_fields(const vector<Vector3d>& Bs, const vector<double>& ws){
+    assert(Bs.size() == ws.size());
+    this->Bs = Bs;
+    this->ws = ws;
+  };
+
+  void add(const Vector3d& B, const double w){
+    Bs.push_back(B);
+    ws.push_back(w);
+  };
+};

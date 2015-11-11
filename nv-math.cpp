@@ -230,3 +230,8 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters, doubl
   }
   return coherence;
 }
+
+//--------------------------------------------------------------------------------------------
+// Control field scanning
+//--------------------------------------------------------------------------------------------
+
