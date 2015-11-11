@@ -37,7 +37,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   uint max_cluster_size;
   int ms;
-  double Bz;
+  Vector3d B_static;
   double Bz_in_gauss;
 
   bool perform_scan;
@@ -147,7 +147,7 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   // set some variables based on iputs
-  Bz = Bz_in_gauss*gauss;
+  B_static = Bz_in_gauss*gauss*zhat;
   scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
@@ -301,7 +301,7 @@ int main(int arg_num, const char *arg_vec[]) {
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nuclei.size(); i++){
       Vector3d A_i = A(nuclei.at(i));
-      w_larmor.at(i) = effective_larmor(nuclei.at(i),Bz*zhat,A_i,ms);
+      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, A_i, ms);
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
@@ -328,7 +328,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) =
-        coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD, Bz, scan_time);
+        coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD, B_static, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }

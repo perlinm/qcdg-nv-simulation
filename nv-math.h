@@ -89,23 +89,23 @@ double find_target_coupling(vector<spin> spins, uint cluster_size_target,
 //--------------------------------------------------------------------------------------------
 
 // hyperfine field experienced by spin s
-Vector3d A(const spin s);
+Vector3d A(const spin& s);
 
 // effective larmor frequency of spin s
-double effective_larmor(const spin s, const Vector3d B, const Vector3d A, int ms);
+double effective_larmor(const spin& s, const Vector3d& B, const Vector3d& A, int ms);
 
 // pulse times for harmonic h and fourier component f
 vector<double> pulse_times(uint k, double f);
 
 // Hamiltoninan coupling two spins
-MatrixXcd H_ss(const spin s1, const spin s2);
+MatrixXcd H_ss(const spin& s1, const spin& s2);
 
 // return spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int(const spin e, const vector<spin> cluster);
+MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
 
 // return Zeeman Hamiltonian for NV center with cluster
-MatrixXcd H_Z(const spin e, const vector<spin> cluster, Vector3d B);
+MantrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement
-double coherence_measurement(int ms, vector<vector<spin>> clusters, double w_scan,
-                             uint k_DD, double f_DD, double Bz, double scan_time);
+double coherence_measurement(int ms, const vector<vector<spin>>& clusters, double w_scan,
+                             uint k_DD, double f_DD, const Vector3d& B, double scan_time);
