@@ -144,3 +144,8 @@ struct control_fields{
     phases.erase(phases.begin() + i);
   };
 };
+
+// perform NV coherence measurement with a static magnetic field and additional control fields
+double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
+                             double w_scan, uint k_DD, double f_DD, double scan_time,
+                             const Vector3d& B_static, const control_fields& Bs);
