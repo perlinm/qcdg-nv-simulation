@@ -137,6 +137,5 @@ const MatrixXcd H_ST = ((S+T)*S.transpose()+(S-T)*T.transpose())/sqrt(2.) + j*un
 const MatrixXcd R_NVST = act(X*HG,{0},3)*act(SWAP,{0,1},3);
 
 // SWAP between NV and ST states
-const MatrixXcd SWAP_NVST =
-  act(E,{1,2},3) * act(cNOT,{1,2},3) * act(X*HG,{0},3)
+const MatrixXcd SWAP_NVST = act(E,{1,2},3) * act(cNOT,{1,2},3) * act(X*HG,{0},3)
   * act(cNOT,{0,2},3) * act(SWAP,{0,1},3);

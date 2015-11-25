@@ -49,6 +49,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   fs::path output_dir;
   int seed;
+  bool no_output;
 
   fs::path lattice_path;
   fs::path larmor_path;
@@ -90,6 +91,8 @@ int main(int arg_num, const char *arg_vec[]) {
      "directory for storing data")
     ("seed,s", po::value<int>(&seed)->default_value(1),
      "seed for random number generator (>=1)")
+    ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
+     "don't generate output files")
     ;
 
   // collect inputs
@@ -190,14 +193,16 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // write cell radius and nucleus positions to file
-    ofstream lattice(lattice_path.string());
-    lattice << "# cell radius: " << cell_radius << endl;
-    for(uint i = 0; i < nuclei.size(); i++){
-      lattice << nuclei.at(i).pos(0) << ' '
-              << nuclei.at(i).pos(1) << ' '
-              << nuclei.at(i).pos(2) << endl;
+    if(!no_output){
+      ofstream lattice(lattice_path.string());
+      lattice << "# cell radius: " << cell_radius << endl;
+      for(uint i = 0; i < nuclei.size(); i++){
+        lattice << nuclei.at(i).pos(0) << ' '
+                << nuclei.at(i).pos(1) << ' '
+                << nuclei.at(i).pos(2) << endl;
+      }
+      lattice.close();
     }
-    lattice.close();
 
   } else { // if using_input_lattice, read in the lattice
 
@@ -307,18 +312,28 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // print effective larmor frequencies and NV couping strengths to output file
-    ofstream larmor(larmor_path.string());
-    larmor << file_header.str();
-    larmor << "# w_larmor A_perp\n";
-    for(uint i = 0; i < nuclei.size(); i++){
-      larmor << w_larmor.at(i) << " " << A_perp.at(i) << endl;
+    if(!no_output){
+      ofstream larmor(larmor_path.string());
+      larmor << file_header.str();
+      larmor << "# w_larmor A_perp\n";
+      for(uint i = 0; i < nuclei.size(); i++){
+        larmor << w_larmor.at(i) << " " << A_perp.at(i) << endl;
+      }
+      larmor.close();
     }
-    larmor.close();
 
     // perform coherence scan
     cout << "Beginning coherence scan" << endl;
     vector<double> w_scan(scan_bins);
     vector<double> coherence(scan_bins);
+    control_fields controls;
+
+    // double w = 130.712*2*pi*1e3;
+    // cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time, B_static) << endl;
+    // cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time,
+                                  // B_static, controls) << endl;
+    // return 5;
+
 
     double w_range = w_max - w_min;
     double w_start = max(w_min - w_range/10, 0.);
@@ -326,19 +341,22 @@ int main(int arg_num, const char *arg_vec[]) {
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, B_static);
+                                              scan_time, B_static, controls);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
+      if(i+1 >= 10) break;
     }
 
     // print coherence scan results to output file
-    ofstream scan(scan_path.string());
-    scan << file_header.str();
-    scan << "# w_scan coherence\n";
-    for(int i = 0; i < scan_bins; i++){
-      scan << w_scan.at(i) << " " << coherence.at(i) << endl;
+    if(!no_output){
+      ofstream scan(scan_path.string());
+      scan << file_header.str();
+      scan << "# w_scan coherence\n";
+      for(int i = 0; i < scan_bins; i++){
+        scan << w_scan.at(i) << " " << coherence.at(i) << endl;
+      }
+      scan.close();
     }
-    scan.close();
   }
 
 }

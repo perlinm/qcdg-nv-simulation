@@ -100,19 +100,26 @@ vector<double> pulse_times(uint k, double f);
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
 
-// return spin-spin coupling Hamiltonian for NV center with cluster
+// spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
 
-// return Zeeman Hamiltonian for NV center with cluster
-MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
+// NV zero-field splitting plus Zeeman Hamiltonian
+inline MatrixXcd H_NV_GS(const spin& e, const vector<spin>& cluster, const Vector3d& B);
+
+// nuclear Zeeman Hamiltonian
+MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
+
+// Zeeman Hamiltonian for NV center with cluster
+inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
-                             double w_scan, uint k_DD, double f_DD,
-                             double scan_time, const Vector3d& B);
+                             double w_scan, uint k_DD, double f_DD, double scan_time,
+                             const Vector3d& B);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning
+// (assume large static magnetic field along NV axis)
 //--------------------------------------------------------------------------------------------
 
 struct control_fields{
@@ -143,9 +150,18 @@ struct control_fields{
     freqs.erase(freqs.begin() + i);
     phases.erase(phases.begin() + i);
   };
+
+  uint num() const { return Bs.size(); }
 };
+
+// Hamiltoninan coupling two spins
+inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
+
+// spin-spin coupling Hamiltonian for NV center with cluster
+MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
                              double w_scan, uint k_DD, double f_DD, double scan_time,
-                             const Vector3d& B_static, const control_fields& Bs);
+                             const Vector3d& B_static, const control_fields& controls,
+                             uint integration_steps_per_AXY_period = 1000);

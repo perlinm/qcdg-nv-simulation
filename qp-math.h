@@ -143,4 +143,3 @@ inline double dot(const Vector3d& v, const Vector3d& w){ return v.dot(w); }
 
 inline mvec operator*(double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
-
