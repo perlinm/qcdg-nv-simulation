@@ -280,7 +280,7 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
   double t5 = t_DD/2-t1;
 
   double coherence = 1;
-  for(uint c = 28; c < clusters.size(); c++){
+  for(uint c = 0; c < clusters.size(); c++){
     int cN = clusters.at(c).size(); // number of spins in cluster
     double cHD = pow(2,cN); // dimensionality of cluster Hilbert space
 
