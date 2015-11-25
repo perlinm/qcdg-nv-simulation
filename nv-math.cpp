@@ -260,6 +260,34 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster){
   return H;
 }
 
+MatrixXcd H_int(const spin& e, const vector<spin>& cluster, bool up){
+  const int cN = cluster.size();
+  const int e_state = up ? 0 : 1;
+  const complex<double> e_S_entry = dot(e.S,zhat)(e_state,e_state);
+
+  MatrixXcd H = MatrixXcd::Zero(pow(2,cN),pow(2,cN));
+  for(uint s = 0; s < cluster.size(); s++){
+    // interaction between NV center and spin s
+    H += e_S_entry * act( dot(A(cluster.at(s)),cluster.at(s).S), {s}, cN);
+    for(uint r = 0; r < s; r++){
+      // interaction betwen spin r and spin s
+      H += act(H_ss_large_static_B(cluster.at(r), cluster.at(s)), {r,s}, cN);
+    }
+  }
+  return H;
+}
+
+MatrixXcd H_nZ_cluster(const vector<spin>& cluster, const Vector3d& B){
+  int cN = cluster.size();
+  // zero-field splitting and interaction of NV center with magnetic field
+  MatrixXcd H = MatrixXcd::Zero(pow(2,cN),pow(2,cN));
+  for(uint s = 0; s < cluster.size(); s++){
+    // interaction of spin s with magnetic field
+    H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s}, cN);
+  }
+  return H;
+}
+
 // perform NV coherence measurement with a static magnetic field and additional control fields
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
                              double w_scan, uint k_DD, double f_DD, double scan_time,
@@ -294,18 +322,19 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
     double cHD = pow(2,cN); // dimensionality of cluster Hilbert space
 
     // projections onto |ms> and |0> NV states
-    MatrixXcd proj_m = act(up*up.adjoint(), {0}, cN+1); // |ms><ms|
-    MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, cN+1); // |0><0|
+    // MatrixXcd proj_m = act(up*up.adjoint(), {0}, cN+1); // |ms><ms|
+    // MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, cN+1); // |0><0|
 
     // initialize spin cluster propagators
     const MatrixXcd Id = MatrixXcd::Identity(cHD,cHD); // identity matrix
     MatrixXcd U_m = Id; // <ms|U|ms> (initial)
     MatrixXcd U_0 = Id; // <0|U|0> (initial)
+    bool up = true;
 
     // const MatrixXcd Id2 = MatrixXcd::Identity(2*cHD,2*cHD); // identity matrix
     // MatrixXcd U = Id2;
 
-    MatrixXcd X = act(sx,{0},cN+1);
+    const MatrixXcd X = act(sx,{0},cN+1);
 
     for(uint t_i = 1; t_i <= integration_steps; t_i++){
       double t = t_i*dt; // time
@@ -315,10 +344,11 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
       // if we are within dt/2 of an AXY pulse time, flip the projections
       if(min({abs(t_hAXY-t1), abs(t_hAXY-t2), abs(t_hAXY-t3),
               abs(t_hAXY-t4), abs(t_hAXY-t5)}) < dt/2){
-        const MatrixXcd proj_tmp = proj_m;
-        proj_m = proj_0;
-        proj_0 = proj_tmp;
+        // const MatrixXcd proj_tmp = proj_m;
+        // proj_m = proj_0;
+        // proj_0 = proj_tmp;
         // U = (X*U).eval();
+        up = !up;
       }
 
       // compute net magnetic field
@@ -328,11 +358,15 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
       }
 
       // compute NV+cluster Hamiltonian
-      MatrixXcd H = H_int_large_static_B(e_ms, clusters.at(c)) + H_nZ(clusters.at(c), B);
+      // const MatrixXcd H = H_int_large_static_B(e_ms, clusters.at(c))
+        // + H_nZ(clusters.at(c), B);
 
       // spin cluster Hamiltonians
-      MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
-      MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
+      // const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
+      // const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
+      const MatrixXcd H_nZ = H_nZ_cluster(clusters.at(c), B);
+      const MatrixXcd H_m = H_int(e_ms, clusters.at(c), up) + H_nZ;
+      const MatrixXcd H_0 = H_int(e_ms, clusters.at(c), !up) + H_nZ;
 
       // update and normalize propagators
       // U_m = (exp(-j*dt*H_m)*U_m).eval();
@@ -349,19 +383,19 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
     // update coherence
     coherence *= real(trace(U_0.adjoint()*U_m)) / cHD;
 
-    continue;
+    // continue;
 
-    MatrixXcd rho_0 = act((sx+I2)/2,{0},cN+1);
+    const MatrixXcd rho_0 = act((sx+I2)/2,{0},cN+1);
     // MatrixXcd rho = U*rho_0*U.adjoint();
 
 
     spin e_ms_z = e_ms;
     e_ms_z.S = mvec(dot(e_ms_z.S,zhat),zhat);
 
-    MatrixXcd H = H_int(e_ms_z, clusters.at(c)) + H_nZ(clusters.at(c), B_static);
-    MatrixXcd U1 = exp(-j*H*t1);
-    MatrixXcd U2 = exp(-j*H*(t2-t1));
-    MatrixXcd U3 = exp(-j*H*(t3-t2));
+    const MatrixXcd H = H_int(e_ms_z, clusters.at(c)) + H_nZ(clusters.at(c), B_static);
+    const MatrixXcd U1 = exp(-j*H*t1);
+    const MatrixXcd U2 = exp(-j*H*(t2-t1));
+    const MatrixXcd U3 = exp(-j*H*(t3-t2));
 
     MatrixXcd U_a = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
     U_a = pow(U_a,2*int(scan_time/t_DD));

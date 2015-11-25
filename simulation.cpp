@@ -328,11 +328,11 @@ int main(int arg_num, const char *arg_vec[]) {
     vector<double> coherence(scan_bins);
     control_fields controls;
 
-    // double w = 130.712*2*pi*1e3;
-    // cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time, B_static) << endl;
-    // cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time,
-                                  // B_static, controls) << endl;
-    // return 5;
+    double w = 130.712*2*pi*1e3;
+    cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time, B_static) << endl;
+    cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time,
+                                  B_static, controls) << endl;
+    return 5;
 
 
     double w_range = w_max - w_min;
@@ -344,7 +344,7 @@ int main(int arg_num, const char *arg_vec[]) {
                                               scan_time, B_static, controls);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
-      // if(i+1 >= 10) break;
+      if(i+1 >= 10) break;
     }
 
     // print coherence scan results to output file
