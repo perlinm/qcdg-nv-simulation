@@ -264,13 +264,13 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster){
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
                              double w_scan, uint k_DD, double f_DD, double scan_time,
                              const Vector3d& B_static, const control_fields& controls,
-                             uint integration_steps_per_AXY_period){
+                             uint integration_factor){
   spin e_ms = e(ms); // electron spin
 
   double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   double t_DD = 2*pi/w_DD; // AXY protocol period
-  double dt = t_DD/integration_steps_per_AXY_period;
-  uint integration_steps = int(scan_time/t_DD)*integration_steps_per_AXY_period;
+  double dt = t_DD/integration_factor;
+  uint integration_steps = int(scan_time/t_DD)*integration_factor;
 
   vector<double> xs = pulse_spacings(k_DD,f_DD); // AXY protocol pulse times
   double t1 = xs.at(0)*t_DD;
@@ -280,7 +280,16 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
   double t5 = t_DD/2-t1;
 
   double coherence = 1;
-  for(uint c = 0; c < clusters.size(); c++){
+  for(uint c = 28; c < clusters.size(); c++){
+
+    cout << endl;
+    cout << 1/dt << endl;
+    cout << w_DD << endl;
+    for(uint s = 0; s < clusters.at(c).size(); s++){
+      cout << effective_larmor(clusters.at(c).at(s), B_static,
+                               A(clusters.at(c).at(s)), ms) << endl;
+    }
+
     int cN = clusters.at(c).size(); // number of spins in cluster
     double cHD = pow(2,cN); // dimensionality of cluster Hilbert space
 
@@ -293,6 +302,11 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
     MatrixXcd U_m = Id; // <ms|U|ms> (initial)
     MatrixXcd U_0 = Id; // <0|U|0> (initial)
 
+    // const MatrixXcd Id2 = MatrixXcd::Identity(2*cHD,2*cHD); // identity matrix
+    // MatrixXcd U = Id2;
+
+    MatrixXcd X = act(sx,{0},cN+1);
+
     for(uint t_i = 1; t_i <= integration_steps; t_i++){
       double t = t_i*dt; // time
 
@@ -304,6 +318,7 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
         const MatrixXcd proj_tmp = proj_m;
         proj_m = proj_0;
         proj_0 = proj_tmp;
+        // U = (X*U).eval();
       }
 
       // compute net magnetic field
@@ -324,36 +339,42 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
       // U_0 = (exp(-j*dt*H_0)*U_0).eval();
       U_m = ((Id - j*dt*H_m - dt*dt*H_m*H_m/2)*U_m).eval();
       U_0 = ((Id - j*dt*H_0 - dt*dt*H_0*H_0/2)*U_0).eval();
+      // U = ((Id2 - j*dt*H - dt*dt*H*H/2)*U).eval();
 
       U_m /= sqrt(real(trace(U_m.adjoint()*U_m)/cHD));
       U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)/cHD));
+      // U /= sqrt(real(trace(U.adjoint()*U)/(2*cHD)));
     }
 
     // update coherence
     coherence *= real(trace(U_0.adjoint()*U_m)) / cHD;
 
-    // continue;
+    continue;
 
-    // spin e_ms_z = e_ms;
-    // e_ms_z.S = mvec(dot(e_ms_z.S,zhat),zhat);
-
-    // MatrixXcd H = H_int(e_ms_z, clusters.at(c)) + H_nZ(clusters.at(c), B_static);
-    // MatrixXcd X = act(sx,{0},cN+1);
-    // MatrixXcd U1 = exp(-j*H*t1);
-    // MatrixXcd U2 = exp(-j*H*(t2-t1));
-    // MatrixXcd U3 = exp(-j*H*(t3-t2));
-
-    // MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
-    // U = pow(U,2*int(scan_time/t_DD));
-
-    // U /= sqrt(real(trace(U.adjoint()*U)/(2*cHD)));
-
-    // MatrixXcd rho_0 = act((sx+I2)/2,{0},cN+1);
+    MatrixXcd rho_0 = act((sx+I2)/2,{0},cN+1);
     // MatrixXcd rho = U*rho_0*U.adjoint();
 
-    // // update coherence
-    // cout << real(trace(U_0.adjoint()*U_m)) / cHD << "   "
-    //      << 2*real(trace(rho*rho_0)) / cHD - 1 << endl;
+
+    spin e_ms_z = e_ms;
+    e_ms_z.S = mvec(dot(e_ms_z.S,zhat),zhat);
+
+    MatrixXcd H = H_int(e_ms_z, clusters.at(c)) + H_nZ(clusters.at(c), B_static);
+    MatrixXcd U1 = exp(-j*H*t1);
+    MatrixXcd U2 = exp(-j*H*(t2-t1));
+    MatrixXcd U3 = exp(-j*H*(t3-t2));
+
+    MatrixXcd U_a = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
+    U_a = pow(U_a,2*int(scan_time/t_DD));
+
+    U_a /= sqrt(real(trace(U_a.adjoint()*U_a)/(2*cHD)));
+
+    MatrixXcd rho_a = U_a*rho_0*U_a.adjoint();
+
+    // update coherence
+    cout << real(trace(U_0.adjoint()*U_m)) / cHD << "   ";
+    // cout << 2*real(trace(rho*rho_0)) / cHD - 1 << "   ";
+    cout << 2*real(trace(rho_a*rho_0)) / cHD - 1 << endl;
+    return 1;
   }
   return coherence;
 }

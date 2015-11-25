@@ -344,7 +344,7 @@ int main(int arg_num, const char *arg_vec[]) {
                                               scan_time, B_static, controls);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
-      if(i+1 >= 10) break;
+      // if(i+1 >= 10) break;
     }
 
     // print coherence scan results to output file

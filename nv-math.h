@@ -164,4 +164,4 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
                              double w_scan, uint k_DD, double f_DD, double scan_time,
                              const Vector3d& B_static, const control_fields& controls,
-                             uint integration_steps_per_AXY_period = 1000);
+                             uint integration_factor = 1000);
