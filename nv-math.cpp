@@ -260,95 +260,60 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster){
   return H;
 }
 
-MatrixXcd H_int(const spin& e, const vector<spin>& cluster, bool up){
-  const int cN = cluster.size();
-  const int e_state = up ? 0 : 1;
-  const complex<double> e_S_entry = dot(e.S,zhat)(e_state,e_state);
-
-  MatrixXcd H = MatrixXcd::Zero(pow(2,cN),pow(2,cN));
-  for(uint s = 0; s < cluster.size(); s++){
-    // interaction between NV center and spin s
-    H += e_S_entry * act( dot(A(cluster.at(s)),cluster.at(s).S), {s}, cN);
-    for(uint r = 0; r < s; r++){
-      // interaction betwen spin r and spin s
-      H += act(H_ss_large_static_B(cluster.at(r), cluster.at(s)), {r,s}, cN);
-    }
-  }
-  return H;
-}
-
-MatrixXcd H_nZ_cluster(const vector<spin>& cluster, const Vector3d& B){
-  int cN = cluster.size();
-  // zero-field splitting and interaction of NV center with magnetic field
-  MatrixXcd H = MatrixXcd::Zero(pow(2,cN),pow(2,cN));
-  for(uint s = 0; s < cluster.size(); s++){
-    // interaction of spin s with magnetic field
-    H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s}, cN);
-  }
-  return H;
-}
-
 // perform NV coherence measurement with a static magnetic field and additional control fields
 double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
                              double w_scan, uint k_DD, double f_DD, double scan_time,
                              const Vector3d& B_static, const control_fields& controls,
                              uint integration_factor){
-  spin e_ms = e(ms); // electron spin
+  const spin e_ms = e(ms); // electron spin
 
-  double w_DD = w_scan/k_DD; // AXY protocol angular frequency
-  double t_DD = 2*pi/w_DD; // AXY protocol period
-  double dt = t_DD/integration_factor;
-  uint integration_steps = int(scan_time/t_DD)*integration_factor;
+  const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
+  const double t_DD = 2*pi/w_DD; // AXY protocol period
 
-  vector<double> xs = pulse_spacings(k_DD,f_DD); // AXY protocol pulse times
-  double t1 = xs.at(0)*t_DD;
-  double t2 = xs.at(1)*t_DD;
-  double t3 = t_DD/4;
-  double t4 = t_DD/2-t2;
-  double t5 = t_DD/2-t1;
+  double max_possible_B_mag = B_static.norm();
+  for(uint c = 0; c < controls.num(); c++){
+    max_possible_B_mag += controls.Bs.at(c).norm();
+  }
+  // todo: compute freq_scale, dt, and integration_steps for each cluster
+  //   for the event that we simulate heteronuclear systems
+  const double freq_scale = max(w_DD,gC13*max_possible_B_mag);
+  const double dt = 1/(freq_scale*integration_factor); // integration time step
+
+  scan_time = int(scan_time/t_DD)*t_DD; // scan an integer number of AXY sequences
+  const uint integration_steps = int(scan_time/dt);
+
+  const vector<double> xs = pulse_spacings(k_DD,f_DD); // AXY protocol pulse times
+  const double t1 = xs.at(0)*t_DD;
+  const double t2 = xs.at(1)*t_DD;
+  const double t3 = t_DD/4;
+  const double t4 = t_DD/2-t2;
+  const double t5 = t_DD/2-t1;
 
   double coherence = 1;
-  for(uint c = 28; c < clusters.size(); c++){
-
-    cout << endl;
-    cout << 1/dt << endl;
-    cout << w_DD << endl;
-    for(uint s = 0; s < clusters.at(c).size(); s++){
-      cout << effective_larmor(clusters.at(c).at(s), B_static,
-                               A(clusters.at(c).at(s)), ms) << endl;
-    }
-
-    int cN = clusters.at(c).size(); // number of spins in cluster
-    double cHD = pow(2,cN); // dimensionality of cluster Hilbert space
+  for(uint c = 0; c < clusters.size(); c++){
+    const int spins = clusters.at(c).size()+1; // number of spins in NV+cluster
+    const double cHD = pow(2,spins-1); // dimensionality of cluster Hilbert space
 
     // projections onto |ms> and |0> NV states
-    // MatrixXcd proj_m = act(up*up.adjoint(), {0}, cN+1); // |ms><ms|
-    // MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, cN+1); // |0><0|
+    MatrixXcd proj_m = act(up*up.adjoint(), {0}, spins); // |ms><ms|
+    MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, spins); // |0><0|
 
     // initialize spin cluster propagators
     const MatrixXcd Id = MatrixXcd::Identity(cHD,cHD); // identity matrix
     MatrixXcd U_m = Id; // <ms|U|ms> (initial)
     MatrixXcd U_0 = Id; // <0|U|0> (initial)
-    bool up = true;
-
-    // const MatrixXcd Id2 = MatrixXcd::Identity(2*cHD,2*cHD); // identity matrix
-    // MatrixXcd U = Id2;
-
-    const MatrixXcd X = act(sx,{0},cN+1);
 
     for(uint t_i = 1; t_i <= integration_steps; t_i++){
-      double t = t_i*dt; // time
+      const double t = t_i*dt; // time
 
       // flip electron spin according to the AXY sequence
       double t_hAXY = t - floor(t/(t_DD/2))*t_DD/2; // time into current half-sequence of AXY
       // if we are within dt/2 of an AXY pulse time, flip the projections
       if(min({abs(t_hAXY-t1), abs(t_hAXY-t2), abs(t_hAXY-t3),
               abs(t_hAXY-t4), abs(t_hAXY-t5)}) < dt/2){
-        // const MatrixXcd proj_tmp = proj_m;
-        // proj_m = proj_0;
-        // proj_0 = proj_tmp;
-        // U = (X*U).eval();
-        up = !up;
+        const MatrixXcd proj_tmp = proj_m;
+        proj_m = proj_0;
+        proj_0 = proj_tmp;
       }
 
       // compute net magnetic field
@@ -358,56 +323,51 @@ double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
       }
 
       // compute NV+cluster Hamiltonian
-      // const MatrixXcd H = H_int_large_static_B(e_ms, clusters.at(c))
-        // + H_nZ(clusters.at(c), B);
+      const MatrixXcd H = H_int_large_static_B(e_ms, clusters.at(c))
+        + H_nZ(clusters.at(c), B);
 
       // spin cluster Hamiltonians
-      // const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
-      // const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
-      const MatrixXcd H_nZ = H_nZ_cluster(clusters.at(c), B);
-      const MatrixXcd H_m = H_int(e_ms, clusters.at(c), up) + H_nZ;
-      const MatrixXcd H_0 = H_int(e_ms, clusters.at(c), !up) + H_nZ;
+      const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
+      const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
 
       // update and normalize propagators
       // U_m = (exp(-j*dt*H_m)*U_m).eval();
       // U_0 = (exp(-j*dt*H_0)*U_0).eval();
-      U_m = ((Id - j*dt*H_m - dt*dt*H_m*H_m/2)*U_m).eval();
-      U_0 = ((Id - j*dt*H_0 - dt*dt*H_0*H_0/2)*U_0).eval();
-      // U = ((Id2 - j*dt*H - dt*dt*H*H/2)*U).eval();
+      // U_m = ((Id - j*dt*H_m - dt*dt*H_m*H_m/2)*U_m).eval();
+      // U_0 = ((Id - j*dt*H_0 - dt*dt*H_0*H_0/2)*U_0).eval();
+      U_m = ((Id - j*dt*H_m)*U_m).eval();
+      U_0 = ((Id - j*dt*H_0)*U_0).eval();
 
       U_m /= sqrt(real(trace(U_m.adjoint()*U_m)/cHD));
       U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)/cHD));
-      // U /= sqrt(real(trace(U.adjoint()*U)/(2*cHD)));
     }
 
     // update coherence
     coherence *= real(trace(U_0.adjoint()*U_m)) / cHD;
 
-    // continue;
-
-    const MatrixXcd rho_0 = act((sx+I2)/2,{0},cN+1);
-    // MatrixXcd rho = U*rho_0*U.adjoint();
-
+    continue;
 
     spin e_ms_z = e_ms;
     e_ms_z.S = mvec(dot(e_ms_z.S,zhat),zhat);
 
     const MatrixXcd H = H_int(e_ms_z, clusters.at(c)) + H_nZ(clusters.at(c), B_static);
+    const MatrixXcd X = act(sx,{0},spins);
     const MatrixXcd U1 = exp(-j*H*t1);
     const MatrixXcd U2 = exp(-j*H*(t2-t1));
     const MatrixXcd U3 = exp(-j*H*(t3-t2));
 
-    MatrixXcd U_a = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
-    U_a = pow(U_a,2*int(scan_time/t_DD));
+    MatrixXcd U = U1*X*U2*X*U3*X*U3*X*U2*X*U1;
+    U = pow(U,2*int(scan_time/t_DD));
 
-    U_a /= sqrt(real(trace(U_a.adjoint()*U_a)/(2*cHD)));
+    U /= sqrt(real(trace(U.adjoint()*U)/(2*cHD)));
 
-    MatrixXcd rho_a = U_a*rho_0*U_a.adjoint();
+    const MatrixXcd rho_0 = act((sx+I2)/2,{0},spins);
+    const MatrixXcd rho = U*rho_0*U.adjoint();
 
     // update coherence
     cout << real(trace(U_0.adjoint()*U_m)) / cHD << "   ";
-    // cout << 2*real(trace(rho*rho_0)) / cHD - 1 << "   ";
-    cout << 2*real(trace(rho_a*rho_0)) / cHD - 1 << endl;
+    cout << 2*real(trace(rho*rho_0)) / cHD - 1 << "   ";
+    cout << endl;
     return 1;
   }
   return coherence;
