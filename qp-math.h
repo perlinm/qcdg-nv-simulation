@@ -17,8 +17,22 @@ const MatrixXcd I1 = MatrixXcd::Identity(1,1);
 const MatrixXcd I2 = MatrixXcd::Identity(2,2);
 const MatrixXcd I4 = MatrixXcd::Identity(4,4);
 
+// dot product between vectors
+inline double dot(const Vector3d& v, const Vector3d& w){ return v.dot(w); }
+
 // return unit vector in direction of vec
 inline Vector3d hat(const Vector3d& vec){ return vec.normalized(); }
+
+// project vec onto plane orthogonal to axis
+inline Vector3d project(const Vector3d& vec, const Vector3d& axis){
+  return vec - vec.dot(hat(axis))*hat(axis);
+}
+
+// rotate vec counterclockwise by phi about axis
+inline Vector3d rotate(const Vector3d& vec, const double phi, const Vector3d axis){
+  return project(vec,axis)*cos(phi) + hat(axis).cross(vec)*sin(phi)
+    + vec.dot(hat(axis))*hat(axis);
+}
 
 // matrix functions
 inline complex<double> trace(const MatrixXcd& M){ return M.trace(); }
@@ -139,7 +153,6 @@ struct mvec{
 inline MatrixXcd dot(const mvec& v, const mvec& w){ return v.dot(w); }
 inline MatrixXcd dot(const mvec& v, const Vector3d& r){ return v.dot(r); }
 inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
-inline double dot(const Vector3d& v, const Vector3d& w){ return v.dot(w); }
 
 inline mvec operator*(const double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
