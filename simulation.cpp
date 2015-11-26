@@ -262,14 +262,14 @@ int main(int arg_num, const char *arg_vec[]) {
   }
   const vector<vector<spin>> clusters = group_spins(nuclei, ind_clusters);
 
-  cout << "Nuclei grouped into " << clusters.size() << " clusters"
+  cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
        << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
 
   // collect and print histogram of cluster sizes
   max_cluster_size = largest_cluster_size(ind_clusters);
   vector<uint> size_hist(max_cluster_size);
-  for(uint i = 0; i < clusters.size(); i++){
-    size_hist.at(clusters.at(i).size()-1) += 1;
+  for(uint i = 0; i < ind_clusters.size(); i++){
+    size_hist.at(ind_clusters.at(i).size()-1) += 1;
   }
   cout << "Cluster size histogram: " << endl;
   for(uint i = 0; i < size_hist.size(); i++){
@@ -305,8 +305,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nuclei.size(); i++){
-      Vector3d A_i = A(nuclei.at(i));
-      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, A_i, ms);
+      const Vector3d A_i = A(nuclei.at(i));
+      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, ms).norm();
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
@@ -328,23 +328,16 @@ int main(int arg_num, const char *arg_vec[]) {
     cout << "Beginning coherence scan" << endl;
     vector<double> w_scan(scan_bins);
     vector<double> coherence(scan_bins);
-    control_fields controls;
-
-    // double w = 130.712*2*pi*1e3;
-    // cout << coherence_measurement(ms, clusters, w, k_DD, f_DD, scan_time,
-                                  // B_static, controls) << endl;
-    // return 5;
 
     const double w_range = w_max - w_min;
-    double w_start = max(w_min - w_range/10, 0.); w_start = 129.39*2*pi*1e3;
+    const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, B_static, controls);
+                                              scan_time, B_static);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
-      if(i+1 >= 3) break;
     }
 
     // print coherence scan results to output file

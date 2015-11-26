@@ -94,10 +94,15 @@ vector<vector<spin>> group_spins(const vector<spin>& spins,
 //--------------------------------------------------------------------------------------------
 
 // hyperfine field experienced by spin s
-inline Vector3d A(const spin& s);
+inline Vector3d A(const spin& s){
+  const Vector3d r = s.pos - e(1).pos;
+  return e(1).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
+};
 
 // effective larmor frequency of spin s
-double effective_larmor(const spin& s, const Vector3d& B, const Vector3d& A, int ms);
+inline Vector3d effective_larmor(const spin& s, const Vector3d& B, const int ms){
+  return s.g*B - ms/2.*A(s);
+};
 
 // pulse times for harmonic h and fourier component f
 vector<double> pulse_times(const uint k, const double f);
@@ -123,7 +128,7 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
                              const double scan_time, const Vector3d& B);
 
 //--------------------------------------------------------------------------------------------
-// Control field scanning
+// Control field scanning and targeting
 // (assume large static magnetic field along NV axis)
 //--------------------------------------------------------------------------------------------
 
