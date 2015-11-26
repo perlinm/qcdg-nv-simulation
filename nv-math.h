@@ -144,12 +144,12 @@ struct control_fields{
     this->phases = phases;
   };
 
-  void add(const Vector3d& B, double w, double phase){
+  void add(const Vector3d& B, const double w, const double phase){
     Bs.push_back(B);
     freqs.push_back(w);
     phases.push_back(phase);
   };
-  void remove(uint i){
+  void remove(const uint i){
     assert(i < Bs.size());
     Bs.erase(Bs.begin() + i);
     freqs.erase(freqs.begin() + i);

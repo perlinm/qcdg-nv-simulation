@@ -341,7 +341,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, B_static);
+                                              scan_time, B_static, controls);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
       if(i+1 >= 3) break;
