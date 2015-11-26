@@ -62,7 +62,7 @@ struct spin{
 
 // initialize nitrogen and vacancy centers
 const spin n(ao, 0., s_vec);
-inline spin e(int ms){
+inline spin e(const int ms){
   return spin(Vector3d::Zero(), ge,
               mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
 }
@@ -72,30 +72,35 @@ inline spin e(int ms){
 //--------------------------------------------------------------------------------------------
 
 // coupling strength between two spins; assumes strong magnetic field in zhat
-double coupling_strength(const spin s1, const spin s2);
+double coupling_strength(const spin& s1, const spin& s2);
 
 // group spins into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<spin>> get_clusters(vector<spin> spins, double min_coupling_strength);
+vector<vector<uint>> get_index_clusters(const vector<spin>& spins,
+                                        const double min_coupling_strength);
 
 // get size of largest spin cluster
-uint largest_cluster_size(vector<vector<spin>> clusters);
+uint largest_cluster_size(const vector<vector<uint>>& ind_clusters);
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(vector<spin> spins, uint cluster_size_target,
-                            double initial_cluster_coupling, double dcc_cutoff);
+double find_target_coupling(const vector<spin>& spins, const uint cluster_size_target,
+                            const double initial_cluster_coupling, const double dcc_cutoff);
+
+// group spins into clusters according to cluster_indices
+vector<vector<spin>> group_spins(const vector<spin>& spins,
+                                 const vector<vector<uint>>& cluster_indices);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
 // hyperfine field experienced by spin s
-Vector3d A(const spin& s);
+inline Vector3d A(const spin& s);
 
 // effective larmor frequency of spin s
 double effective_larmor(const spin& s, const Vector3d& B, const Vector3d& A, int ms);
 
 // pulse times for harmonic h and fourier component f
-vector<double> pulse_times(uint k, double f);
+vector<double> pulse_times(const uint k, const double f);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
@@ -113,9 +118,9 @@ MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
 inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
-                             double w_scan, uint k_DD, double f_DD, double scan_time,
-                             const Vector3d& B);
+double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
+                             const double w_scan, const uint k_DD, const double f_DD,
+                             const double scan_time, const Vector3d& B);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning
@@ -161,7 +166,8 @@ inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
 MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(int ms, const vector<vector<spin>>& clusters,
-                             double w_scan, uint k_DD, double f_DD, double scan_time,
-                             const Vector3d& B_static, const control_fields& controls,
-                             uint integration_factor = 100);
+double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
+                             const double w_scan, const uint k_DD, const double f_DD,
+                             double scan_time, const Vector3d& B_static,
+                             const control_fields& controls,
+                             const uint integration_factor = 100);

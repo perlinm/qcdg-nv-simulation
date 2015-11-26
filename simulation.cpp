@@ -246,25 +246,27 @@ int main(int arg_num, const char *arg_vec[]) {
   double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling in clustering algorithm
 
   // get cluster_coupling for which the largest cluster size is >= max_cluster_size
-  double cluster_coupling = find_target_coupling(nuclei,max_cluster_size,
-                                                 cluster_coupling_guess,dcc_cutoff);
-  vector<vector<spin>> clusters = get_clusters(nuclei,cluster_coupling);
+  double cluster_coupling = find_target_coupling(nuclei, max_cluster_size,
+                                                 cluster_coupling_guess, dcc_cutoff);
+  vector<vector<uint>> ind_clusters = get_index_clusters(nuclei, cluster_coupling);
 
   // if (largest cluster size > max_cluster_size),
   //   which can occur when (largest cluster size == max_cluster_size) is impossible,
   //   find largest cluster_coupling for which (largest cluster size < max_cluster_size)
-  while(largest_cluster_size(clusters) > max_cluster_size){
+  while(largest_cluster_size(ind_clusters) > max_cluster_size){
     int cluster_size_target
-      = largest_cluster_size(get_clusters(nuclei,cluster_coupling+dcc_cutoff));
-    cluster_coupling = find_target_coupling(nuclei,cluster_size_target,
-                                            cluster_coupling,dcc_cutoff);
-    clusters = get_clusters(nuclei,cluster_coupling);
+      = largest_cluster_size(get_index_clusters(nuclei, cluster_coupling+dcc_cutoff));
+    cluster_coupling = find_target_coupling(nuclei, cluster_size_target,
+                                            cluster_coupling, dcc_cutoff);
+    ind_clusters = get_index_clusters(nuclei, cluster_coupling);
   }
+  const vector<vector<spin>> clusters = group_spins(nuclei, ind_clusters);
+
   cout << "Nuclei grouped into " << clusters.size() << " clusters"
        << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
 
   // collect and print histogram of cluster sizes
-  max_cluster_size = largest_cluster_size(clusters);
+  max_cluster_size = largest_cluster_size(ind_clusters);
   vector<uint> size_hist(max_cluster_size);
   for(uint i = 0; i < clusters.size(); i++){
     size_hist.at(clusters.at(i).size()-1) += 1;
@@ -333,13 +335,13 @@ int main(int arg_num, const char *arg_vec[]) {
                                   // B_static, controls) << endl;
     // return 5;
 
-    double w_range = w_max - w_min;
+    const double w_range = w_max - w_min;
     double w_start = max(w_min - w_range/10, 0.); w_start = 129.39*2*pi*1e3;
-    double w_end = w_max + w_range/10;
+    const double w_end = w_max + w_range/10;
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, B_static, controls);
+                                              scan_time, B_static);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
       if(i+1 >= 3) break;

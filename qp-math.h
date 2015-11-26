@@ -8,7 +8,7 @@ using namespace std;
 using namespace Eigen;
 
 // check whether value val is in vector vec
-inline bool in_vector(auto val, vector<auto> vec){
+inline bool in_vector(const auto val, const vector<auto>& vec){
   return (find(vec.begin(), vec.end(), val) != vec.end());
 }
 
@@ -28,13 +28,13 @@ inline MatrixXcd sqrt(const MatrixXcd& M){ return M.sqrt(); }
 inline MatrixXcd pow(const MatrixXcd& M, auto x){ return M.pow(x); }
 
 // tensor product of two matrices
-inline MatrixXcd tp(const MatrixXcd A, const MatrixXcd B){ return kroneckerProduct(A,B); }
+inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){ return kroneckerProduct(A,B); }
 
 // tensor product of many matrices
-MatrixXcd tp(const initializer_list<MatrixXcd> list);
+MatrixXcd tp(const initializer_list<MatrixXcd>& list);
 
 // remove numerical artifacts from a matrix
-void remove_artifacts(MatrixXcd& A, double threshold = 1e-12);
+void remove_artifacts(MatrixXcd& A, const double threshold = 1e-12);
 
 // get global phase of matrix
 complex<double> get_phase(const MatrixXcd& A);
@@ -47,22 +47,22 @@ inline void remove_phase(MatrixXcd& A){ A *= conj(get_phase(A)); }
 //--------------------------------------------------------------------------------------------
 
 // get the n-th bit of an integer num
-inline bool int_bit(uint num, uint n){
+inline bool int_bit(const uint num, const uint n){
   if(pow(2,n) > num) return 0;
   else return (num >> n)&  1;
 }
 
 // get state of qbit q (of N) from enumerated state s
-inline bool qbit_state(uint q, uint N, uint s){ return int_bit(s,N-1-q); }
+inline bool qbit_state(const uint q, const uint N, const uint s){ return int_bit(s,N-1-q); }
 
 // get integer corresponding to an 'on' state of bit p (of N)
-inline uint bit_int(uint q, int N){ return pow(2,N-1-q); }
+inline uint bit_int(const uint q, const int N){ return pow(2,N-1-q); }
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
-MatrixXcd act(const MatrixXcd& A, const vector<uint> qs_act, uint qbits_new);
+MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_new);
 
 // perform a partial trace over qbits qs_trace
-MatrixXcd ptrace(const MatrixXcd& A, const vector<uint> qs_trace);
+MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 
 //--------------------------------------------------------------------------------------------
 // Matrix vectors
@@ -72,15 +72,15 @@ struct mvec{
   vector<MatrixXcd> v;
 
   mvec(){};
-  mvec(const vector<MatrixXcd> v){ this->v = v; };
-  mvec(const MatrixXcd v_mat, const Vector3d v_vec){
+  mvec(const vector<MatrixXcd>& v){ this->v = v; };
+  mvec(const MatrixXcd& v_mat, const Vector3d& v_vec){
     for(uint i = 0; i < v_vec.size(); i++){
       v.push_back(v_mat*v_vec(i));
     }
   };
 
   uint size() const { return v.size(); }
-  MatrixXcd at(uint i) const { return v.at(i); }
+  MatrixXcd at(const uint i) const { return v.at(i); }
 
   // comparison operators
   bool operator==(const mvec& w) const {
@@ -107,13 +107,13 @@ struct mvec{
     }
     return *this;
   }
-  mvec operator*(double s){
+  mvec operator*(const double s){
     for(uint i = 0; i < v.size(); i++){
       v.at(i) *= s;
     }
     return *this;
   }
-  mvec operator/(double s) { return *this * (1/s); }
+  mvec operator/(const double s) { return *this * (1/s); }
   mvec operator*(const MatrixXcd& G){
     for(uint i = 0; i < v.size(); i++){
       v.at(i) *= G;
@@ -141,5 +141,5 @@ inline MatrixXcd dot(const mvec& v, const Vector3d& r){ return v.dot(r); }
 inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
 inline double dot(const Vector3d& v, const Vector3d& w){ return v.dot(w); }
 
-inline mvec operator*(double s, mvec& v){ return v*s; }
+inline mvec operator*(const double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
