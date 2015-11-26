@@ -154,6 +154,13 @@ struct control_fields{
     freqs.push_back(w);
     phases.push_back(phase);
   };
+  void add(const control_fields& controls){
+    for(uint i = 0; i < controls.num(); i++){
+      Bs.push_back(controls.Bs.at(i));
+      freqs.push_back(controls.freqs.at(i));
+      phases.push_back(controls.phases.at(i));
+    }
+  };
   void remove(const uint i){
     assert(i < Bs.size());
     Bs.erase(Bs.begin() + i);
