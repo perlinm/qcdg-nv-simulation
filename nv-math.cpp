@@ -242,6 +242,17 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
 // (assume large static magnetic field along NV axis)
 //--------------------------------------------------------------------------------------------
 
+// return control field for decoupling spin s from other nuclei
+control_fields nuclear_decoupling_field(const spin& s, const Vector3d& B_static, const int ms,
+                                        const double phi_rfd, const double theta_rfd,
+                                        const double scale){
+  const Vector3d w_j = effective_larmor(s, B_static, ms);
+  const double w_rfd = w_j.norm()/(1-sin(theta_rfd)/(2*sqrt(2)*scale));
+  const double V_rfd = w_rfd/(s.g*scale);
+  const Vector3d n_rfd = cos(theta_rfd)*hat(w_j) + sin(theta_rfd)*hat(w_j.cross(zhat));
+  return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
+}
+
 // Hamiltoninan coupling two spins
 inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2){
   return coupling_strength(s1,s2) * (3*tp(dot(s1.S,zhat), dot(s2.S,zhat)) - dot(s1.S,s2.S));

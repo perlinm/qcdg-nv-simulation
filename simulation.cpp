@@ -306,11 +306,12 @@ int main(int arg_num, const char *arg_vec[]) {
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nuclei.size(); i++){
       const Vector3d A_i = A(nuclei.at(i));
-      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, ms).norm();
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
+      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, ms).norm();
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
       if(w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
+
     }
 
     // print effective larmor frequencies and NV couping strengths to output file

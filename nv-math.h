@@ -171,6 +171,12 @@ struct control_fields{
   uint num() const { return Bs.size(); }
 };
 
+// return control field for decoupling spin s from other nuclei
+control_fields nuclear_decoupling_field(const spin& s, const Vector3d& B_static, const int ms,
+                                        const double phi_rfd = 0,
+                                        const double theta_rfd = pi/2,
+                                        const double scale = 1000);
+
 // Hamiltoninan coupling two spins
 inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
 
