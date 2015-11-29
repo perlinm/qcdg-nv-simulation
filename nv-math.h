@@ -6,6 +6,44 @@ using namespace std;
 using namespace Eigen;
 
 //--------------------------------------------------------------------------------------------
+// Single spin state vectors
+//--------------------------------------------------------------------------------------------
+
+// spin up/down state vectors
+const VectorXcd up = (Vector2cd() << 1,0).finished();
+const VectorXcd dn = (Vector2cd() << 0,1).finished();
+
+// two qbit basis states
+const VectorXcd uu = tp(up,up);
+const VectorXcd ud = tp(up,dn);
+const VectorXcd du = tp(dn,up);
+const VectorXcd dd = tp(dn,dn);
+
+// two qbit singlet-triplet states
+const VectorXcd S = (ud-du)/sqrt(2);
+const VectorXcd T = (ud+du)/sqrt(2);
+
+//--------------------------------------------------------------------------------------------
+// Single spin operations
+//--------------------------------------------------------------------------------------------
+
+// pauli spin matrices
+const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
+const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
+const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
+const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
+
+// spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
+inline MatrixXcd Ux(double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
+inline MatrixXcd Uy(double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
+inline MatrixXcd Uz(double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
+
+// rotation operators
+inline MatrixXcd Rx(double phi){ return Ux(phi/2); }
+inline MatrixXcd Ry(double phi){ return Uy(phi/2); }
+inline MatrixXcd Rz(double phi){ return Uz(phi/2); }
+
+//--------------------------------------------------------------------------------------------
 // Diamond lattice parameters
 //--------------------------------------------------------------------------------------------
 
@@ -15,27 +53,17 @@ const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
 const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
 const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 
+// vector of lattice sites in a diamond unit cell
+const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
+
 // unit vectors along bonding axes
 const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from V to N
 const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
 const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 
-// vector of lattice sites in a diamond unit cell
-const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
-
 //--------------------------------------------------------------------------------------------
-// Spin states, matrices, vectors, and structs
+// Spin vectors and structs
 //--------------------------------------------------------------------------------------------
-
-// spin up/down state vectors
-const VectorXcd up = (Vector2cd() << 1,0).finished();
-const VectorXcd dn = (Vector2cd() << 0,1).finished();
-
-// pauli spin matrices
-const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
-const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
-const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
-const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
 
 // spin vector for a spin-1/2 particle
 const mvec s_vec = mvec(sx/2,xhat) + mvec(sy/2,yhat) + mvec(sz/2,zhat);
@@ -74,19 +102,19 @@ inline spin e(const int ms){
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
 
-// group spins into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> get_index_clusters(const vector<spin>& spins,
+// group nuclei into clusters with intercoupling strengths >= min_coupling_strength
+vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
                                         const double min_coupling_strength);
 
 // get size of largest spin cluster
 uint largest_cluster_size(const vector<vector<uint>>& ind_clusters);
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(const vector<spin>& spins, const uint cluster_size_target,
+double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_target,
                             const double initial_cluster_coupling, const double dcc_cutoff);
 
-// group spins into clusters according to cluster_indices
-vector<vector<spin>> group_spins(const vector<spin>& spins,
+// group nuclei into clusters according to cluster_indices
+vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
                                  const vector<vector<uint>>& cluster_indices);
 
 //--------------------------------------------------------------------------------------------
@@ -100,8 +128,8 @@ inline Vector3d A(const spin& s){
 };
 
 // effective larmor frequency of spin s
-inline Vector3d effective_larmor(const spin& s, const Vector3d& B, const int ms){
-  return s.g*B - ms/2.*A(s);
+inline Vector3d effective_larmor(const spin& s, const double static_B, const int ms){
+  return s.g*static_B*zhat - ms/2.*A(s);
 };
 
 // pulse times for harmonic h and fourier component f
@@ -125,7 +153,7 @@ inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d&
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
                              const double w_scan, const uint k_DD, const double f_DD,
-                             const double scan_time, const Vector3d& B);
+                             const double scan_time, const double static_B);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning and targeting
@@ -171,12 +199,6 @@ struct control_fields{
   uint num() const { return Bs.size(); }
 };
 
-// return control field for decoupling spin s from other nuclei
-control_fields nuclear_decoupling_field(const spin& s, const Vector3d& B_static, const int ms,
-                                        const double phi_rfd = 0,
-                                        const double theta_rfd = pi/2,
-                                        const double scale = 1000);
-
 // Hamiltoninan coupling two spins
 inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
 
@@ -186,6 +208,26 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 // perform NV coherence measurement with a static magnetic field and additional control fields
 double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
                              const double w_scan, const uint k_DD, const double f_DD,
-                             double scan_time, const Vector3d& B_static,
+                             double scan_time, const double static_B,
                              const control_fields& controls,
                              const uint integration_factor = 100);
+
+//--------------------------------------------------------------------------------------------
+// Single nuclear targeting
+//--------------------------------------------------------------------------------------------
+
+// return control field for decoupling spin s from other nuclei
+control_fields nuclear_decoupling_field(const spin& s, const double static_B, const int ms,
+                                        const double phi_rfd = 0,
+                                        const double theta_rfd = pi/2,
+                                        const double scale = 1000);
+
+// return AXY sequence pulses with given offset
+vector<double> offset_pulses(vector<double> xs, const double x_offset);
+
+// compute fidelity of SWAP operation between NV center and target nucleus
+double swap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
+                     const vector<spin>& nuclei, const double static_B, const int ms,
+                     const uint k_DD = 1, const double scale = 1000);
+
+int F(double t, double t_DD, vector<double> pulses);

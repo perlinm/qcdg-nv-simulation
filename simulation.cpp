@@ -37,8 +37,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
   uint max_cluster_size;
   int ms;
-  Vector3d B_static;
-  double B_static_norm_in_gauss;
+  double static_B;
+  double static_B_norm_in_gauss;
 
   bool perform_scan;
   int scan_bins;
@@ -73,7 +73,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "maximum allowable size of C-13 clusters")
     ("ms,m", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
-    ("B_static,B", po::value<double>(&B_static_norm_in_gauss)->default_value(140.1,"140.1"),
+    ("static_B,B", po::value<double>(&static_B_norm_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
@@ -120,7 +120,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
-  assert(B_static_norm_in_gauss >= 0);
+  assert(static_B_norm_in_gauss >= 0);
 
   if(perform_scan){
     assert(scan_bins > 0);
@@ -150,7 +150,7 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   // set some variables based on iputs
-  B_static = B_static_norm_in_gauss*gauss*zhat;
+  static_B = static_B_norm_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
@@ -228,7 +228,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
     lattice.close();
 
-    // assert that no C-13 spins lie at the NV lattice sites
+    // assert that no C-13 nuclei lie at the NV lattice sites
     for(uint i = 0; i < nuclei.size(); i++){
       if((nuclei.at(i).pos == n.pos) || (nuclei.at(i).pos == e(ms).pos)){
         cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
@@ -260,7 +260,7 @@ int main(int arg_num, const char *arg_vec[]) {
                                             cluster_coupling, dcc_cutoff);
     ind_clusters = get_index_clusters(nuclei, cluster_coupling);
   }
-  const vector<vector<spin>> clusters = group_spins(nuclei, ind_clusters);
+  const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
 
   cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
        << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
@@ -307,7 +307,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nuclei.size(); i++){
       const Vector3d A_i = A(nuclei.at(i));
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
-      w_larmor.at(i) = effective_larmor(nuclei.at(i), B_static, ms).norm();
+      w_larmor.at(i) = effective_larmor(nuclei.at(i), static_B, ms).norm();
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
       if(w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
@@ -336,7 +336,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, B_static);
+                                              scan_time, static_B);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -353,5 +353,13 @@ int main(int arg_num, const char *arg_vec[]) {
     }
   }
 
+  // -----------------------------------------------------------------------------------------
+  // NV/nucleus SWAP fidelity
+  // -----------------------------------------------------------------------------------------
+
+  const uint target_nucleus_index = 49;
+  const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
+
+  cout << swap_fidelity(rho_NV_0, target_nucleus_index, nuclei, static_B, ms) << endl;
 }
 

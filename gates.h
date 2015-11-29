@@ -7,32 +7,8 @@ using namespace Eigen;
 #include "nv-math.h"
 
 //--------------------------------------------------------------------------------------------
-// State vectors
-//--------------------------------------------------------------------------------------------
-
-// two qbit basis states
-const VectorXcd uu = tp(up,up);
-const VectorXcd ud = tp(up,dn);
-const VectorXcd du = tp(dn,up);
-const VectorXcd dd = tp(dn,dn);
-
-// two qbit singlet-triplet states
-const VectorXcd S = (ud-du)/sqrt(2);
-const VectorXcd T = (ud+du)/sqrt(2);
-
-//--------------------------------------------------------------------------------------------
 // Single qubit gates
 //--------------------------------------------------------------------------------------------
-
-// spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
-inline MatrixXcd Ux(double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
-inline MatrixXcd Uy(double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
-inline MatrixXcd Uz(double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
-
-// rotation operators
-inline MatrixXcd Rx(double phi){ return Ux(phi/2); }
-inline MatrixXcd Ry(double phi){ return Uy(phi/2); }
-inline MatrixXcd Rz(double phi){ return Uz(phi/2); }
 
 // phase-flip, bit-flit, and Hadamard gates
 const MatrixXcd Z = sz;
