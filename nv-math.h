@@ -226,8 +226,6 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
 
 // compute fidelity of SWAP operation between NV center and target nucleus
-double swap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
+double iswap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
                      const vector<spin>& nuclei, const double static_B, const int ms,
                      const uint k_DD = 1, const double scale = 1000);
-
-int F(double t, double t_DD, vector<double> pulses);

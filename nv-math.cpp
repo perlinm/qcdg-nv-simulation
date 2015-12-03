@@ -114,9 +114,12 @@ vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
-// pulse times for harmonic h and fourier component f
-vector<double> axy_pulses(const uint k, const double f){
+// pulse times for harmonic k, fourier component f, and a given offset
+vector<double> axy_pulses(const uint k, const double f, double offset = 0.){
+
   assert((k == 1) || (k == 3));
+
+  // compute first two pulse times
   const double fp = f*pi;
   double x1,x2;
   if(k == 1){
@@ -137,10 +140,33 @@ vector<double> axy_pulses(const uint k, const double f){
     x2 = 1./4 - 1/(2*pi)*atan(sqrt(q2*q2-1));
   }
 
-  vector<double> times;
-  times.push_back(x1);
-  times.push_back(x2);
-  return times;
+  // construct vector of all pulse times (normalized to one AXY period)
+  vector<double> pulses;
+  pulses.push_back(x1);
+  pulses.push_back(x2);
+  pulses.push_back(0.25);
+  pulses.push_back(0.5 - x2);
+  pulses.push_back(0.5 - x1);
+  pulses.push_back(0.5 + x1);
+  pulses.push_back(0.5 + x2);
+  pulses.push_back(0.75);
+  pulses.push_back(1. - x2);
+  pulses.push_back(1. - x1);
+
+  if(offset == 0.) return pulses;
+
+  // shift offset to be within one AXY period
+  while(offset < 0) offset += 1;
+  while(offset > 1) offset -= 1;
+
+  vector<double> offset_pulses;
+  for(uint p = 0; p < 20; p++){
+    if(p/10 + pulses.at(p%10) - offset > 0){
+      offset_pulses.push_back(p/10 + pulses.at(p%10) - offset);
+    }
+    if(offset_pulses.size() == 10) break;
+  }
+  return offset_pulses;
 }
 
 // Hamiltoninan coupling two spins
@@ -195,11 +221,7 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
 
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-
-  const vector<double> xs = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
-  const double t1 = xs.at(0)*t_DD;
-  const double t2 = xs.at(1)*t_DD;
-  const double t3 = t_DD/4;
+  const vector<double> pulses = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
@@ -208,21 +230,20 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
     const MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, clusters.at(c).size()+1); // |0><0|
 
     // construct full Hamiltonian
-    const MatrixXcd H = H_int(e_ms, clusters.at(c))
-      + H_Z(e_ms, clusters.at(c), static_B*zhat);
+    const MatrixXcd H = H_int(e_ms,clusters.at(c)) + H_Z(e_ms,clusters.at(c),static_B*zhat);
 
       // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
     const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
 
     // propagators for sections of the AXY sequence
-    const MatrixXcd U1_m = exp(-j*H_m*(t1));
-    const MatrixXcd U2_m = exp(-j*H_0*(t2-t1));
-    const MatrixXcd U3_m = exp(-j*H_m*(t3-t2));
+    const MatrixXcd U1_m = exp(-j*H_m*t_DD*pulses.at(0));
+    const MatrixXcd U2_m = exp(-j*H_0*t_DD*(pulses.at(1)-pulses.at(0)));
+    const MatrixXcd U3_m = exp(-j*H_m*t_DD*(pulses.at(2)-pulses.at(1)));
 
-    const MatrixXcd U1_0 = exp(-j*H_0*(t1));
-    const MatrixXcd U2_0 = exp(-j*H_m*(t2-t1));
-    const MatrixXcd U3_0 = exp(-j*H_0*(t3-t2));
+    const MatrixXcd U1_0 = exp(-j*H_0*t_DD*pulses.at(0));
+    const MatrixXcd U2_0 = exp(-j*H_m*t_DD*(pulses.at(1)-pulses.at(0)));
+    const MatrixXcd U3_0 = exp(-j*H_0*t_DD*(pulses.at(2)-pulses.at(1)));
 
     // single AXY sequence propagators
     MatrixXcd U_m = U1_m*U2_m*U3_m*U3_0*U2_0*U1_0 * U1_0*U2_0*U3_0*U3_m*U2_m*U1_m;
@@ -272,6 +293,7 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
 
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
+  const vector<double> pulses = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
 
   Vector3d max_possible_B = static_B*zhat;
   for(uint c = 0; c < controls.num(); c++){
@@ -279,20 +301,14 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
     max_possible_B += abs(dot(B,xhat))*xhat + abs(dot(B,yhat))*yhat + abs(dot(B,zhat))*zhat;
   }
 
-  // todo: compute freq_scale, dt, and integration_steps for each cluster
+  // todo: compute freq_scale, dt, dx, and integration_steps for each cluster
   //   for the event that we simulate heteronuclear systems
   const double freq_scale = max(w_DD,gC13*max_possible_B.norm());
   const double dt = 1/(freq_scale*integration_factor); // integration time step
+  const double dx = 1/(t_DD*freq_scale*integration_factor);
 
   scan_time = int(scan_time/t_DD)*t_DD; // scan an integer number of AXY sequences
   const uint integration_steps = int(scan_time/dt);
-
-  const vector<double> xs = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
-  const double t1 = xs.at(0)*t_DD;
-  const double t2 = xs.at(1)*t_DD;
-  const double t3 = t_DD/4;
-  const double t4 = t_DD/2-t2;
-  const double t5 = t_DD/2-t1;
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
@@ -308,14 +324,14 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
     MatrixXcd U_m = Id; // <ms|U|ms> (initial)
     MatrixXcd U_0 = Id; // <0|U|0> (initial)
 
-    for(uint t_i = 1; t_i <= integration_steps; t_i++){
-      const double t = t_i*dt; // time
+    for(uint x_i = 1; x_i <= integration_steps; x_i++){
+      const double x = x_i*dx; // time
 
       // flip electron spin according to the AXY sequence
-      const double t_hAXY = t - floor(t/(t_DD/2))*t_DD/2; // time in current AXY half-sequence
-      // if we are within dt/2 of an AXY pulse time, flip the projections
-      if(min({abs(t_hAXY-t1), abs(t_hAXY-t2), abs(t_hAXY-t3),
-              abs(t_hAXY-t4), abs(t_hAXY-t5)}) < dt/2){
+      const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
+      // if we are within dx/2 of an AXY pulse time, flip the projections
+      if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
+              abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dx/2){
         const MatrixXcd proj_tmp = proj_m;
         proj_m = proj_0;
         proj_0 = proj_tmp;
@@ -324,7 +340,7 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
       // compute net magnetic field
       Vector3d B = static_B*zhat;
       for(uint c = 0; c < controls.num(); c++){
-        B += controls.Bs.at(c) * cos(controls.freqs.at(c)*t + controls.phases.at(c));
+        B += controls.Bs.at(c) * cos(controls.freqs.at(c)*x*t_DD + controls.phases.at(c));
       }
 
       // compute NV+cluster Hamiltonian
@@ -368,59 +384,10 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
-// return AXY sequence pulses with given offset
-vector<double> offset_pulses(vector<double> xs, double x_offset){
-  // check that we have the first two pulses, and add pulses 3 through 10
-  assert(xs.size() == 2);
-  xs.push_back(0.25);
-  xs.push_back(0.5 - xs.at(1));
-  xs.push_back(0.5 - xs.at(0));
-  xs.push_back(0.5 + xs.at(0));
-  xs.push_back(0.5 + xs.at(1));
-  xs.push_back(0.5 + xs.at(2));
-  xs.push_back(0.5 + xs.at(3));
-  xs.push_back(0.5 + xs.at(4));
-
-  // shift offset to be within one AXY period
-  while(x_offset < 0) x_offset += 1;
-  while(x_offset > 1) x_offset -= 1;
-
-  vector<double> pulses;
-  for(uint p = 0; p < 20; p++){
-    if(p/10+xs.at(p%10)-x_offset > 0){
-      pulses.push_back(p/10+xs.at(p%10)-x_offset);
-    }
-    if(pulses.size() == 10) break;
-  }
-  return pulses;
-}
-
-
-
-
-
-
-int F(double x, vector<double> pulses){
-  assert(pulses.size() == 10);
-
-  while(x > 1) x -= 1;
-
-  for(uint i = 0; i < 5; i++){
-    if(x > pulses.at(2*i) && x < pulses.at(2*i+1)){
-      return -1;
-    }
-  }
-  return 1;
-}
-
-
-
-
-
 // compute fidelity of SWAP operation between NV center and target spin
-double swap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
-                     const vector<spin>& nuclei, const double static_B, const int ms,
-                     const uint k_DD, const double scale){
+double iswap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
+                      const vector<spin>& nuclei, const double static_B, const int ms,
+                      const uint k_DD, const double scale){
   // objects specific to target nucleus
   const spin target = nuclei.at(target_nucleus_index);
   const MatrixXcd rho_target_0 = MatrixXcd::Identity(2,2);
@@ -450,29 +417,8 @@ double swap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
   const double sy_pulse_offset = (target_phi-0.5*pi)/(2*pi);
 
   // AXY protocol pulse times (normalized to one AXY sequence period)
-  const vector<double> sx_pulses = offset_pulses(axy_pulses(k_DD,f_DD), sx_pulse_offset);
-  const vector<double> sy_pulses = offset_pulses(axy_pulses(k_DD,f_DD), sy_pulse_offset);
-
-  double F_cos = 0, F_sin = 0;
-  double dx = f_DD/100;
-  uint final_i = int(1e2/dx);
-  for(uint i = 0; i < final_i; i++){
-    double x = double(i)*dx;
-    F_cos += dx*cos(target_larmor.norm()*x*t_DD)*F(x,sx_pulses);
-    F_sin += dx*sin(target_larmor.norm()*x*t_DD)*F(x,sx_pulses);
-  }
-  F_cos /= final_i*dx/2;
-  F_sin /= final_i*dx/2;
-
-  cout << F_cos/f_DD << endl
-       << F_sin/f_DD << endl
-       << endl << endl;
-  cout << dot(hat(target_A_perp),xhat) << endl
-       << dot(hat(target_A_perp),yhat) << endl
-       << endl << endl;
-
-  return 1;
-
+  const vector<double> sx_pulses = axy_pulses(k_DD, f_DD, sx_pulse_offset);
+  const vector<double> sy_pulses = axy_pulses(k_DD, f_DD, sy_pulse_offset);
 
   // NV center pulses
   const MatrixXcd X = act(sx,{0},2);
@@ -484,5 +430,39 @@ double swap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
   // full NV+cluster Hamiltonian
   const MatrixXcd H = H_int_large_static_B(e(ms), {target}) + H_nZ({target}, static_B*zhat);
 
-  return w_DD;
+  MatrixXcd U_sx = exp(-j*H*t_DD*sx_pulses.at(0));
+  for(uint i = 1; i < sx_pulses.size(); i++){
+    U_sx = (exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * X * U_sx).eval();
+  }
+  U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * X * U_sx).eval();
+  U_sx = (Z_to_X * U_sx * X_to_Z).eval();
+
+  MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
+  for(uint i = 1; i < sy_pulses.size(); i++){
+    U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
+  }
+  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
+  U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
+
+
+
+  U_sx = pow(U_sx,50);
+
+  MatrixXcd H_sx = j*log(U_sx);
+  remove_artifacts(H_sx);
+
+  remove_artifacts(U_sx,1e-4);
+  cout << U_sx << endl << endl;
+
+  MatrixXcd H_int_eff = 0.25*ms*f_DD*target_A_perp.norm()*cos(target_phi)*tp(sx,sx);
+  MatrixXcd H_nZ_eff = -act(dot(target.g*static_B*zhat - 0.5*ms*target_A, target.S) ,{1},2);
+  MatrixXcd U_eff = exp(-j*(H_int_eff+H_nZ_eff)*t_DD);
+
+  U_eff = pow(U_eff,50);
+  remove_artifacts(U_eff,1e-4);
+
+  cout << U_eff << endl << endl;
+
+
+  return 1;
 }

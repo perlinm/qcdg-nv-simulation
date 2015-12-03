@@ -360,6 +360,6 @@ int main(int arg_num, const char *arg_vec[]) {
   const uint target_nucleus_index = 49;
   const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
 
-  cout << swap_fidelity(rho_NV_0, target_nucleus_index, nuclei, static_B, ms) << endl;
+  cout << iswap_fidelity(rho_NV_0, target_nucleus_index, nuclei, static_B, ms) << endl;
 }
 
