@@ -118,7 +118,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
 
-  assert(max_cluster_size > 0);
+  assert(max_cluster_size > 1);
   assert(ms == 1 || ms == -1);
   assert(static_B_norm_in_gauss >= 0);
 
