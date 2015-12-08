@@ -68,6 +68,17 @@ uint largest_cluster_size(const vector<vector<uint>>& ind_clusters){
 // find cluster coupling for which the largest cluster is >= cluster_size_target
 double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_target,
                             const double initial_cluster_coupling, const double dcc_cutoff){
+  // special case for "clusters" of 1 nucleus
+  if(cluster_size_target == 1){
+    double max_coupling = 0;
+    for(uint i = 0; i < nuclei.size(); i++){
+      for(uint j = i+1; j < nuclei.size(); j++){
+        double c_ij = coupling_strength(nuclei.at(i), nuclei.at(j));
+        if(c_ij > max_coupling) max_coupling = c_ij;
+      }
+    }
+    return max_coupling + dcc_cutoff;
+  }
 
   double cluster_coupling = initial_cluster_coupling;
   double dcc = cluster_coupling/4;

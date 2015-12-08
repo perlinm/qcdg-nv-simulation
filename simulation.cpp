@@ -118,7 +118,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
 
-  assert(max_cluster_size > 1);
+  assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert(static_B_norm_in_gauss >= 0);
 
@@ -241,7 +241,11 @@ int main(int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
-  cout << "Clustering " << nuclei.size() << " nuclei" << endl;
+  if(max_cluster_size > 1){
+    cout << "Clustering " << nuclei.size() << " nuclei" << endl;
+  } else {
+    cout << "Placed " << nuclei.size() << " nuclei" << endl;
+  }
   double cluster_coupling_guess = 100; // this value doesn't really matter
   double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling in clustering algorithm
 
@@ -255,26 +259,31 @@ int main(int arg_num, const char *arg_vec[]) {
   while(largest_cluster_size(ind_clusters) > max_cluster_size){
     int cluster_size_target
       = largest_cluster_size(get_index_clusters(nuclei, cluster_coupling+dcc_cutoff));
+    cout << cluster_size_target << endl;
     cluster_coupling = find_target_coupling(nuclei, cluster_size_target,
                                             cluster_coupling, dcc_cutoff);
     ind_clusters = get_index_clusters(nuclei, cluster_coupling);
   }
   const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
 
-  cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
-       << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
+  if(max_cluster_size > 1){
+    cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
+         << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
 
-  // collect and print histogram of cluster sizes
-  max_cluster_size = largest_cluster_size(ind_clusters);
-  vector<uint> size_hist(max_cluster_size);
-  for(uint i = 0; i < ind_clusters.size(); i++){
-    size_hist.at(ind_clusters.at(i).size()-1) += 1;
+    // collect and print histogram of cluster sizes
+    max_cluster_size = largest_cluster_size(ind_clusters);
+    vector<uint> size_hist(max_cluster_size);
+    for(uint i = 0; i < ind_clusters.size(); i++){
+      size_hist.at(ind_clusters.at(i).size()-1) += 1;
+    }
+    cout << "Cluster size histogram: " << endl;
+    for(uint i = 0; i < size_hist.size(); i++){
+      cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
+    }
+    cout << endl;
+  } else {
+    cout << "Largest internuclear coupling: " << cluster_coupling << " Hz" << endl;
   }
-  cout << "Cluster size histogram: " << endl;
-  for(uint i = 0; i < size_hist.size(); i++){
-    cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
-  }
-  cout << endl;
 
   // now that we are done with initialization, fix up the output filename suffix
   boost::replace_all(output_suffix, "[cell_radius]", to_string(cell_radius));
