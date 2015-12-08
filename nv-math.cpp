@@ -68,6 +68,8 @@ uint largest_cluster_size(const vector<vector<uint>>& ind_clusters){
 // find cluster coupling for which the largest cluster is >= cluster_size_target
 double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_target,
                             const double initial_cluster_coupling, const double dcc_cutoff){
+  assert(dcc_cutoff > 0);
+
   // special case for "clusters" of 1 nucleus
   if(cluster_size_target == 1){
     double max_coupling = 0;
@@ -469,7 +471,6 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
 
 
 
-
   cout << operation_time << "    " << int(operation_time/t_DD) << endl << endl;
   double max_val = 1e-4;
 
@@ -485,9 +486,6 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
     }
   }
   cout << U_sx_mag << endl << endl;
-
-
-
 
 
 

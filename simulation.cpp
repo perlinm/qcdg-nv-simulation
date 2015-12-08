@@ -41,7 +41,7 @@ int main(int arg_num, const char *arg_vec[]) {
   double static_B_norm_in_gauss;
 
   bool perform_scan;
-  int scan_bins;
+  uint scan_bins;
   double f_DD;
   uint k_DD;
   double scan_time;
@@ -78,7 +78,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies?")
-    ("scan_bins", po::value<int>(&scan_bins)->default_value(100),
+    ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
@@ -129,7 +129,7 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(scan_time_in_ms > 0);
   }
 
-  assert(seed > 0);
+  assert(seed > 0); // seeds of 0 and 1 give the same result, so don't allow nonpositive seeds
 
   // define path of input or output file defining system configuration
   if(using_input_lattice){
@@ -246,8 +246,8 @@ int main(int arg_num, const char *arg_vec[]) {
   } else {
     cout << "Placed " << nuclei.size() << " nuclei" << endl;
   }
-  double cluster_coupling_guess = 100; // this value doesn't really matter
-  double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling in clustering algorithm
+  const double cluster_coupling_guess = 100; // this value doesn't really matter
+  const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
   // get cluster_coupling for which the largest cluster size is >= max_cluster_size
   double cluster_coupling = find_target_coupling(nuclei, max_cluster_size,
@@ -259,7 +259,6 @@ int main(int arg_num, const char *arg_vec[]) {
   while(largest_cluster_size(ind_clusters) > max_cluster_size){
     int cluster_size_target
       = largest_cluster_size(get_index_clusters(nuclei, cluster_coupling+dcc_cutoff));
-    cout << cluster_size_target << endl;
     cluster_coupling = find_target_coupling(nuclei, cluster_size_target,
                                             cluster_coupling, dcc_cutoff);
     ind_clusters = get_index_clusters(nuclei, cluster_coupling);
@@ -319,7 +318,6 @@ int main(int arg_num, const char *arg_vec[]) {
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
       if(w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
-
     }
 
     // print effective larmor frequencies and NV couping strengths to output file
@@ -341,7 +339,7 @@ int main(int arg_num, const char *arg_vec[]) {
     const double w_range = w_max - w_min;
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
-    for(int i = 0; i < scan_bins; i++){
+    for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(scan_time, clusters, w_scan.at(i), k_DD, f_DD,
                                               static_B, ms);
@@ -354,7 +352,7 @@ int main(int arg_num, const char *arg_vec[]) {
       ofstream scan(scan_path.string());
       scan << file_header.str();
       scan << "# w_scan coherence\n";
-      for(int i = 0; i < scan_bins; i++){
+      for(uint i = 0; i < scan_bins; i++){
         scan << w_scan.at(i) << " " << coherence.at(i) << endl;
       }
       scan.close();
