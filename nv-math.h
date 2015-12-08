@@ -133,7 +133,7 @@ inline Vector3d effective_larmor(const spin& s, const double static_B, const int
 };
 
 // pulse times for harmonic h and fourier component f
-vector<double> pulse_times(const uint k, const double f);
+vector<double> axy_pulses(const uint k, const double f, double offset = 0.);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
