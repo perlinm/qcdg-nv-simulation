@@ -75,7 +75,7 @@ double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_
   vector<vector<uint>> ind_clusters = get_index_clusters(nuclei, cluster_coupling);
   bool coupling_too_small = largest_cluster_size(ind_clusters) >= cluster_size_target;
   bool last_coupling_too_small;
-  bool crossed_correct_coupling;
+  bool crossed_correct_coupling = false;
 
   // determine coupling for which the largest cluster size just barely >= max_cluster_size
   while(dcc >= dcc_cutoff || !coupling_too_small){
@@ -153,11 +153,11 @@ vector<double> axy_pulses(const uint k, const double f, double offset = 0.){
   pulses.push_back(1. - x2);
   pulses.push_back(1. - x1);
 
-  if(offset == 0.) return pulses;
-
   // shift offset to be within one AXY period
   while(offset < 0) offset += 1;
-  while(offset > 1) offset -= 1;
+  while(offset >= 1) offset -= 1;
+
+  if(offset == 0.) return pulses;
 
   vector<double> offset_pulses;
   for(uint p = 0; p < 20; p++){
@@ -214,9 +214,9 @@ inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d&
 }
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
+double coherence_measurement(const double scan_time, const vector<vector<spin>>& clusters,
                              const double w_scan, const uint k_DD, const double f_DD,
-                             const double scan_time, const double static_B){
+                             const double static_B, const int ms){
   const spin e_ms = e(ms); // electron spin
 
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
@@ -285,9 +285,9 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster){
 }
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
+double coherence_measurement(double scan_time, const vector<vector<spin>>& clusters,
                              const double w_scan, const uint k_DD, const double f_DD,
-                             double scan_time, const double static_B,
+                             const double static_B, const int ms,
                              const control_fields& controls, const uint integration_factor){
   const spin e_ms = e(ms); // electron spin
 
@@ -337,15 +337,14 @@ double coherence_measurement(const int ms, const vector<vector<spin>>& clusters,
         proj_0 = proj_tmp;
       }
 
-      // compute net magnetic field
+      // net magnetic field
       Vector3d B = static_B*zhat;
       for(uint c = 0; c < controls.num(); c++){
         B += controls.Bs.at(c) * cos(controls.freqs.at(c)*x*t_DD + controls.phases.at(c));
       }
 
-      // compute NV+cluster Hamiltonian
-      const MatrixXcd H = H_int_large_static_B(e_ms, clusters.at(c))
-        + H_nZ(clusters.at(c), B);
+      // NV+cluster Hamiltonian
+      const MatrixXcd H = H_int_large_static_B(e_ms,clusters.at(c)) + H_nZ(clusters.at(c),B);
 
       // spin cluster Hamiltonians
       const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
@@ -385,15 +384,19 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 }
 
 // compute fidelity of SWAP operation between NV center and target spin
-double iswap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index,
-                      const vector<spin>& nuclei, const double static_B, const int ms,
+double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nuclei,
+                      const double static_B, const int ms,
                       const uint k_DD, const double scale){
+  // initial state of NV center
+  const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
+
   // objects specific to target nucleus
   const spin target = nuclei.at(target_nucleus_index);
   const MatrixXcd rho_target_0 = MatrixXcd::Identity(2,2);
-  const Vector3d target_A = A(target);
-  const Vector3d target_A_perp = target_A - dot(target_A,zhat)*zhat;
   const Vector3d target_larmor = effective_larmor(target, static_B, ms);
+  const Vector3d target_A = A(target);
+  const Vector3d target_A_w = dot(target_A,hat(target_larmor))*hat(target_larmor);
+  const Vector3d target_A_perp = target_A - target_A_w;
 
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
@@ -405,12 +408,16 @@ double iswap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index
   }
 
   // AXY sequence parameters
-  const double f_DD = 2*dw_min/(target_A_perp.norm()*scale);
+  const double f_DD = -ms*2*dw_min/(target_A_perp.norm()*scale);
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
+  const double operation_time = pi/abs(f_DD*target_A_perp.norm());
 
   // phase of hyperfine field rotation in the frame of H_nZ
-  const double target_phi = acos(dot(hat(target_A_perp),xhat));
+  /***************************** target_phi arbitrarily set to 0 ****************************/
+  const double target_phi = 0;
+  // const double target_phi = acos(dot(hat(target_A_perp),xhat));
+  /******************************************************************************************/
 
   // AXY sequence offsets for resonance with xhat and yhat componenets of the hyperfine field
   const double sx_pulse_offset = target_phi/(2*pi);
@@ -427,42 +434,68 @@ double iswap_fidelity(const MatrixXcd& rho_NV_0, const uint target_nucleus_index
   const MatrixXcd Z_to_Y = act(Rx(-pi/2),{0},2);
   const MatrixXcd Y_to_Z = act(Rx(pi/2),{0},2);
 
-  // full NV+cluster Hamiltonian
+  // NV+cluster Hamiltonian
+  /****************************** H uses unneeded approximation *****************************/
   const MatrixXcd H = H_int_large_static_B(e(ms), {target}) + H_nZ({target}, static_B*zhat);
+  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  /******************************************************************************************/
 
-  MatrixXcd U_sx = exp(-j*H*t_DD*sx_pulses.at(0));
+
+
+  MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
   for(uint i = 1; i < sx_pulses.size(); i++){
-    U_sx = (exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * X * U_sx).eval();
+    U_sx = (X * exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * U_sx).eval();
   }
-  U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * X * U_sx).eval();
-  U_sx = (Z_to_X * U_sx * X_to_Z).eval();
+  U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * U_sx).eval();
+  // U_sx = (Z_to_X * U_sx * X_to_Z).eval();
 
-  MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
-  for(uint i = 1; i < sy_pulses.size(); i++){
-    U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
+  // MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
+  // for(uint i = 1; i < sy_pulses.size(); i++){
+  //   U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
+  // }
+  // U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
+  // U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
+
+
+
+
+  cout << operation_time << "    " << int(operation_time/t_DD) << endl << endl;
+  double max_val = 1e-4;
+
+
+  U_sx = pow(U_sx, int(operation_time/t_DD));
+  // U_sx = (Z_to_X * U_sx * X_to_Z).eval();
+
+
+  MatrixXd U_sx_mag = MatrixXd::Zero(4,4);
+  for(uint m = 0; m < U_sx_mag.rows(); m++){
+    for(uint n = 0; n < U_sx_mag.rows(); n++){
+      if(abs(U_sx(m,n)) > max_val) U_sx_mag(m,n) = abs(U_sx(m,n));
+    }
   }
-  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
-  U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
+  cout << U_sx_mag << endl << endl;
 
 
 
-  U_sx = pow(U_sx,50);
 
-  MatrixXcd H_sx = j*log(U_sx);
-  remove_artifacts(H_sx);
 
-  remove_artifacts(U_sx,1e-4);
-  cout << U_sx << endl << endl;
 
-  MatrixXcd H_int_eff = 0.25*ms*f_DD*target_A_perp.norm()*cos(target_phi)*tp(sx,sx);
-  MatrixXcd H_nZ_eff = -act(dot(target.g*static_B*zhat - 0.5*ms*target_A, target.S) ,{1},2);
-  MatrixXcd U_eff = exp(-j*(H_int_eff+H_nZ_eff)*t_DD);
+  MatrixXcd H_int_eff = 0.25*ms*f_DD*tp(sz,dot(target_A_perp,target.S));
+  MatrixXcd U_int_eff = exp(-j*H_int_eff*t_DD*int(operation_time/t_DD));
 
-  U_eff = pow(U_eff,50);
-  remove_artifacts(U_eff,1e-4);
+  MatrixXcd H_nZ_eff = -act(dot(target.g*static_B*zhat - 0.5*ms*target_A,target.S), {1},2);
+  MatrixXcd U_nZ_eff = exp(-j*(H_nZ_eff)*t_DD*int(operation_time/t_DD)*target_A_perp.norm());
 
-  cout << U_eff << endl << endl;
+  MatrixXcd U = U_nZ_eff*U_int_eff;
+  // U = (Z_to_X * U * X_to_Z).eval();
 
+  MatrixXd U_mag = MatrixXd::Zero(4,4);
+  for(uint m = 0; m < U_mag.rows(); m++){
+    for(uint n = 0; n < U_mag.rows(); n++){
+      if(abs(U(m,n)) > max_val) U_mag(m,n) = abs(U(m,n));
+    }
+  }
+  cout << U_mag << endl << endl;
 
   return 1;
 }

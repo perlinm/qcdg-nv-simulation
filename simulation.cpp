@@ -11,8 +11,8 @@ using namespace Eigen;
 
 #include <boost/algorithm/string.hpp> // string manipulation library
 #include <boost/filesystem.hpp> // filesystem path manipulation library
-namespace fs = boost::filesystem;
 #include <boost/program_options.hpp> // options parsing library
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 #include "constants.h"
@@ -249,7 +249,6 @@ int main(int arg_num, const char *arg_vec[]) {
   double cluster_coupling = find_target_coupling(nuclei, max_cluster_size,
                                                  cluster_coupling_guess, dcc_cutoff);
   vector<vector<uint>> ind_clusters = get_index_clusters(nuclei, cluster_coupling);
-
   // if (largest cluster size > max_cluster_size),
   //   which can occur when (largest cluster size == max_cluster_size) is impossible,
   //   find largest cluster_coupling for which (largest cluster size < max_cluster_size)
@@ -335,8 +334,8 @@ int main(int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(int i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(ms, clusters, w_scan.at(i), k_DD, f_DD,
-                                              scan_time, static_B);
+      coherence.at(i) = coherence_measurement(scan_time, clusters, w_scan.at(i), k_DD, f_DD,
+                                              static_B, ms);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -358,8 +357,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   const uint target_nucleus_index = 49;
-  const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
 
-  cout << iswap_fidelity(rho_NV_0, target_nucleus_index, nuclei, static_B, ms) << endl;
+  cout << iswap_fidelity(target_nucleus_index, nuclei, static_B, ms) << endl;
 }
 
