@@ -417,7 +417,7 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
   }
 
   // AXY sequence parameters
-  // const double f_DD = -ms*2*dw_min/(target_A_perp.norm()*scale);
+  // const double f_DD = -ms*dw_min/(target_A_perp.norm()*scale);
   const double f_DD = 0.06;
   cout << endl << "f_DD: " << f_DD << endl << endl;
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
