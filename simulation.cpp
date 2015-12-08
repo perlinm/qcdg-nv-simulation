@@ -364,7 +364,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   uint target_nucleus_index = 47;
+  cout << iswap_fidelity(target_nucleus_index, nuclei, static_B, ms) << endl;
 
-  iswap_fidelity(target_nucleus_index, nuclei, static_B, ms);
 }
 
