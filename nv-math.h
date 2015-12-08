@@ -133,7 +133,7 @@ inline Vector3d effective_larmor(const spin& s, const double static_B, const int
 };
 
 // pulse times for harmonic h and fourier component f
-vector<double> axy_pulses(const uint k, const double f, double offset = 0.);
+vector<double> axy_pulses(const uint k, const double f, double offset = 0);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
@@ -220,7 +220,7 @@ double coherence_measurement(double scan_time, const vector<vector<spin>>& clust
 control_fields nuclear_decoupling_field(const spin& s, const double static_B, const int ms,
                                         const double phi_rfd = 0,
                                         const double theta_rfd = pi/2,
-                                        const double scale = 1000);
+                                        const double scale = 100);
 
 // return AXY sequence pulses with given offset
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
@@ -228,4 +228,4 @@ vector<double> offset_pulses(vector<double> xs, const double x_offset);
 // compute fidelity of SWAP operation between NV center and target nucleus
 double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nuclei,
                       const double static_B, const int ms,
-                      const uint k_DD = 1, const double scale = 1000);
+                      const uint k_DD = 1, const double scale = 100);

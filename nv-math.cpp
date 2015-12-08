@@ -128,7 +128,7 @@ vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
 //--------------------------------------------------------------------------------------------
 
 // pulse times for harmonic k, fourier component f, and a given offset
-vector<double> axy_pulses(const uint k, const double f, double offset = 0.){
+vector<double> axy_pulses(const uint k, const double f, double offset){
 
   assert((k == 1) || (k == 3));
 
@@ -421,20 +421,19 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
   }
 
   // AXY sequence parameters
-  const double f_DD = -ms*2*dw_min/(target_A_perp.norm()*scale);
+  // const double f_DD = -ms*2*dw_min/(target_A_perp.norm()*scale);
+  const double f_DD = 0.06;
+  cout << endl << "f_DD: " << f_DD << endl << endl;
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  const double operation_time = pi/abs(f_DD*target_A_perp.norm());
+  const double operation_time = 2*pi/abs(f_DD*target_A_perp.norm());
 
   // phase of hyperfine field rotation in the frame of H_nZ
-  /***************************** target_phi arbitrarily set to 0 ****************************/
-  const double target_phi = 0;
-  // const double target_phi = acos(dot(hat(target_A_perp),xhat));
-  /******************************************************************************************/
+  const double target_phi = acos(dot(hat(target_A_perp),xhat));
 
   // AXY sequence offsets for resonance with xhat and yhat componenets of the hyperfine field
   const double sx_pulse_offset = target_phi/(2*pi);
-  const double sy_pulse_offset = (target_phi-0.5*pi)/(2*pi);
+  const double sy_pulse_offset = sx_pulse_offset - 0.25;
 
   // AXY protocol pulse times (normalized to one AXY sequence period)
   const vector<double> sx_pulses = axy_pulses(k_DD, f_DD, sx_pulse_offset);
@@ -447,64 +446,58 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
   const MatrixXcd Z_to_Y = act(Rx(-pi/2),{0},2);
   const MatrixXcd Y_to_Z = act(Rx(pi/2),{0},2);
 
+  const MatrixXcd X_to_Y = act(Rz(pi/2),{0},2);
+  const MatrixXcd Y_to_X = act(Rz(-pi/2),{0},2);
+
   // NV+cluster Hamiltonian
   /****************************** H uses unneeded approximation *****************************/
-  const MatrixXcd H = H_int_large_static_B(e(ms), {target}) + H_nZ({target}, static_B*zhat);
-  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  // const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
+  const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
   /******************************************************************************************/
-
-
 
   MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
   for(uint i = 1; i < sx_pulses.size(); i++){
     U_sx = (X * exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * U_sx).eval();
   }
   U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * U_sx).eval();
-  // U_sx = (Z_to_X * U_sx * X_to_Z).eval();
+  U_sx = (Z_to_X * U_sx * X_to_Z).eval();
 
-  // MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
-  // for(uint i = 1; i < sy_pulses.size(); i++){
-  //   U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
-  // }
-  // U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
-  // U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
-
-
-
-  cout << operation_time << "    " << int(operation_time/t_DD) << endl << endl;
-  double max_val = 1e-4;
-
-
-  U_sx = pow(U_sx, int(operation_time/t_DD));
-  // U_sx = (Z_to_X * U_sx * X_to_Z).eval();
-
-
-  MatrixXd U_sx_mag = MatrixXd::Zero(4,4);
-  for(uint m = 0; m < U_sx_mag.rows(); m++){
-    for(uint n = 0; n < U_sx_mag.rows(); n++){
-      if(abs(U_sx(m,n)) > max_val) U_sx_mag(m,n) = abs(U_sx(m,n));
-    }
+  MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
+  for(uint i = 1; i < sy_pulses.size(); i++){
+    U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
   }
-  cout << U_sx_mag << endl << endl;
+  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
+  U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
+
+  const MatrixXcd iSWAP = pow(U_sx*U_sy, int(operation_time/t_DD));
 
 
 
-  MatrixXcd H_int_eff = 0.25*ms*f_DD*tp(sz,dot(target_A_perp,target.S));
-  MatrixXcd U_int_eff = exp(-j*H_int_eff*t_DD*int(operation_time/t_DD));
+
+  MatrixXcd H_int_eff = -0.25*ms*f_DD*target_A_perp.norm() *
+    (tp(sx,dot(target.S,xhat)) + tp(sy,dot(target.S,yhat)));
+  MatrixXcd U_int_eff = exp(-j*H_int_eff*t_DD);
 
   MatrixXcd H_nZ_eff = -act(dot(target.g*static_B*zhat - 0.5*ms*target_A,target.S), {1},2);
-  MatrixXcd U_nZ_eff = exp(-j*(H_nZ_eff)*t_DD*int(operation_time/t_DD)*target_A_perp.norm());
+  MatrixXcd U_nZ_eff = exp(-j*H_nZ_eff*t_DD);
 
-  MatrixXcd U = U_nZ_eff*U_int_eff;
-  // U = (Z_to_X * U * X_to_Z).eval();
+  MatrixXcd U_eff = U_nZ_eff*U_int_eff;
 
-  MatrixXd U_mag = MatrixXd::Zero(4,4);
-  for(uint m = 0; m < U_mag.rows(); m++){
-    for(uint n = 0; n < U_mag.rows(); n++){
-      if(abs(U(m,n)) > max_val) U_mag(m,n) = abs(U(m,n));
-    }
-  }
-  cout << U_mag << endl << endl;
+
+  // MatrixXcd U_full = pow(U_sy, double(int(operation_time/t_DD)));
+  // MatrixXcd U_eff_full = pow(U_eff, double(int(operation_time/t_DD)));
+  MatrixXcd U_full = iSWAP;
+  MatrixXcd U_eff_full = pow(U_eff, double(int(operation_time/t_DD)));
+  if(real(U_eff_full(0,0)) < 0) U_eff_full *= -1;
+  MatrixXcd dU = U_full-U_eff_full;
+
+  remove_artifacts(U_full,1e-3);
+  remove_artifacts(U_eff_full,1e-3);
+  remove_artifacts(dU,1e-3);
+
+  cout << U_full << endl << endl;
+  cout << U_eff_full << endl << endl;
+  cout << dU << endl << endl;
 
   return 1;
 }

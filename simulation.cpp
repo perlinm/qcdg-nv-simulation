@@ -363,8 +363,8 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  const uint target_nucleus_index = 49;
+  uint target_nucleus_index = 47;
 
-  cout << iswap_fidelity(target_nucleus_index, nuclei, static_B, ms) << endl;
+  iswap_fidelity(target_nucleus_index, nuclei, static_B, ms);
 }
 
