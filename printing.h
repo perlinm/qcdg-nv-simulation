@@ -10,14 +10,12 @@ using namespace Eigen;
 #include "nv-math.h"
 
 // clean up matrix for human readability
-inline void clean(MatrixXcd &M){
-  remove_artifacts(M);
-  remove_phase(M);
-  remove_artifacts(M);
+inline MatrixXcd clean(const MatrixXcd& A){
+  return remove_artifacts(remove_phase(remove_artifacts(A)));
 }
 
 // returns basis element p for Hamiltonians of a system with N spins
-MatrixXcd H_basis_element(int p, int N){
+MatrixXcd H_basis_element(const int p, const int N){
   MatrixXcd spins[4] = {st, sx, sy, sz};
   MatrixXcd b_p = spins[int_bit(p,0)+2*int_bit(p,1)];
   for(int n = 1; n < N; n++){
@@ -25,7 +23,7 @@ MatrixXcd H_basis_element(int p, int N){
   }
   return b_p;
 }
-string H_basis_element_text(int p, int N){
+string H_basis_element_text(const int p, const int N){
   char spins[4] = {'I','X','Y','Z'};
   stringstream stream;
   for(int n = 0; n < N; n++){
@@ -41,7 +39,7 @@ inline MatrixXcd flatten(MatrixXcd M){
 }
 
 // returns matrix whose columns are basis Hamiltonians for a system of N spins
-MatrixXcd H_basis_matrix(int N){
+MatrixXcd H_basis_matrix(const int N){
   MatrixXcd spins[4] = {st, sx, sy, sz};
   MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
   for(int p = 0; p < pow(4,N); p++){
@@ -51,17 +49,16 @@ MatrixXcd H_basis_matrix(int N){
 }
 
 // decompose Hamiltonian into its basis elements
-MatrixXcd H_decompose(const MatrixXcd H, bool fast = true){
+MatrixXcd H_decompose(const MatrixXcd& H, const bool fast = true){
   int N = log2(H.rows());
   if(fast) return H_basis_matrix(N).householderQr().solve(flatten(H));
   else return H_basis_matrix(N).fullPivLu().solve(flatten(H));
 }
 
 // print Hamiltonian in human-readable form
-void H_print(const MatrixXcd H, bool fast = true){
+void H_print(const MatrixXcd& H, const bool fast = true){
   int N = log2(H.rows());
-  MatrixXcd hs = H_decompose(H,fast);
-  clean(hs);
+  MatrixXcd hs = clean(H_decompose(H,fast));
   for(int p = 0; p < pow(4,N); p++){
     if(abs(hs(p)) != 0){
       cout << H_basis_element_text(p,N) << ": " << hs(p) << endl;
@@ -70,7 +67,7 @@ void H_print(const MatrixXcd H, bool fast = true){
 }
 
 // print state vector in human readable form
-void state_print(const MatrixXcd psi){
+void state_print(const MatrixXcd& psi){
   int N = psi.size();
   int qbits = log2(N);
   for(int n = 0; n < N; n++){
@@ -85,7 +82,7 @@ void state_print(const MatrixXcd psi){
 }
 
 // print matrix in human readable form
-void matrix_print(const MatrixXcd M){
+void matrix_print(const MatrixXcd& M){
   int qbits = log2(M.rows());
   for(int m = 0; m < M.rows(); m++){
     for(int n = 0; n < M.cols(); n++){

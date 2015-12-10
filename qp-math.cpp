@@ -18,13 +18,15 @@ MatrixXcd tp(const initializer_list<MatrixXcd>& list){
 }
 
 // remove numerical artifacts from a matrix
-void remove_artifacts(MatrixXcd& A, const double threshold){
+MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold){
+  MatrixXcd B = MatrixXcd::Zero(A.rows(),A.cols());
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
-      if(abs(A(m,n).real()) < threshold) A(m,n) -= A(m,n).real();
-      if(abs(A(m,n).imag()) < threshold) A(m,n) -= A(m,n).imag()*j;
+      if(abs(A(m,n).real()) > threshold) B(m,n) += A(m,n).real();
+      if(abs(A(m,n).imag()) > threshold) B(m,n) += A(m,n).imag()*j;
     }
   }
+  return B;
 }
 
 // get global phase of matrix
@@ -33,7 +35,6 @@ complex<double> get_phase(const MatrixXcd& A){
     for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n)) != 0){
         complex<double> phase = A(m,n)/abs(A(m,n));
-        if(phase.real() < 0) phase = -phase;
         return phase;
       }
     }

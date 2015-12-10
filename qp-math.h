@@ -48,13 +48,13 @@ inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){ return kroneckerPro
 MatrixXcd tp(const initializer_list<MatrixXcd>& list);
 
 // remove numerical artifacts from a matrix
-void remove_artifacts(MatrixXcd& A, const double threshold = 1e-12);
+MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold = 1e-12);
 
 // get global phase of matrix
 complex<double> get_phase(const MatrixXcd& A);
 
 // remove global phase from matrix
-inline void remove_phase(MatrixXcd& A){ A *= conj(get_phase(A)); }
+inline MatrixXcd remove_phase(const MatrixXcd& A){ return A*conj(get_phase(A)); }
 
 //--------------------------------------------------------------------------------------------
 // Operator rearrangement
