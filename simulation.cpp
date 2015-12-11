@@ -374,10 +374,12 @@ int main(int arg_num, const char *arg_vec[]) {
 
   double mean_good_fidelity = 0;
   double mean_bad_fidelity = 0;
+  double fidelity_cutoff = 0.9;
   for(uint target_index = 0; target_index < nuclei.size(); target_index++){
 
     double fidelity = iswap_fidelity(target_index, nuclei, static_B, ms);
-    if(fidelity > 0.95){
+
+    if(fidelity > fidelity_cutoff){
       mean_good_fidelity += fidelity;
       good++;
     }
@@ -392,6 +394,7 @@ int main(int arg_num, const char *arg_vec[]) {
   mean_bad_fidelity /= bad;
 
   cout << endl;
+  cout << "fidelity cutoff: " << fidelity_cutoff << endl;
   cout << "good: " << good << endl;
   cout << "  mean good fidelity: " << mean_good_fidelity << endl;
   cout << "bad: " << bad << endl;

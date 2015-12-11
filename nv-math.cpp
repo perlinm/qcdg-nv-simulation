@@ -127,13 +127,6 @@ vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
-// shift num by mod until it lies on the range [0,mod]
-double mod_to(double num, const double mod){
-  while(num < 0) num += mod;
-  while(num >= mod) num -= mod;
-  return num;
-}
-
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulses(const uint k, const double f){
 
@@ -431,49 +424,20 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
   const double operation_time = 2*pi/abs(f_DD*target_A_perp.norm());
+  // const double operation_time = 1.2356*pi/abs(f_DD*target_A_perp.norm());
 
   // AXY pulse sequence matching target larmor frequency
-  const vector<double> target_pulses = axy_pulses(k_DD, f_DD);
-
-  // initial phase of hyperfine field rotation in the frame of H_nZ
-  const double target_A_phase = atan2(dot(target_A_perp,yhat), dot(target_A_perp,xhat));
-
-  // pulse delays for addressing sx and sy components of target spin
-  double delay_sx = target_A_phase/(2*pi);
-  while(delay_sx < 0) delay_sx += 1;
-  while(delay_sx >= 1) delay_sx -= 1;
-
-  double delay_sy = target_A_phase/(2*pi) - 0.25;
-  while(delay_sy < 0) delay_sy += 1;
-  while(delay_sy >= 1) delay_sy -= 1;
-
-  // AXY pulse sequences addressing sx and sy components of target spin
-  const vector<double> sx_pulses = delayed_pulses(target_pulses, delay_sx);
-  const vector<double> sy_pulses = delayed_pulses(target_pulses, delay_sy);
-
-  // sign we should have on the NV center spin when addressing with these delayed pulses
-  int sign_x = 1;
-  for(uint i = 0; i < target_pulses.size(); i++){
-    if(delay_sx >= target_pulses.at(i)) sign_x *= -1;
-    else break;
-  }
-  int sign_y = 1;
-  for(uint i = 0; i < target_pulses.size(); i++){
-    if(delay_sy >= target_pulses.at(i)) sign_y *= -1;
-    else break;
-  }
-
-  // NV center pulses
-  const MatrixXcd X = act(sx,{0},2);
-  const MatrixXcd Z_to_X = act(Ry(sign_x*pi/2),{0},2);
-  const MatrixXcd X_to_Z = act(Ry(-sign_x*pi/2),{0},2);
-  const MatrixXcd Z_to_Y = act(Rx(-sign_y*pi/2),{0},2);
-  const MatrixXcd Y_to_Z = act(Rx(sign_y*pi/2),{0},2);
+  const vector<double> sx_pulses = axy_pulses(k_DD, f_DD);
+  const vector<double> sy_pulses = delayed_pulses(axy_pulses(k_DD, f_DD), 0.25);
 
   // NV+cluster Hamiltonian
   // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
   const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
 
+  // NV center flip pulse
+  const MatrixXcd X = act(sx,{0},2);
+
+  // spin component addressing propagators
   MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
   MatrixXcd U_sy = X * exp(-j*H*t_DD*sy_pulses.at(0));
   for(uint i = 1; i < sx_pulses.size(); i++){
@@ -486,11 +450,29 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   U_sx = pow(U_sx, int(operation_time/t_DD));
   U_sy = pow(U_sy, int(operation_time/t_DD));
 
-  const MatrixXcd iSWAP = Z_to_X * U_sx * X_to_Z * Z_to_Y * U_sy * Y_to_Z;
-  const MatrixXcd iSWAP_inv = X_to_Z * U_sx * Z_to_X * Y_to_Z * U_sy * Z_to_Y;
+  // basis vectors for target spin
+  const Vector3d target_zhat = hat(target_larmor);
+  const Vector3d target_xhat = hat(target_A_perp);
+  const Vector3d target_yhat = target_zhat.cross(target_xhat);
 
-  const MatrixXcd iSWAP_exact = (Matrix4cd() << 1,0,0,0, 0,0,j,0,
-                                 0,j,0,0, 0,0,0,1).finished();
+  // rotation operators
+  const MatrixXcd R_Z_to_tZ = rotate(acos(dot(zhat,target_zhat)), zhat.cross(target_zhat));
+  const MatrixXcd R_Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
+  const MatrixXcd R_Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
+  const MatrixXcd Z_to_tZ = act( R_Z_to_tZ, {0}, 2);
+  const MatrixXcd Z_to_tX = act( R_Z_to_tX, {0}, 2);
+  const MatrixXcd Z_to_tY = act( R_Z_to_tY, {0}, 2);
+
+  // iSWAP operation
+  const MatrixXcd iSWAP =
+    Z_to_tX * U_sx * Z_to_tX.inverse() *
+    Z_to_tY * U_sy * Z_to_tY.inverse();
+
+  // exact iSWAP gate
+  const MatrixXcd iSWAP_exact =
+    Z_to_tZ.inverse() * act(R_Z_to_tZ.inverse(), {1}, 2) *
+    (Matrix4cd() << 1,0,0,0, 0,0,j,0, 0,j,0,0, 0,0,0,1).finished() *
+    Z_to_tZ * act(R_Z_to_tZ, {1}, 2);
 
   const MatrixXcd psi_NV_0 = up+2*dn;
   const MatrixXcd rho_0_unnormed = tp(psi_NV_0*psi_NV_0.adjoint(), MatrixXcd::Identity(2,2));
