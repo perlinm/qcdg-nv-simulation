@@ -407,7 +407,7 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 // compute fidelity of SWAP operation between NV center and target spin
 double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
                       const double static_B, const int ms,
-                      const uint k_DD, const double scale, const double error_tolerance){
+                      const uint k_DD, const double scale){
   // objects specific to target nucleus
   const spin target = nuclei.at(target_index);
   const Vector3d target_larmor = effective_larmor(target, static_B, ms);
@@ -471,8 +471,8 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   const MatrixXcd Y_to_Z = act(Rx(sign_y*pi/2),{0},2);
 
   // NV+cluster Hamiltonian
-  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
-  const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
+  const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  // const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
 
   MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
   MatrixXcd U_sy = X * exp(-j*H*t_DD*sy_pulses.at(0));
@@ -499,8 +499,7 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   const MatrixXcd rho = iSWAP*rho_0*iSWAP.adjoint();
   const MatrixXcd sigma = iSWAP_exact*rho_0*iSWAP_exact.adjoint();
 
-  const MatrixXcd sqrt_rho = sqrt(rho + error_tolerance*MatrixXcd::Random(rho.rows(),
-                                                                          rho.cols()));
+  const MatrixXcd sqrt_rho = sqrt(rho);
   const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
 
   return sqrt_F*sqrt_F;

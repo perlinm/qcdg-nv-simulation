@@ -1,18 +1,18 @@
-| g++ -Wall -Werror -O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o qp-math.o qp-math.cpp
+| g++ -O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o qp-math.o qp-math.cpp
 < qp-math.h
 < qp-math.cpp
 > qp-math.o
 
-| g++ -Wall -Werror -O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o nv-math.o nv-math.cpp
+| g++ -O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o nv-math.o nv-math.cpp
 < nv-math.h
 < nv-math.cpp
 > nv-math.o
 
-| g++ -Wall -Werror -O3 -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -I /usr/include/eigen3/ -g -flto -c -o simulation.o simulation.cpp
+| g++ -O3 -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -I /usr/include/eigen3/ -g -flto -c -o simulation.o simulation.cpp
 < simulation.cpp
 > simulation.o
 
-| g++ -Wall -Werror -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -flto -o simulate qp-math.o nv-math.o simulation.o
+| g++ -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -flto -o simulate qp-math.o nv-math.o simulation.o
 < qp-math.o
 < nv-math.o
 < simulation.o

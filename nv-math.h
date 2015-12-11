@@ -231,5 +231,4 @@ vector<double> offset_pulses(vector<double> xs, const double x_offset);
 // compute fidelity of SWAP operation between NV center and target nucleus
 double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
                       const double static_B, const int ms,
-                      const uint k_DD = 1, const double scale = 100,
-                      const double error_tolerance = 1e-30);
+                      const uint k_DD = 1, const double scale = 100);
