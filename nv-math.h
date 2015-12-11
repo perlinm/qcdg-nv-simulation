@@ -95,6 +95,11 @@ inline spin e(const int ms){
               mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
 }
 
+// perform spin-1/2 rotation about arbitrary axis
+inline MatrixXcd rotate(const double phi, const Vector3d axis){
+  return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,axis);
+}
+
 //--------------------------------------------------------------------------------------------
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
