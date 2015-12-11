@@ -107,32 +107,37 @@ struct mvec{
   bool operator!=(const mvec& w) const { return !(*this == w); }
 
   // addition, subtraction, and multiplication
-  mvec operator+(const mvec& w){
+  mvec operator+(const mvec& w) const {
     assert(v.size() == w.size());
+    vector<MatrixXcd> out;
     for(uint i = 0; i < v.size(); i++){
-      v.at(i) += w.at(i);
+      out.push_back(v.at(i)+w.at(i));
     }
-    return *this;
+    return out;
   }
-  mvec operator-(const mvec& w){
+  mvec operator-(const mvec& w) const {
     assert(v.size() == w.size());
+    vector<MatrixXcd> out;
     for(uint i = 0; i < v.size(); i++){
-      v.at(i) -= w.at(i);
+      out.push_back(v.at(i)-w.at(i));
     }
-    return *this;
+    return out;
   }
-  mvec operator*(const double s){
+  mvec operator*(const double s) const {
+    vector<MatrixXcd> out;
     for(uint i = 0; i < v.size(); i++){
-      v.at(i) *= s;
+      out.push_back(v.at(i)*s);
     }
-    return *this;
+    return out;
   }
-  mvec operator/(const double s) { return *this * (1/s); }
-  mvec operator*(const MatrixXcd& G){
+  mvec operator/(const double s) const { return *this * (1/s); }
+  mvec operator/(const int s) const { return *this * (1/double(s)); }
+  mvec operator*(const MatrixXcd& G) const {
+    vector<MatrixXcd> out;
     for(uint i = 0; i < v.size(); i++){
-      v.at(i) *= G;
+      out.push_back(v.at(i)*G);
     }
-    return *this;
+    return out;
   }
 
   // inner product with vectors and matrix vectors

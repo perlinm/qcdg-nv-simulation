@@ -183,7 +183,7 @@ int main(int arg_num, const char *arg_vec[]) {
           cell_pos(2) = k;
           for(uint ls = 0; ls < cell_sites.size(); ls++){ // loop over lattice sites in cell
             if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13,s_vec));
+              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13,s_vec/2));
             }
           }
         }
@@ -229,7 +229,7 @@ int main(int arg_num, const char *arg_vec[]) {
       y = stod(line);
       getline(lattice,line);
       z = stod(line);
-      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec));
+      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec/2));
     }
     lattice.close();
 

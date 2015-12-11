@@ -66,7 +66,7 @@ const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 //--------------------------------------------------------------------------------------------
 
 // spin vector for a spin-1/2 particle
-const mvec s_vec = mvec(sx/2,xhat) + mvec(sy/2,yhat) + mvec(sz/2,zhat);
+const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
 // struct for spins
 struct spin{
@@ -89,7 +89,7 @@ struct spin{
 };
 
 // initialize nitrogen and vacancy centers
-const spin n(ao, 0., s_vec);
+const spin n(ao, 0., s_vec/2);
 inline spin e(const int ms){
   return spin(Vector3d::Zero(), ge,
               mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
