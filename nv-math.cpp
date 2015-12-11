@@ -424,15 +424,13 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
   const double operation_time = 2*pi/abs(f_DD*target_A_perp.norm());
-  // const double operation_time = 1.2356*pi/abs(f_DD*target_A_perp.norm());
 
   // AXY pulse sequence matching target larmor frequency
   const vector<double> sx_pulses = axy_pulses(k_DD, f_DD);
   const vector<double> sy_pulses = delayed_pulses(axy_pulses(k_DD, f_DD), 0.25);
 
   // NV+cluster Hamiltonian
-  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
-  const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
+  const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
 
   // NV center flip pulse
   const MatrixXcd X = act(sx,{0},2);
