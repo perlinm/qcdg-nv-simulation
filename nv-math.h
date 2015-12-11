@@ -34,14 +34,14 @@ const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
 const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
 
 // spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
-inline MatrixXcd Ux(double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
-inline MatrixXcd Uy(double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
-inline MatrixXcd Uz(double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
+inline MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
+inline MatrixXcd Uy(const double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
+inline MatrixXcd Uz(const double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
 
 // rotation operators
-inline MatrixXcd Rx(double phi){ return Ux(phi/2); }
-inline MatrixXcd Ry(double phi){ return Uy(phi/2); }
-inline MatrixXcd Rz(double phi){ return Uz(phi/2); }
+inline MatrixXcd Rx(const double phi){ return Ux(phi/2); }
+inline MatrixXcd Ry(const double phi){ return Uy(phi/2); }
+inline MatrixXcd Rz(const double phi){ return Uz(phi/2); }
 
 //--------------------------------------------------------------------------------------------
 // Diamond lattice parameters
@@ -74,7 +74,7 @@ struct spin{
   double g; // gyromagnetic ratio
   mvec S; // spin vector
 
-  spin(const Vector3d& pos, double g, const mvec& S){
+  spin(const Vector3d& pos, const double g, const mvec& S){
     assert(S.size() == 3);
     this->pos = pos;
     this->g = g;
@@ -115,7 +115,7 @@ double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_
 
 // group nuclei into clusters according to cluster_indices
 vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
-                                 const vector<vector<uint>>& cluster_indices);
+                                  const vector<vector<uint>>& cluster_indices);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods
@@ -133,7 +133,10 @@ inline Vector3d effective_larmor(const spin& s, const double static_B, const int
 };
 
 // pulse times for harmonic h and fourier component f
-vector<double> axy_pulses(const uint k, const double f, double offset = 0);
+vector<double> axy_pulses(const uint k, const double f);
+
+// delay pulses by a given phase
+vector<double> delayed_pulses(const vector<double> pulses, const double delay);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
@@ -226,6 +229,7 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
 
 // compute fidelity of SWAP operation between NV center and target nucleus
-double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nuclei,
+double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
                       const double static_B, const int ms,
-                      const uint k_DD = 1, const double scale = 100);
+                      const uint k_DD = 1, const double scale = 100,
+                      const double error_tolerance = 1e-30);

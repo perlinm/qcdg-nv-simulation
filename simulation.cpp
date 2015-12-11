@@ -51,6 +51,8 @@ int main(int arg_num, const char *arg_vec[]) {
   int seed;
   bool no_output;
 
+  double dummy;
+
   fs::path lattice_path;
   fs::path larmor_path;
   fs::path scan_path;
@@ -93,6 +95,9 @@ int main(int arg_num, const char *arg_vec[]) {
      "seed for random number generator (>=1)")
     ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
      "don't generate output files")
+
+    ("dummy,d", po::value<double>(&dummy)->default_value(1,"1"),
+     "dummy variable for testing purposes")
     ;
 
   // collect inputs
@@ -363,8 +368,42 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  uint target_nucleus_index = 47;
-  cout << iswap_fidelity(target_nucleus_index, nuclei, static_B, ms) << endl;
+  int good = 0;
+  int bad = 0;
+  cout << endl;
+
+  double mean_good_fidelity = 0;
+  double mean_bad_fidelity = 0;
+  for(uint target_index = 0; target_index < nuclei.size(); target_index++){
+
+    const spin target = nuclei.at(target_index);
+    const Vector3d target_larmor = effective_larmor(target, static_B, ms);
+    const Vector3d target_A = A(target);
+    const Vector3d target_A_w = dot(target_A,hat(target_larmor))*hat(target_larmor);
+    const Vector3d target_A_perp = target_A - target_A_w;
+    const double target_A_phase = atan2(dot(target_A_perp,yhat), dot(target_A_perp,xhat));
+
+    if(abs(target_A_phase) > 1e-3){
+      double fidelity = iswap_fidelity(target_index, nuclei, static_B, ms);
+      if(fidelity > 0.95){
+        mean_good_fidelity += fidelity;
+        good++;
+      }
+      else{
+        cout << endl;
+        mean_bad_fidelity += fidelity;
+        bad++;
+      }
+    }
+  }
+  mean_good_fidelity /= good;
+  mean_bad_fidelity /= bad;
+
+  cout << endl;
+  cout << "good: " << good << endl;
+  cout << "  mean good fidelity: " << mean_good_fidelity << endl;
+  cout << "bad: " << bad << endl;
+  cout << "  mean bad fidelity: " << mean_bad_fidelity << endl;
 
 }
 

@@ -111,7 +111,7 @@ double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_
 
 // group nuclei into clusters according to cluster_indices
 vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
-                                 const vector<vector<uint>>& cluster_indices){
+                                  const vector<vector<uint>>& cluster_indices){
   vector<vector<spin>> clusters;
   for(uint c = 0; c < cluster_indices.size(); c++){
     vector<spin> cluster;
@@ -127,8 +127,15 @@ vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
-// pulse times for harmonic k, fourier component f, and a given offset
-vector<double> axy_pulses(const uint k, const double f, double offset){
+// shift num by mod until it lies on the range [0,mod]
+double mod_to(double num, const double mod){
+  while(num < 0) num += mod;
+  while(num >= mod) num -= mod;
+  return num;
+}
+
+// pulse times for harmonic h and fourier component f
+vector<double> axy_pulses(const uint k, const double f){
 
   assert((k == 1) || (k == 3));
 
@@ -165,21 +172,22 @@ vector<double> axy_pulses(const uint k, const double f, double offset){
   pulses.push_back(0.75);
   pulses.push_back(1. - x2);
   pulses.push_back(1. - x1);
+  return pulses;
+}
 
-  // shift offset to be within one AXY period
-  while(offset < 0) offset += 1;
-  while(offset >= 1) offset -= 1;
+vector<double> delayed_pulses(const vector<double> pulses, const double delay){
+  // number of pulses
+  const uint N = pulses.size();
 
-  if(offset == 0.) return pulses;
-
-  vector<double> offset_pulses;
-  for(uint p = 0; p < 20; p++){
-    if(p/10 + pulses.at(p%10) - offset > 0){
-      offset_pulses.push_back(p/10 + pulses.at(p%10) - offset);
+  // delayed pulses
+  vector<double> delayed_pulses;
+  for(uint p = 0; p < 2*N; p++){
+    if(p/N + pulses.at(p%N) - delay > 0){
+      delayed_pulses.push_back(p/N + pulses.at(p%N) - delay);
     }
-    if(offset_pulses.size() == 10) break;
+    if(delayed_pulses.size() == N) break;
   }
-  return offset_pulses;
+  return delayed_pulses;
 }
 
 // Hamiltoninan coupling two spins
@@ -397,11 +405,11 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 }
 
 // compute fidelity of SWAP operation between NV center and target spin
-double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nuclei,
+double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
                       const double static_B, const int ms,
-                      const uint k_DD, const double scale){
+                      const uint k_DD, const double scale, const double error_tolerance){
   // objects specific to target nucleus
-  const spin target = nuclei.at(target_nucleus_index);
+  const spin target = nuclei.at(target_index);
   const Vector3d target_larmor = effective_larmor(target, static_B, ms);
   const Vector3d target_A = A(target);
   const Vector3d target_A_w = dot(target_A,hat(target_larmor))*hat(target_larmor);
@@ -410,91 +418,89 @@ double iswap_fidelity(const uint target_nucleus_index, const vector<spin>& nucle
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
   for(uint s = 0; s < nuclei.size(); s++){
-    if(s == target_nucleus_index) continue;
+    if(s == target_index) continue;
     const double dw = abs(target_larmor.norm()
                           - effective_larmor(nuclei.at(s), static_B, ms).norm());
     if(dw < dw_min) dw_min = dw;
   }
 
   // AXY sequence parameters
-  // const double f_DD = -ms*dw_min/(target_A_perp.norm()*scale);
-  const double f_DD = 0.06;
-  cout << endl << "f_DD: " << f_DD << endl << endl;
   const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
+  // const double f_DD = -ms*dw_min/(target_A_perp.norm()*scale);
+  const double f_DD = -ms*0.05;
+  const double operation_time = 2*pi/abs(f_DD*target_A_perp.norm());
+  // cout << "f_DD: " << f_DD << endl;
 
-  // phase of hyperfine field rotation in the frame of H_nZ
-  const double target_phi = acos(dot(hat(target_A_perp),xhat));
+  // AXY pulse sequence matching target larmor frequency
+  const vector<double> target_pulses = axy_pulses(k_DD, f_DD);
 
-  // AXY sequence offsets for resonance with xhat and yhat componenets of the hyperfine field
-  const double sx_pulse_offset = target_phi/(2*pi);
-  const double sy_pulse_offset = sx_pulse_offset - 0.25;
+  // initial phase of hyperfine field rotation in the frame of H_nZ
+  const double target_A_phase = atan2(dot(target_A_perp,yhat), dot(target_A_perp,xhat));
 
-  // AXY protocol pulse times (normalized to one AXY sequence period)
-  const vector<double> sx_pulses = axy_pulses(k_DD, f_DD, sx_pulse_offset);
-  const vector<double> sy_pulses = axy_pulses(k_DD, f_DD, sy_pulse_offset);
+  // pulse delays for addressing sx and sy components of target spin
+  double delay_sx = target_A_phase/(2*pi);
+  while(delay_sx < 0) delay_sx += 1;
+  while(delay_sx >= 1) delay_sx -= 1;
+
+  double delay_sy = target_A_phase/(2*pi) - 0.25;
+  while(delay_sy < 0) delay_sy += 1;
+  while(delay_sy >= 1) delay_sy -= 1;
+
+  // AXY pulse sequences addressing sx and sy components of target spin
+  const vector<double> sx_pulses = delayed_pulses(target_pulses, delay_sx);
+  const vector<double> sy_pulses = delayed_pulses(target_pulses, delay_sy);
+
+  // sign we should have on the NV center spin when addressing with these delayed pulses
+  int sign_x = 1;
+  for(uint i = 0; i < target_pulses.size(); i++){
+    if(delay_sx >= target_pulses.at(i)) sign_x *= -1;
+    else break;
+  }
+  int sign_y = 1;
+  for(uint i = 0; i < target_pulses.size(); i++){
+    if(delay_sy >= target_pulses.at(i)) sign_y *= -1;
+    else break;
+  }
 
   // NV center pulses
   const MatrixXcd X = act(sx,{0},2);
-  const MatrixXcd Z_to_X = act(Ry(pi/2),{0},2);
-  const MatrixXcd X_to_Z = act(Ry(-pi/2),{0},2);
-  const MatrixXcd Z_to_Y = act(Rx(-pi/2),{0},2);
-  const MatrixXcd Y_to_Z = act(Rx(pi/2),{0},2);
+  const MatrixXcd Z_to_X = act(Ry(sign_x*pi/2),{0},2);
+  const MatrixXcd X_to_Z = act(Ry(-sign_x*pi/2),{0},2);
+  const MatrixXcd Z_to_Y = act(Rx(-sign_y*pi/2),{0},2);
+  const MatrixXcd Y_to_Z = act(Rx(sign_y*pi/2),{0},2);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
 
   MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
+  MatrixXcd U_sy = X * exp(-j*H*t_DD*sy_pulses.at(0));
   for(uint i = 1; i < sx_pulses.size(); i++){
     U_sx = (X * exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * U_sx).eval();
+    U_sy = (X * exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * U_sy).eval();
   }
   U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * U_sx).eval();
-  U_sx = (Z_to_X * U_sx * X_to_Z).eval();
+  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * U_sy).eval();
 
-  MatrixXcd U_sy = exp(-j*H*t_DD*sy_pulses.at(0));
-  for(uint i = 1; i < sy_pulses.size(); i++){
-    U_sy = (exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * X * U_sy).eval();
-  }
-  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * X * U_sy).eval();
-  U_sy = (Z_to_Y * U_sy * Y_to_Z).eval();
+  U_sx = pow(U_sx, int(operation_time/t_DD));
+  U_sy = pow(U_sy, int(operation_time/t_DD));
 
-  const double operation_time = 4*pi/abs(f_DD*target_A_perp.norm());
-  const MatrixXcd U = pow(U_sx*U_sy, int(operation_time/(2*t_DD)));
-  const MatrixXcd iSWAP = (Matrix4cd() << 1,0,0,0, 0,0,j,0, 0,j,0,0, 0,0,0,1).finished();
-  // const MatrixXcd SWAP = (Matrix4cd() << 1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,1).finished();
+  const MatrixXcd iSWAP = Z_to_X * U_sx * X_to_Z * Z_to_Y * U_sy * Y_to_Z;
+  const MatrixXcd iSWAP_inv = X_to_Z * U_sx * Z_to_X * Y_to_Z * U_sy * Z_to_Y;
 
-  const MatrixXcd psi_NV_0 = up+j*dn;
+  const MatrixXcd iSWAP_exact = (Matrix4cd() << 1,0,0,0, 0,0,j,0,
+                                 0,j,0,0, 0,0,0,1).finished();
+
+  const MatrixXcd psi_NV_0 = up+2*dn;
   const MatrixXcd rho_0_unnormed = tp(psi_NV_0*psi_NV_0.adjoint(), MatrixXcd::Identity(2,2));
   const MatrixXcd rho_0 = rho_0_unnormed/abs(trace(rho_0_unnormed));
 
-  const MatrixXcd rho = U*rho_0*U.adjoint();
-  const MatrixXcd sigma = iSWAP*rho_0*iSWAP.adjoint();
+  const MatrixXcd rho = iSWAP*rho_0*iSWAP.adjoint();
+  const MatrixXcd sigma = iSWAP_exact*rho_0*iSWAP_exact.adjoint();
 
-  cout << endl;
-  cout << "initial system state:" << endl;
-  cout << rho_0 << endl << endl;
-  cout << "initial NV state:" << endl;
-  cout << ptrace(rho_0,{1}) << endl << endl;
-  cout << "initial nuclear spin state:" << endl;
-  cout << ptrace(rho_0,{0}) << endl << endl;
-
-  cout << endl;
-  cout << "final system state (exact):" << endl;
-  cout << sigma << endl << endl;
-  cout << "final NV state (exact):" << endl;
-  cout << ptrace(sigma,{1}) << endl << endl;
-  cout << "final nuclear spin state (exact):" << endl;
-  cout << ptrace(sigma,{0}) << endl << endl;
-
-  cout << endl;
-  cout << "final system state (actual):" << endl;
-  cout << rho << endl << endl;
-  cout << "final NV state (actual):" << endl;
-  cout << ptrace(rho,{1}) << endl << endl;
-  cout << "final nuclear spin state (actual):" << endl;
-  cout << ptrace(rho,{0}) << endl << endl;
-
-  const MatrixXcd sqrt_rho = sqrt(rho);
+  const MatrixXcd sqrt_rho = sqrt(rho + error_tolerance*MatrixXcd::Random(rho.rows(),
+                                                                          rho.cols()));
   const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
 
   return sqrt_F*sqrt_F;
