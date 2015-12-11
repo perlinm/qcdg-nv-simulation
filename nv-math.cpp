@@ -457,19 +457,21 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
 
   // rotation operators
   const MatrixXcd Z_to_tZ = rotate(acos(dot(zhat,target_zhat)), zhat.cross(target_zhat));
-  const MatrixXcd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
-  const MatrixXcd Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
+  const MatrixXcd tZ_to_tX = rotate(pi/2, target_yhat);
+  const MatrixXcd tZ_to_tY = rotate(-pi/2, target_xhat);
 
   // iSWAP operation
   const MatrixXcd iSWAP =
-    act( Z_to_tX, {0}, 2) * U_sx * act( Z_to_tX.inverse(), {0}, 2) *
-    act( Z_to_tY, {0}, 2) * U_sy * act( Z_to_tY.inverse(), {0}, 2);
+    act( Z_to_tZ, {0}, 2) *
+    act( tZ_to_tX, {0}, 2) * U_sx * act( tZ_to_tX.inverse(), {0}, 2) *
+    act( tZ_to_tY, {0}, 2) * U_sy * act( tZ_to_tY.inverse(), {0}, 2) *
+    act( Z_to_tZ.inverse(), {0}, 2);
 
   // exact iSWAP gate
   const MatrixXcd iSWAP_exact =
-    act( Z_to_tZ.inverse(), {0}, 2) * act(Z_to_tZ.inverse(), {1}, 2) *
+    act(Z_to_tZ.inverse(), {1}, 2) *
     (Matrix4cd() << 1,0,0,0, 0,0,j,0, 0,j,0,0, 0,0,0,1).finished() *
-    act( Z_to_tZ, {0}, 2) * act(Z_to_tZ, {1}, 2);
+    act(Z_to_tZ, {1}, 2);
 
   const MatrixXcd psi_NV_0 = up+2*dn;
   const MatrixXcd rho_0_unnormed = tp(psi_NV_0*psi_NV_0.adjoint(), MatrixXcd::Identity(2,2));
