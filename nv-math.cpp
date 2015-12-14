@@ -399,14 +399,19 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 
 // compute fidelity of SWAP operation between NV center and target spin
 double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
-                      const double static_B, const int ms,
+                      const double static_B, const int ms, const double cluster_coupling,
                       const uint k_DD, const double scale){
-  // objects specific to target nucleus
+  // target nucleus effective larmor frequency
   const spin target = nuclei.at(target_index);
   const Vector3d target_larmor = effective_larmor(target, static_B, ms);
+
+  // hyperfine field at target nucleus
   const Vector3d target_A = A(target);
   const Vector3d target_A_w = dot(target_A,hat(target_larmor))*hat(target_larmor);
   const Vector3d target_A_perp = target_A - target_A_w;
+
+  // if our interaction strength is too weak, we can't address this nucleus
+  if(target_A_perp.norm() < cluster_coupling) return 0;
 
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
@@ -430,7 +435,8 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   const vector<double> sy_pulses = delayed_pulses(axy_pulses(k_DD, f_DD), 0.25);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
+  const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
 
   // NV center flip pulse
   const MatrixXcd X = act(sx,{0},2);
@@ -448,28 +454,26 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   U_sx = pow(U_sx, int(operation_time/t_DD));
   U_sy = pow(U_sy, int(operation_time/t_DD));
 
-  // basis vectors for target spin
+  // basis vectors for target nucleus
   const Vector3d target_zhat = hat(target_larmor);
   const Vector3d target_xhat = hat(target_A_perp);
   const Vector3d target_yhat = target_zhat.cross(target_xhat);
 
+  // spin operators in basis of target nucleus
+  const Matrix2cd sxh = dot(s_vec,target_xhat);
+  const Matrix2cd syh = dot(s_vec,target_yhat);
+
   // rotation operators
-  const MatrixXcd Z_to_tZ = rotate(acos(dot(zhat,target_zhat)), zhat.cross(target_zhat));
-  const MatrixXcd tZ_to_tX = rotate(pi/2, target_yhat);
-  const MatrixXcd tZ_to_tY = rotate(-pi/2, target_xhat);
+  const Matrix2cd Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
+  const Matrix2cd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
 
   // iSWAP operation
   const MatrixXcd iSWAP =
-    act( Z_to_tZ, {0}, 2) *
-    act( tZ_to_tX, {0}, 2) * U_sx * act( tZ_to_tX.inverse(), {0}, 2) *
-    act( tZ_to_tY, {0}, 2) * U_sy * act( tZ_to_tY.inverse(), {0}, 2) *
-    act( Z_to_tZ.inverse(), {0}, 2);
+    act(Z_to_tX, {0}, 2) * U_sx * act(Z_to_tX.inverse(), {0}, 2) *
+    act(Z_to_tY, {0}, 2) * U_sy * act(Z_to_tY.inverse(), {0}, 2);
 
   // exact iSWAP gate
-  const MatrixXcd iSWAP_exact =
-    act(Z_to_tZ.inverse(), {1}, 2) *
-    (Matrix4cd() << 1,0,0,0, 0,0,j,0, 0,j,0,0, 0,0,0,1).finished() *
-    act(Z_to_tZ, {1}, 2);
+  const MatrixXcd iSWAP_exact = exp(j*0.25*pi*(tp(sxh,sxh)+tp(syh,syh)));
 
   const MatrixXcd psi_NV_0 = up+2*dn;
   const MatrixXcd rho_0_unnormed = tp(psi_NV_0*psi_NV_0.adjoint(), MatrixXcd::Identity(2,2));

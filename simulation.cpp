@@ -377,18 +377,16 @@ int main(int arg_num, const char *arg_vec[]) {
   double fidelity_cutoff = 0.9;
   for(uint target_index = 0; target_index < nuclei.size(); target_index++){
 
-    double fidelity = iswap_fidelity(target_index, nuclei, static_B, ms);
+    double fidelity = iswap_fidelity(target_index, nuclei, static_B, ms, cluster_coupling);
 
     if(fidelity > fidelity_cutoff){
       mean_good_fidelity += fidelity;
       good++;
     }
     else{
-      // cout << target_index << "  " << fidelity << endl;
       mean_bad_fidelity += fidelity;
       bad++;
     }
-
   }
   mean_good_fidelity /= good;
   mean_bad_fidelity /= bad;
