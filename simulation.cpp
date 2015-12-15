@@ -367,37 +367,54 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  double fidelity_cutoff = 0.9;
+  ofstream info_file("./iswap_info.txt");
+  info_file << "# w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
 
-  int good = 0;
-  int bad = 0;
-  int unaddressable = 0;
-  double mean_good_fidelity = 0;
-  double mean_bad_fidelity = 0;
+  for(uint target = 0; target < nuclei.size(); target++){
 
-  for(uint target_index = 0; target_index < nuclei.size(); target_index++){
-    double fidelity = iswap_fidelity(target_index, nuclei, ind_clusters,
-                                     static_B, ms, cluster_coupling);
-    if(fidelity > fidelity_cutoff){
-      mean_good_fidelity += fidelity;
-      good++;
-    } else if(fidelity == 0){
-      unaddressable++;
-    } else{
-      mean_bad_fidelity += fidelity;
-      bad++;
+    uint k_DD = 1;
+    double scale = 100;
+
+    // larmor frequency of and hyperfine field at target nucleus
+    const Vector3d larmor_eff = effective_larmor(nuclei.at(target), static_B, ms);
+    const Vector3d hyperfine = A(nuclei.at(target));
+    const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+    const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
+
+    // if our interaction strength is too weak, we can't address this nucleus
+    if(hyperfine_perp.norm() < cluster_coupling) continue;
+
+    // minimum difference in larmor frequencies between target nucleus and other nuclei
+    double dw_min = DBL_MAX;
+    for(uint s = 0; s < nuclei.size(); s++){
+      if(s == target) continue;
+      const double dw = abs(larmor_eff.norm()
+                            - effective_larmor(nuclei.at(s), static_B, ms).norm());
+      if(dw < dw_min) dw_min = dw;
     }
-  }
-  mean_good_fidelity /= good;
-  mean_bad_fidelity /= bad;
 
-  cout << endl;
-  cout << "fidelity cutoff: " << fidelity_cutoff << endl;
-  cout << "good: " << good << endl;
-  cout << "  mean good fidelity: " << mean_good_fidelity << endl;
-  cout << "bad: " << bad << endl;
-  cout << "  mean bad fidelity: " << mean_bad_fidelity << endl;
-  cout << "unaddressable: " << unaddressable << endl;
+    // if this larmor frequency too close to another, we cannot (yet) address this nucleus
+    if(dw_min < cluster_coupling/scale) continue;
+
+    // AXY sequence parameters
+    const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale);
+    const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
+    const double t_DD = 2*pi/w_DD; // AXY protocol period
+    const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
+
+    const double fidelity = iswap_fidelity(target, nuclei, ind_clusters,
+                                           static_B, ms, cluster_coupling, k_DD, scale);
+
+    info_file << larmor_eff.norm() << " "
+              << hyperfine.norm() << " "
+              << hyperfine_perp.norm() << " "
+              << dw_min << " "
+              << f_DD << " "
+              << operation_time << " "
+              << fidelity << endl;
+  }
+
+  info_file.close();
 
 }
 
