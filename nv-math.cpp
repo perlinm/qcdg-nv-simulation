@@ -437,6 +437,9 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
     if(dw < dw_min) dw_min = dw;
   }
 
+  // if this larmor frequency too close to another, we cannot (yet) address this nucleus
+  if(dw_min < cluster_coupling/scale) return 0;
+
   // AXY sequence parameters
   const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale);
   const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
