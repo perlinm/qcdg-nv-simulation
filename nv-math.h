@@ -159,9 +159,10 @@ MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
 inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const double scan_time, const vector<vector<spin>>& clusters,
-                             const double w_scan, const uint k_DD, const double f_DD,
-                             const double static_B, const int ms);
+double coherence_measurement(const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double scan_time, const double w_scan, const uint k_DD,
+                             const double f_DD, const double static_B, const int ms);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning and targeting
@@ -214,9 +215,10 @@ inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
 MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(double scan_time, const vector<vector<spin>>& clusters,
-                             const double w_scan, const uint k_DD, const double f_DD,
-                             const double static_B, const int ms,
+double coherence_measurement(const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double scan_time, const double w_scan, const uint k_DD,
+                             const double f_DD, const double static_B, const int ms,
                              const control_fields& controls,
                              const uint integration_factor = 100);
 
@@ -234,6 +236,8 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
 
 // compute fidelity of SWAP operation between NV center and target nucleus
-double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
+double iswap_fidelity(const uint target, const vector<spin>& nuclei,
+                      const vector<vector<uint>>& ind_clusters,
                       const double static_B, const int ms, const double cluster_coupling,
                       const uint k_DD = 1, const double scale = 100);
+

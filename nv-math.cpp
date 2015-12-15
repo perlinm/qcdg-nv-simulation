@@ -228,9 +228,11 @@ inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d&
 }
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const double scan_time, const vector<vector<spin>>& clusters,
-                             const double w_scan, const uint k_DD, const double f_DD,
-                             const double static_B, const int ms){
+double coherence_measurement(const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double scan_time, const double w_scan, const uint k_DD,
+                             const double f_DD, const double static_B, const int ms){
+  const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters); // spin clusters
   const spin e_ms = e(ms); // electron spin
 
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
@@ -299,10 +301,12 @@ MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster){
 }
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(double scan_time, const vector<vector<spin>>& clusters,
-                             const double w_scan, const uint k_DD, const double f_DD,
-                             const double static_B, const int ms,
+double coherence_measurement(const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double scan_time, const double w_scan, const uint k_DD,
+                             const double f_DD, const double static_B, const int ms,
                              const control_fields& controls, const uint integration_factor){
+  const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters); // spin clusters
   const spin e_ms = e(ms); // electron spin
 
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
@@ -321,8 +325,8 @@ double coherence_measurement(double scan_time, const vector<vector<spin>>& clust
   const double dt = 1/(freq_scale*integration_factor); // integration time step
   const double dx = 1/(t_DD*freq_scale*integration_factor);
 
-  scan_time = int(scan_time/t_DD)*t_DD; // scan an integer number of AXY sequences
-  const uint integration_steps = int(scan_time/dt);
+  // use an integer number of integration steps to scan an integer number of AXY sequences
+  const uint integration_steps = int (int(scan_time/t_DD)*t_DD / dt);
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
@@ -398,50 +402,58 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 }
 
 // compute fidelity of SWAP operation between NV center and target spin
-double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
+double iswap_fidelity(const uint target, const vector<spin>& nuclei,
+                      const vector<vector<uint>>& ind_clusters,
                       const double static_B, const int ms, const double cluster_coupling,
                       const uint k_DD, const double scale){
-  // target nucleus effective larmor frequency
-  const spin target = nuclei.at(target_index);
-  const Vector3d target_larmor = effective_larmor(target, static_B, ms);
+  // identify cluster of target nucleus
+  const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
+  vector<spin> cluster;
+  uint cluster_target;
+  for(uint c = 0; c < clusters.size(); c++){
+    for(uint s = 0; s < clusters.at(c).size(); s++){
+      if(clusters.at(c).at(s) == nuclei.at(target)){
+        cluster = clusters.at(c);
+        cluster_target = s;
+      }
+    }
+  }
 
-  // hyperfine field at target nucleus
-  const Vector3d target_A = A(target);
-  const Vector3d target_A_w = dot(target_A,hat(target_larmor))*hat(target_larmor);
-  const Vector3d target_A_perp = target_A - target_A_w;
+  // larmor frequency of and hyperfine field at target nucleus
+  const Vector3d larmor_eff = effective_larmor(nuclei.at(target), static_B, ms);
+  const Vector3d hyperfine = A(nuclei.at(target));
+  const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+  const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
 
   // if our interaction strength is too weak, we can't address this nucleus
-  if(target_A_perp.norm() < cluster_coupling) return 0;
+  if(hyperfine_perp.norm() < cluster_coupling) return 0;
 
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
   for(uint s = 0; s < nuclei.size(); s++){
-    if(s == target_index) continue;
-    const double dw = abs(target_larmor.norm()
+    if(s == target) continue;
+    const double dw = abs(larmor_eff.norm()
                           - effective_larmor(nuclei.at(s), static_B, ms).norm());
     if(dw < dw_min) dw_min = dw;
   }
 
   // AXY sequence parameters
-  // const double f_DD = -ms*dw_min/(target_A_perp.norm()*scale);
-  const double f_DD = -ms*0.05;
-  // cout << "f_DD: " << f_DD << endl;
-  const double w_DD = target_larmor.norm()/k_DD; // AXY protocol angular frequency
+  const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale);
+  const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  const double operation_time = 2*pi/abs(f_DD*target_A_perp.norm());
+  const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
 
   // AXY pulse sequence matching target larmor frequency
   const vector<double> sx_pulses = axy_pulses(k_DD, f_DD);
   const vector<double> sy_pulses = delayed_pulses(axy_pulses(k_DD, f_DD), 0.25);
 
   // NV+cluster Hamiltonian
-  // const MatrixXcd H = H_int(e(ms),{target}) + H_Z(e(ms),{target},static_B*zhat);
-  const MatrixXcd H = H_int_large_static_B(e(ms),{target}) + H_nZ({target},static_B*zhat);
+  const MatrixXcd H = H_int(e(ms), cluster) + H_Z(e(ms), cluster, static_B*zhat);
 
-  // NV center flip pulse
-  const MatrixXcd X = act(sx,{0},2);
+  // NV center spin flip pulse
+  const MatrixXcd X = act(sx,{0},cluster.size()+1);
 
-  // spin component addressing propagators
+  // spin addressing propagators
   MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
   MatrixXcd U_sy = X * exp(-j*H*t_DD*sy_pulses.at(0));
   for(uint i = 1; i < sx_pulses.size(); i++){
@@ -454,29 +466,33 @@ double iswap_fidelity(const uint target_index, const vector<spin>& nuclei,
   U_sx = pow(U_sx, int(operation_time/t_DD));
   U_sy = pow(U_sy, int(operation_time/t_DD));
 
-  // basis vectors for target nucleus
-  const Vector3d target_zhat = hat(target_larmor);
-  const Vector3d target_xhat = hat(target_A_perp);
+  // "natural" basis vectors for target nucleus
+  const Vector3d target_zhat = hat(larmor_eff);
+  const Vector3d target_xhat = hat(hyperfine_perp);
   const Vector3d target_yhat = target_zhat.cross(target_xhat);
 
-  // spin operators in basis of target nucleus
-  const Matrix2cd sxh = dot(s_vec,target_xhat);
-  const Matrix2cd syh = dot(s_vec,target_yhat);
-
-  // rotation operators
+  // operators to rotate into the "natural" frame
   const Matrix2cd Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
   const Matrix2cd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
 
   // iSWAP operation
   const MatrixXcd iSWAP =
-    act(Z_to_tX, {0}, 2) * U_sx * act(Z_to_tX.inverse(), {0}, 2) *
-    act(Z_to_tY, {0}, 2) * U_sy * act(Z_to_tY.inverse(), {0}, 2);
+    act(Z_to_tX,{0},cluster.size()+1) * U_sx * act(Z_to_tX.inverse(),{0},cluster.size()+1) *
+    act(Z_to_tY,{0},cluster.size()+1) * U_sy * act(Z_to_tY.inverse(),{0},cluster.size()+1);
+
+  // spin operators in the "natural" basis
+  const Matrix2cd sxp = dot(s_vec,target_xhat);
+  const Matrix2cd syp = dot(s_vec,target_yhat);
 
   // exact iSWAP gate
-  const MatrixXcd iSWAP_exact = exp(j*0.25*pi*(tp(sxh,sxh)+tp(syh,syh)));
+  const MatrixXcd iSWAP_exact = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
+                                                    {0,cluster_target+1}, cluster.size()+1));
 
   const MatrixXcd psi_NV_0 = up+2*dn;
-  const MatrixXcd rho_0_unnormed = tp(psi_NV_0*psi_NV_0.adjoint(), MatrixXcd::Identity(2,2));
+  const MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
+  const MatrixXcd rho_cluster_0 = MatrixXcd::Identity(pow(2,cluster.size()),
+                                                      pow(2,cluster.size()));
+  const MatrixXcd rho_0_unnormed = tp(rho_NV_0,rho_cluster_0);
   const MatrixXcd rho_0 = rho_0_unnormed/abs(trace(rho_0_unnormed));
 
   const MatrixXcd rho = iSWAP*rho_0*iSWAP.adjoint();

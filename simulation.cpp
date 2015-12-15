@@ -268,7 +268,6 @@ int main(int arg_num, const char *arg_vec[]) {
                                             cluster_coupling, dcc_cutoff);
     ind_clusters = get_index_clusters(nuclei, cluster_coupling);
   }
-  const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
 
   if(max_cluster_size > 1){
     cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
@@ -346,8 +345,8 @@ int main(int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(scan_time, clusters, w_scan.at(i), k_DD, f_DD,
-                                              static_B, ms);
+      coherence.at(i) = coherence_measurement(nuclei, ind_clusters, scan_time,
+                                              w_scan.at(i), k_DD, f_DD, static_B, ms);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -368,22 +367,23 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
+  double fidelity_cutoff = 0.9;
+
   int good = 0;
   int bad = 0;
-  cout << endl;
-
+  int unaddressable = 0;
   double mean_good_fidelity = 0;
   double mean_bad_fidelity = 0;
-  double fidelity_cutoff = 0.9;
+
   for(uint target_index = 0; target_index < nuclei.size(); target_index++){
-
-    double fidelity = iswap_fidelity(target_index, nuclei, static_B, ms, cluster_coupling);
-
+    double fidelity = iswap_fidelity(target_index, nuclei, ind_clusters,
+                                     static_B, ms, cluster_coupling);
     if(fidelity > fidelity_cutoff){
       mean_good_fidelity += fidelity;
       good++;
-    }
-    else{
+    } else if(fidelity == 0){
+      unaddressable++;
+    } else{
       mean_bad_fidelity += fidelity;
       bad++;
     }
@@ -397,6 +397,7 @@ int main(int arg_num, const char *arg_vec[]) {
   cout << "  mean good fidelity: " << mean_good_fidelity << endl;
   cout << "bad: " << bad << endl;
   cout << "  mean bad fidelity: " << mean_bad_fidelity << endl;
+  cout << "unaddressable: " << unaddressable << endl;
 
 }
 
