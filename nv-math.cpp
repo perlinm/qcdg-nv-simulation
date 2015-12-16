@@ -392,11 +392,11 @@ double coherence_measurement(const vector<spin>& nuclei,
 
 // return control field for decoupling spin s from other nuclei
 control_fields nuclear_decoupling_field(const spin& s, const double static_B, const int ms,
-                                        const double phi_rfd, const double theta_rfd,
-                                        const double scale){
+                                        const double scale_factor, const double phi_rfd,
+                                        const double theta_rfd){
   const Vector3d w_j = effective_larmor(s, static_B, ms);
-  const double w_rfd = w_j.norm()/(1-sin(theta_rfd)/(2*sqrt(2)*scale));
-  const double V_rfd = w_rfd/(s.g*scale);
+  const double w_rfd = w_j.norm()/(1-sin(theta_rfd)/(2*sqrt(2)*scale_factor));
+  const double V_rfd = w_rfd/(s.g*scale_factor);
   const Vector3d n_rfd = cos(theta_rfd)*hat(w_j) + sin(theta_rfd)*hat(w_j.cross(zhat));
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
@@ -404,8 +404,8 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 // compute fidelity of SWAP operation between NV center and target spin
 double iswap_fidelity(const uint target, const vector<spin>& nuclei,
                       const vector<vector<uint>>& ind_clusters,
-                      const double static_B, const int ms, const double cluster_coupling,
-                      const uint k_DD, const double scale){
+                      const double static_B, const int ms, const uint k_DD,
+                      const double cluster_coupling, const double scale_factor){
   // identify cluster of target nucleus
   const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
   vector<spin> cluster;
@@ -438,10 +438,10 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
   }
 
   // if this larmor frequency too close to another, we cannot (yet) address this nucleus
-  if(dw_min < cluster_coupling/scale) return 0;
+  if(dw_min < cluster_coupling/scale_factor) return 0;
 
   // AXY sequence parameters
-  const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale);
+  const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale_factor);
   const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
   const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());

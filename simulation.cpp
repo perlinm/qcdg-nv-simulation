@@ -39,23 +39,25 @@ int main(int arg_num, const char *arg_vec[]) {
   int ms;
   double static_B;
   double static_B_norm_in_gauss;
+  uint k_DD;
+  double scale_factor;
 
   bool perform_scan;
   uint scan_bins;
   double f_DD;
-  uint k_DD;
   double scan_time;
   double scan_time_in_ms;
+
+  bool compute_fidelities;
 
   fs::path output_dir;
   int seed;
   bool no_output;
 
-  double dummy;
-
   fs::path lattice_path;
   fs::path larmor_path;
   fs::path scan_path;
+  fs::path fidelities_path;
   string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
   string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
 
@@ -77,6 +79,10 @@ int main(int arg_num, const char *arg_vec[]) {
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
     ("static_B,B", po::value<double>(&static_B_norm_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
+    ("k_DD,k", po::value<uint>(&k_DD)->default_value(1),
+     "resonance harmonic used in spin addressing (1 or 3)")
+    ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
+     "factor used to define different scales")
 
     ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies?")
@@ -84,10 +90,12 @@ int main(int arg_num, const char *arg_vec[]) {
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("k_DD,k", po::value<uint>(&k_DD)->default_value(1),
-     "resonance harmonic used in coherence scanning (1 or 3)")
     ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
      "time for each coherence measurement (in microseconds)")
+
+    ("fidelities",
+     po::value<bool>(&compute_fidelities)->default_value(false)->implicit_value(true),
+     "compute expected iswap fidelities?")
 
     ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
      "directory for storing data")
@@ -95,9 +103,6 @@ int main(int arg_num, const char *arg_vec[]) {
      "seed for random number generator (>=1)")
     ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
      "don't generate output files")
-
-    ("dummy,d", po::value<double>(&dummy)->default_value(1,"1"),
-     "dummy variable for testing purposes")
     ;
 
   // collect inputs
@@ -126,11 +131,11 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert(static_B_norm_in_gauss >= 0);
+  assert((k_DD == 1) || (k_DD == 3));
+  assert(scale_factor > 1);
 
   if(perform_scan){
     assert(scan_bins > 0);
-    assert((f_DD > 0) && (f_DD < 1));
-    assert((k_DD == 1) || (k_DD == 3));
     assert(scan_time_in_ms > 0);
   }
 
@@ -347,7 +352,7 @@ int main(int arg_num, const char *arg_vec[]) {
     // print coherence scan results to output file
     if(!no_output){
       ofstream scan(scan_path.string());
-      scan << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
+      scan << "# cluster coupling factor: " << cluster_coupling << endl;
       scan << "# f_DD: " << f_DD << endl;
       scan << "# scan time: " << scan_time << endl;
       cout << endl;
@@ -363,76 +368,79 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  vector<uint> addressable_targets;
-  vector<double> larmor_effs;
-  vector<double> hyperfines;
-  vector<double> hyperfine_perps;
-  vector<double> dw_mins;
-  vector<double> f_DDs;
-  vector<double> operation_times;
-  vector<double> fidelities;
+  if(compute_fidelities){
+    fidelities_path = output_dir/fs::path("fidelities-"+output_suffix);
 
-  for(uint target = 0; target < nuclei.size(); target++){
+    vector<uint> addressable_targets;
+    vector<double> larmor_effs;
+    vector<double> hyperfines;
+    vector<double> hyperfine_perps;
+    vector<double> dw_mins;
+    vector<double> f_DDs;
+    vector<double> operation_times;
+    vector<double> fidelities;
 
-    uint k_DD = 1;
-    double scale = 100;
+    for(uint target = 0; target < nuclei.size(); target++){
 
-    // larmor frequency of and hyperfine field at target nucleus
-    const Vector3d larmor_eff = effective_larmor(nuclei.at(target), static_B, ms);
-    const Vector3d hyperfine = A(nuclei.at(target));
-    const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
-    const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
+      // larmor frequency of and hyperfine field at target nucleus
+      const Vector3d larmor_eff = effective_larmor(nuclei.at(target), static_B, ms);
+      const Vector3d hyperfine = A(nuclei.at(target));
+      const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+      const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
 
-    // if our interaction strength is too weak, we can't address this nucleus
-    if(hyperfine_perp.norm() < cluster_coupling) continue;
+      // if our interaction strength is too weak, we can't address this nucleus
+      if(hyperfine_perp.norm() < cluster_coupling) continue;
 
-    // minimum difference in larmor frequencies between target nucleus and other nuclei
-    double dw_min = DBL_MAX;
-    for(uint s = 0; s < nuclei.size(); s++){
-      if(s == target) continue;
-      const double dw = abs(larmor_eff.norm()
-                            - effective_larmor(nuclei.at(s), static_B, ms).norm());
-      if(dw < dw_min) dw_min = dw;
+      // minimum difference in larmor frequencies between target nucleus and other nuclei
+      double dw_min = DBL_MAX;
+      for(uint s = 0; s < nuclei.size(); s++){
+        if(s == target) continue;
+        const double dw = abs(larmor_eff.norm()
+                              - effective_larmor(nuclei.at(s), static_B, ms).norm());
+        if(dw < dw_min) dw_min = dw;
+      }
+
+      // if this larmor frequency too close to another, we cannot (yet) address this nucleus
+      if(dw_min < cluster_coupling/scale_factor) continue;
+
+      // AXY sequence parameters
+      const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale_factor);
+      const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
+      const double t_DD = 2*pi/w_DD; // AXY protocol period
+      const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
+
+      // iSWAP gate fidelity
+      const double fidelity = iswap_fidelity(target, nuclei, ind_clusters, static_B, ms,
+                                             k_DD, cluster_coupling, scale_factor);
+
+      addressable_targets.push_back(target);
+      larmor_effs.push_back(larmor_eff.norm());
+      hyperfines.push_back(hyperfine.norm());
+      hyperfine_perps.push_back(hyperfine_perp.norm());
+      dw_mins.push_back(dw_min);
+      f_DDs.push_back(f_DD);
+      operation_times.push_back(operation_time);
+      fidelities.push_back(fidelity);
     }
 
-    // if this larmor frequency too close to another, we cannot (yet) address this nucleus
-    if(dw_min < cluster_coupling/scale) continue;
-
-    // AXY sequence parameters
-    const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale);
-    const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
-    const double t_DD = 2*pi/w_DD; // AXY protocol period
-    const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
-
-    const double fidelity = iswap_fidelity(target, nuclei, ind_clusters,
-                                           static_B, ms, cluster_coupling, k_DD, scale);
-
-    addressable_targets.push_back(target);
-    larmor_effs.push_back(larmor_eff.norm());
-    hyperfines.push_back(hyperfine.norm());
-    hyperfine_perps.push_back(hyperfine_perp.norm());
-    dw_mins.push_back(dw_min);
-    f_DDs.push_back(f_DD);
-    operation_times.push_back(operation_time);
-    fidelities.push_back(fidelity);
-  }
-
-  if(!no_output){
-    ofstream info_file("./iswap_info.txt");
-    info_file << "# index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
-    info_file << "# cluster_coupling: " << cluster_coupling << endl;
-    cout << endl;
-    for(uint t = 0; t < addressable_targets.size(); t++){
-      info_file << addressable_targets.at(t) << " "
-                << larmor_effs.at(t) << " "
-                << hyperfines.at(t) << " "
-                << hyperfine_perps.at(t) << " "
-                << dw_mins.at(t) << " "
-                << f_DDs.at(t) << " "
-                << operation_times.at(t) << " "
-                << fidelities.at(t) << endl;
+    if(!no_output){
+      ofstream info_file(fidelities_path.string());
+      info_file << "# index fidelity\n";
+      info_file << "# cluster coupling factor: " << cluster_coupling << endl;
+      info_file << "# scale factor: " << scale_factor << endl;
+      cout << endl;
+      for(uint t = 0; t < addressable_targets.size(); t++){
+        info_file << addressable_targets.at(t) << " "
+                  << larmor_effs.at(t) << " "
+                  << hyperfines.at(t) << " "
+                  << hyperfine_perps.at(t) << " "
+                  << dw_mins.at(t) << " "
+                  << f_DDs.at(t) << " "
+                  << operation_times.at(t) << " "
+                  << fidelities.at(t) << endl;
+      }
+      info_file.close();
     }
-    info_file.close();
   }
 
 }

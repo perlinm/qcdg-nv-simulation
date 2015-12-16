@@ -218,9 +218,8 @@ double coherence_measurement(const vector<spin>& nuclei,
 
 // return control field for decoupling spin s from other nuclei
 control_fields nuclear_decoupling_field(const spin& s, const double static_B, const int ms,
-                                        const double phi_rfd = 0,
-                                        const double theta_rfd = pi/2,
-                                        const double scale = 100);
+                                        const double scale_factor, const double phi_rfd = 0,
+                                        const double theta_rfd = pi/2);
 
 // return AXY sequence pulses with given offset
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
@@ -228,6 +227,6 @@ vector<double> offset_pulses(vector<double> xs, const double x_offset);
 // compute fidelity of SWAP operation between NV center and target nucleus
 double iswap_fidelity(const uint target, const vector<spin>& nuclei,
                       const vector<vector<uint>>& ind_clusters,
-                      const double static_B, const int ms, const double cluster_coupling,
-                      const uint k_DD = 1, const double scale = 100);
+                      const double static_B, const int ms, const uint k_DD,
+                      const double cluster_coupling, const double scale_factor);
 

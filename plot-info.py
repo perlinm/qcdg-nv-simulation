@@ -1,8 +1,19 @@
 #!/usr/bin/python3
 from pylab import *
 
+if len(sys.argv) != 2:
+    print('useage: %s file' % sys.argv[0])
+    exit(1)
+
+fname = sys.argv[1]
+
+if 'fidelities' not in fname:
+    print('invalid input file')
+    exit(1)
+
+
 index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity = \
-       loadtxt('iswap_info.txt', unpack=True)
+       loadtxt(fname, unpack=True)
 
 mxi = fidelity == max(fidelity)
 
