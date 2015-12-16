@@ -15,7 +15,7 @@ inline MatrixXcd clean(const MatrixXcd& M){
 }
 
 // returns element p of a basis for operators acting on a system with N qubits
-string U_basis_element_text(const int p, const int N){
+string U_basis_element_text(const uint p, const uint N){
   char spins[4] = {'I','X','Y','Z'};
   stringstream stream;
   for(int n = 0; n < N; n++){

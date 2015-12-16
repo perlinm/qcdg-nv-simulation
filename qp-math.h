@@ -100,7 +100,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 //--------------------------------------------------------------------------------------------
 
 // returns element p of a basis for operators acting on a system with N qubits
-MatrixXcd U_basis_element(const int p, const int N);
+MatrixXcd U_basis_element(const uint p, const uint N);
 
 // flatten matrix into a 1-D vector
 inline MatrixXcd flatten(MatrixXcd M){
@@ -109,7 +109,7 @@ inline MatrixXcd flatten(MatrixXcd M){
 }
 
 // returns matrix whose columns are basis operators for a system of N spins
-MatrixXcd U_basis_matrix(const int N);
+MatrixXcd U_basis_matrix(const uint N);
 
 // decompose Hamiltonian into its basis elements
 MatrixXcd U_decompose(const MatrixXcd& U, const bool fast = true);

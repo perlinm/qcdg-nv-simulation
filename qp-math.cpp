@@ -146,7 +146,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
 //--------------------------------------------------------------------------------------------
 
 // returns basis element p for an operator acting on a system with N spins
-MatrixXcd U_basis_element(const int p, const int N){
+MatrixXcd U_basis_element(const uint p, const uint N){
   MatrixXcd spins[4] = {st, sx, sy, sz};
   MatrixXcd b_p = spins[int_bit(p,0)+2*int_bit(p,1)];
   for(int n = 1; n < N; n++){
@@ -156,7 +156,7 @@ MatrixXcd U_basis_element(const int p, const int N){
 }
 
 // returns matrix whose columns are basis Hamiltonians for a system of N spins
-MatrixXcd U_basis_matrix(const int N){
+MatrixXcd U_basis_matrix(const uint N){
   MatrixXcd spins[4] = {st, sx, sy, sz};
   MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
   for(int p = 0; p < pow(4,N); p++){
