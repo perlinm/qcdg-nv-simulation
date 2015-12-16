@@ -420,6 +420,8 @@ int main(int arg_num, const char *arg_vec[]) {
   if(!no_output){
     ofstream info_file("./iswap_info.txt");
     info_file << "# index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
+    info_file << "# cluster_coupling: " << cluster_coupling << endl;
+    cout << endl;
     for(uint t = 0; t < addressable_targets.size(); t++){
       info_file << addressable_targets.at(t) << " "
                 << larmor_effs.at(t) << " "

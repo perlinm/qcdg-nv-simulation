@@ -6,8 +6,10 @@ index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity = \
 
 mxi = fidelity == max(fidelity)
 
-print(fidelity[mxi])
-print(operation_time[mxi])
+print('max fidelity:',max(fidelity))
+print('operation time(s):',operation_time[mxi])
+print()
+print(fidelity[fidelity > 0.95])
 
 f2 = multiply(fidelity,fidelity)
 
