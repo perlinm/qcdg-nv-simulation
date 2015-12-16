@@ -368,7 +368,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   ofstream info_file("./iswap_info.txt");
-  info_file << "# w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
+  info_file << "# index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
 
   for(uint target = 0; target < nuclei.size(); target++){
 
@@ -405,7 +405,8 @@ int main(int arg_num, const char *arg_vec[]) {
     const double fidelity = iswap_fidelity(target, nuclei, ind_clusters,
                                            static_B, ms, cluster_coupling, k_DD, scale);
 
-    info_file << larmor_eff.norm() << " "
+    info_file << target << " "
+              << larmor_eff.norm() << " "
               << hyperfine.norm() << " "
               << hyperfine_perp.norm() << " "
               << dw_min << " "
