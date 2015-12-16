@@ -117,6 +117,13 @@ MatrixXcd U_decompose(const MatrixXcd& U, const bool fast = true);
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G);
 
+// compute fidelity of state rho with respect to state sigma, i.e. how close rho is to sigma
+inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma){
+  const MatrixXcd sqrt_rho = sqrt(rho);
+  const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
+  return sqrt_F*sqrt_F;
+}
+
 //--------------------------------------------------------------------------------------------
 // Matrix vectors
 //--------------------------------------------------------------------------------------------
