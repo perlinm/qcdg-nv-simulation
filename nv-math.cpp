@@ -491,18 +491,5 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
   const MatrixXcd iSWAP_exact = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
                                                     {0,cluster_target+1}, cluster.size()+1));
 
-  const MatrixXcd psi_NV_0 = up+2*dn;
-  const MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
-  const MatrixXcd rho_cluster_0 = MatrixXcd::Identity(pow(2,cluster.size()),
-                                                      pow(2,cluster.size()));
-  const MatrixXcd rho_0_unnormed = tp(rho_NV_0,rho_cluster_0);
-  const MatrixXcd rho_0 = rho_0_unnormed/abs(trace(rho_0_unnormed));
-
-  const MatrixXcd rho = iSWAP*rho_0*iSWAP.adjoint();
-  const MatrixXcd sigma = iSWAP_exact*rho_0*iSWAP_exact.adjoint();
-
-  const MatrixXcd sqrt_rho = sqrt(rho);
-  const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
-
-  return sqrt_F*sqrt_F;
+  return gate_fidelity(iSWAP,iSWAP_exact);
 }

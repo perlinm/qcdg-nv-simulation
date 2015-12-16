@@ -6,44 +6,6 @@ using namespace std;
 using namespace Eigen;
 
 //--------------------------------------------------------------------------------------------
-// Single spin state vectors
-//--------------------------------------------------------------------------------------------
-
-// spin up/down state vectors
-const VectorXcd up = (Vector2cd() << 1,0).finished();
-const VectorXcd dn = (Vector2cd() << 0,1).finished();
-
-// two qbit basis states
-const VectorXcd uu = tp(up,up);
-const VectorXcd ud = tp(up,dn);
-const VectorXcd du = tp(dn,up);
-const VectorXcd dd = tp(dn,dn);
-
-// two qbit singlet-triplet states
-const VectorXcd S = (ud-du)/sqrt(2);
-const VectorXcd T = (ud+du)/sqrt(2);
-
-//--------------------------------------------------------------------------------------------
-// Single spin operations
-//--------------------------------------------------------------------------------------------
-
-// pauli spin matrices
-const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
-const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
-const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
-const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
-
-// spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
-inline MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
-inline MatrixXcd Uy(const double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
-inline MatrixXcd Uz(const double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
-
-// rotation operators
-inline MatrixXcd Rx(const double phi){ return Ux(phi/2); }
-inline MatrixXcd Ry(const double phi){ return Uy(phi/2); }
-inline MatrixXcd Rz(const double phi){ return Uz(phi/2); }
-
-//--------------------------------------------------------------------------------------------
 // Diamond lattice parameters
 //--------------------------------------------------------------------------------------------
 
@@ -60,6 +22,34 @@ const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+
 const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from V to N
 const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
 const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
+
+//--------------------------------------------------------------------------------------------
+// Spin state vectors
+//--------------------------------------------------------------------------------------------
+
+// two qbit basis states
+const VectorXcd uu = tp(up,up);
+const VectorXcd ud = tp(up,dn);
+const VectorXcd du = tp(dn,up);
+const VectorXcd dd = tp(dn,dn);
+
+// two qbit singlet-triplet states
+const VectorXcd S = (ud-du)/sqrt(2);
+const VectorXcd T = (ud+du)/sqrt(2);
+
+//--------------------------------------------------------------------------------------------
+// Single spin operations
+//--------------------------------------------------------------------------------------------
+
+// spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
+inline MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
+inline MatrixXcd Uy(const double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
+inline MatrixXcd Uz(const double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
+
+// rotation operators
+inline MatrixXcd Rx(const double phi){ return Ux(phi/2); }
+inline MatrixXcd Ry(const double phi){ return Uy(phi/2); }
+inline MatrixXcd Rz(const double phi){ return Uz(phi/2); }
 
 //--------------------------------------------------------------------------------------------
 // Spin vectors and structs

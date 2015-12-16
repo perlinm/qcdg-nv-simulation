@@ -8,6 +8,10 @@ using namespace Eigen;
 #include "constants.h"
 #include "qp-math.h"
 
+//--------------------------------------------------------------------------------------------
+// Matrix functions
+//--------------------------------------------------------------------------------------------
+
 // tensor product of many matrices
 MatrixXcd tp(const initializer_list<MatrixXcd>& list){
   MatrixXcd out = I1;
@@ -43,7 +47,7 @@ complex<double> get_phase(const MatrixXcd& A){
 }
 
 //--------------------------------------------------------------------------------------------
-// Operator rearrangement
+// Operator manipulation
 //--------------------------------------------------------------------------------------------
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
@@ -135,6 +139,54 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
     }
   }
   return B;
+}
+
+//--------------------------------------------------------------------------------------------
+// Gate decomposition and fidelity
+//--------------------------------------------------------------------------------------------
+
+// returns basis element p for an operator acting on a system with N spins
+MatrixXcd U_basis_element(const int p, const int N){
+  MatrixXcd spins[4] = {st, sx, sy, sz};
+  MatrixXcd b_p = spins[int_bit(p,0)+2*int_bit(p,1)];
+  for(int n = 1; n < N; n++){
+    b_p = tp(b_p,spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)]);
+  }
+  return b_p;
+}
+
+// returns matrix whose columns are basis Hamiltonians for a system of N spins
+MatrixXcd U_basis_matrix(const int N){
+  MatrixXcd spins[4] = {st, sx, sy, sz};
+  MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
+  for(int p = 0; p < pow(4,N); p++){
+    out.col(p) = flatten(U_basis_element(p,N));
+  }
+  return out;
+}
+
+// decompose an operator into its basis elements
+MatrixXcd U_decompose(const MatrixXcd& U, const bool fast){
+  int N = log2(U.rows());
+  if(fast) return U_basis_matrix(N).householderQr().solve(flatten(U));
+  else return U_basis_matrix(N).fullPivLu().solve(flatten(U));
+}
+
+// compute fidelity of gate U with respect to G, i.e. how well U approximates G
+double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G){
+  const MatrixXcd psi_NV_0 = up+2*dn;
+  const MatrixXcd rho_NV_0 = psi_NV_0*psi_NV_0.adjoint();
+  const MatrixXcd rho_cluster_0 = MatrixXcd::Identity(U.rows()/2,U.cols()/2);
+  const MatrixXcd rho_0_unnormed = tp(rho_NV_0,rho_cluster_0);
+  const MatrixXcd rho_0 = rho_0_unnormed/abs(trace(rho_0_unnormed));
+
+  const MatrixXcd rho = U*rho_0*U.adjoint();
+  const MatrixXcd sigma = G*rho_0*G.adjoint();
+
+  const MatrixXcd sqrt_rho = sqrt(rho);
+  const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
+
+  return sqrt_F*sqrt_F;
 }
 
 //--------------------------------------------------------------------------------------------

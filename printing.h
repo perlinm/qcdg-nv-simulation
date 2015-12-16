@@ -10,20 +10,12 @@ using namespace Eigen;
 #include "nv-math.h"
 
 // clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& A){
-  return remove_artifacts(remove_phase(remove_artifacts(A)));
+inline MatrixXcd clean(const MatrixXcd& M){
+  return remove_artifacts(remove_phase(remove_artifacts(M)));
 }
 
-// returns basis element p for Hamiltonians of a system with N spins
-MatrixXcd H_basis_element(const int p, const int N){
-  MatrixXcd spins[4] = {st, sx, sy, sz};
-  MatrixXcd b_p = spins[int_bit(p,0)+2*int_bit(p,1)];
-  for(int n = 1; n < N; n++){
-    b_p = tp(b_p,spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)]);
-  }
-  return b_p;
-}
-string H_basis_element_text(const int p, const int N){
+// returns element p of a basis for operators acting on a system with N qubits
+string U_basis_element_text(const int p, const int N){
   char spins[4] = {'I','X','Y','Z'};
   stringstream stream;
   for(int n = 0; n < N; n++){
@@ -32,36 +24,13 @@ string H_basis_element_text(const int p, const int N){
   return stream.str();
 }
 
-// flatten matrix into a 1-D vector
-inline MatrixXcd flatten(MatrixXcd M){
-  M.resize(M.size(),1);
-  return M;
-}
-
-// returns matrix whose columns are basis Hamiltonians for a system of N spins
-MatrixXcd H_basis_matrix(const int N){
-  MatrixXcd spins[4] = {st, sx, sy, sz};
-  MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
-  for(int p = 0; p < pow(4,N); p++){
-    out.col(p) = flatten(H_basis_element(p,N));
-  }
-  return out;
-}
-
-// decompose Hamiltonian into its basis elements
-MatrixXcd H_decompose(const MatrixXcd& H, const bool fast = true){
-  int N = log2(H.rows());
-  if(fast) return H_basis_matrix(N).householderQr().solve(flatten(H));
-  else return H_basis_matrix(N).fullPivLu().solve(flatten(H));
-}
-
-// print Hamiltonian in human-readable form
-void H_print(const MatrixXcd& H, const bool fast = true){
-  int N = log2(H.rows());
-  MatrixXcd hs = clean(H_decompose(H,fast));
+// print operator in human-readable form
+void U_print(const MatrixXcd& U, const bool fast = true){
+  int N = log2(U.rows());
+  MatrixXcd hs = clean(U_decompose(U,fast));
   for(int p = 0; p < pow(4,N); p++){
     if(abs(hs(p)) != 0){
-      cout << H_basis_element_text(p,N) << ": " << hs(p) << endl;
+      cout << U_basis_element_text(p,N) << ": " << hs(p) << endl;
     }
   }
 }
