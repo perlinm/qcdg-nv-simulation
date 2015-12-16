@@ -363,13 +363,14 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  vector<double> larmor_effs(nuclei.size());
-  vector<double> hyperfines(nuclei.size());
-  vector<double> hyperfine_perps(nuclei.size());
-  vector<double> dw_mins(nuclei.size());
-  vector<double> f_DDs(nuclei.size());
-  vector<double> operation_times(nuclei.size());
-  vector<double> fidelities(nuclei.size());
+  vector<uint> addressable_targets;
+  vector<double> larmor_effs;
+  vector<double> hyperfines;
+  vector<double> hyperfine_perps;
+  vector<double> dw_mins;
+  vector<double> f_DDs;
+  vector<double> operation_times;
+  vector<double> fidelities;
 
   for(uint target = 0; target < nuclei.size(); target++){
 
@@ -406,27 +407,28 @@ int main(int arg_num, const char *arg_vec[]) {
     const double fidelity = iswap_fidelity(target, nuclei, ind_clusters,
                                            static_B, ms, cluster_coupling, k_DD, scale);
 
-    larmor_effs.at(target) = larmor_eff.norm();
-    hyperfines.at(target) = hyperfine.norm();
-    hyperfine_perps.at(target) = hyperfine_perp.norm();
-    dw_mins.at(target) = dw_min;
-    f_DDs.at(target) = f_DD;
-    operation_times.at(target) = operation_time;
-    fidelities.at(target) = fidelity;
+    addressable_targets.push_back(target);
+    larmor_effs.push_back(larmor_eff.norm());
+    hyperfines.push_back(hyperfine.norm());
+    hyperfine_perps.push_back(hyperfine_perp.norm());
+    dw_mins.push_back(dw_min);
+    f_DDs.push_back(f_DD);
+    operation_times.push_back(operation_time);
+    fidelities.push_back(fidelity);
   }
 
   if(!no_output){
     ofstream info_file("./iswap_info.txt");
     info_file << "# index, w, A, A_perp, dw_min, f_DD, operation_time, fidelity\n";
-    for(uint target = 0; target < nuclei.size(); target++){
-      info_file << target << " "
-                << larmor_effs.at(target) << " "
-                << hyperfines.at(target) << " "
-                << hyperfine_perps.at(target) << " "
-                << dw_mins.at(target) << " "
-                << f_DDs.at(target) << " "
-                << operation_times.at(target) << " "
-                << fidelities.at(target) << endl;
+    for(uint t = 0; t < addressable_targets.size(); t++){
+      info_file << addressable_targets.at(t) << " "
+                << larmor_effs.at(t) << " "
+                << hyperfines.at(t) << " "
+                << hyperfine_perps.at(t) << " "
+                << dw_mins.at(t) << " "
+                << f_DDs.at(t) << " "
+                << operation_times.at(t) << " "
+                << fidelities.at(t) << endl;
     }
     info_file.close();
   }

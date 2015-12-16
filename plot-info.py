@@ -9,9 +9,9 @@ mxi = fidelity == max(fidelity)
 print(fidelity[mxi])
 print(operation_time[mxi])
 
+f2 = multiply(fidelity,fidelity)
+
 figure()
-title('fidelity histogram (scale$=100$)')
-hist(fidelity[fidelity > 0.9])
-xlabel('fidelity')
+hist(f2[f2 > 0.5])
 
 show()
