@@ -437,7 +437,7 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
     if(dw < dw_min) dw_min = dw;
   }
 
-  // if this larmor frequency too close to another, we cannot (yet) address this nucleus
+  // if this larmor frequency is too close to another, we cannot (yet) address the nucleus
   if(dw_min < cluster_coupling/scale_factor) return 0;
 
   // AXY sequence parameters

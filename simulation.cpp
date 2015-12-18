@@ -35,6 +35,9 @@ int main(int arg_num, const char *arg_vec[]) {
   double c13_abundance;
   string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
 
+  bool pair_search;
+  double pair_A_min;
+
   uint max_cluster_size;
   int ms;
   double static_B;
@@ -72,6 +75,11 @@ int main(int arg_num, const char *arg_vec[]) {
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
     ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
+
+    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+     "search for larmor pairs of nuclei")
+    ("pair_A_min", po::value<double>(&pair_A_min)->default_value(1000,"1000"),
+     "minimum magnitude of hyperfine field for larmor pair search")
 
     ("max_cluster_size,c", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
@@ -128,6 +136,11 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(!(using_input_lattice && set_cell_radius));
   assert(!(using_input_lattice && set_c13_abundance));
 
+  if(pair_search){
+    assert(pair_A_min > 0);
+  }
+  assert(!(pair_search && set_cell_radius));
+
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert(static_B_norm_in_gauss >= 0);
@@ -170,8 +183,12 @@ int main(int arg_num, const char *arg_vec[]) {
   // Construct spin lattice
   // -----------------------------------------------------------------------------------------
 
-  cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size());
-  cout << endl << endl;
+  if(!pair_search){
+    cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size())
+         << endl << endl;
+  } else{
+    cell_radius = pow(abs(ge*gC13)/(4*pi*a0*a0*a0*pair_A_min),1.0/3);
+  }
 
   // vector of C-13 nuclei
   vector<spin> nuclei;
@@ -203,7 +220,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // write cell radius and nucleus positions to file
-    if(!no_output){
+    if(!no_output && !pair_search){
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
       for(uint i = 0; i < nuclei.size(); i++){
@@ -245,6 +262,38 @@ int main(int arg_num, const char *arg_vec[]) {
         return 2;
       }
     }
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // Perform search for larmor pairs
+  // -----------------------------------------------------------------------------------------
+
+  if(pair_search){
+
+    const double tolerance = 1e-5;
+    for(uint i = 0; i < nuclei.size(); i++){
+
+      const Vector3d A_i = A(nuclei.at(i));
+      if((A_i).norm() < pair_A_min) continue;
+
+      const double A_i_z = dot(A_i,zhat);
+      const double A_i_xy = (A_i - dot(A_i,zhat)*zhat).norm();
+
+      for(uint j = i+1; j < nuclei.size(); j++){
+
+        const Vector3d A_j = A(nuclei.at(j));
+        if((A_j).norm() < pair_A_min) continue;
+
+        const double A_j_z = dot(A_j,zhat);
+        const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
+
+        if(abs(A_i_z/A_j_z-1) < tolerance && abs(A_i_xy/A_j_xy-1) < tolerance){
+          return 1;
+        }
+      }
+    }
+
+    return 0;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -400,7 +449,7 @@ int main(int arg_num, const char *arg_vec[]) {
         if(dw < dw_min) dw_min = dw;
       }
 
-      // if this larmor frequency too close to another, we cannot (yet) address this nucleus
+      // if this larmor frequency is too close to another, we cannot (yet) address the nucleus
       if(dw_min < cluster_coupling/scale_factor) continue;
 
       // AXY sequence parameters
