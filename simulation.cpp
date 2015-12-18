@@ -31,12 +31,15 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   // define inputs and parameters
-  int cell_radius;
+  uint cell_radius;
+  double hyperfine_cutoff;
+  double hyperfine_cutoff_in_kHz;
   double c13_abundance;
   string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
 
   bool pair_search;
-  double pair_A_min;
+  bool perform_scan;
+  bool compute_fidelities;
 
   uint max_cluster_size;
   int ms;
@@ -45,13 +48,10 @@ int main(int arg_num, const char *arg_vec[]) {
   uint k_DD;
   double scale_factor;
 
-  bool perform_scan;
   uint scan_bins;
   double f_DD;
   double scan_time;
   double scan_time_in_ms;
-
-  bool compute_fidelities;
 
   fs::path output_dir;
   int seed;
@@ -68,22 +68,26 @@ int main(int arg_num, const char *arg_vec[]) {
   po::options_description options("Allowed options", 95);
   options.add_options()
     ("help,h", "produce help message")
-    ("cell_radius,r", po::value<int>(&cell_radius)->default_value(7),
-     "number of unit cells to simulate out from the NV center (along cell axes)")
+
+    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+     "search for larmor pairs of nuclei")
+    ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
+     "perform coherence scan of effective larmor frequencies?")
+    ("fidelities",
+     po::value<bool>(&compute_fidelities)->default_value(false)->implicit_value(true),
+     "compute expected iswap fidelities?")
+
+    ("hyperfine_cutoff,c", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(1,"1"),
+     "set cutoff scale for hyperfine field (in kHz)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
     ("lattice_file", po::value<string>(&lattice_file),
      "specify file defining system configuration")
     ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
 
-    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
-     "search for larmor pairs of nuclei")
-    ("pair_A_min", po::value<double>(&pair_A_min)->default_value(1000,"1000"),
-     "minimum magnitude of hyperfine field for larmor pair search")
-
-    ("max_cluster_size,c", po::value<uint>(&max_cluster_size)->default_value(6),
+    ("max_cluster_size,m", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
-    ("ms,m", po::value<int>(&ms)->default_value(1),
+    ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
     ("static_B,B", po::value<double>(&static_B_norm_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (in gauss)")
@@ -92,18 +96,12 @@ int main(int arg_num, const char *arg_vec[]) {
     ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
      "factor used to define different scales")
 
-    ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
-     "perform coherence scan of effective larmor frequencies?")
     ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
     ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
      "time for each coherence measurement (in microseconds)")
-
-    ("fidelities",
-     po::value<bool>(&compute_fidelities)->default_value(false)->implicit_value(true),
-     "compute expected iswap fidelities?")
 
     ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
      "directory for storing data")
@@ -125,21 +123,16 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   // determine whether certain options were used
-  bool set_cell_radius = !inputs["cell_radius"].defaulted();
+  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_output_suffix = inputs.count("output_suffix");
 
   // run a sanity check on inputs and parameter values
-  assert(cell_radius > 0);
+  assert(hyperfine_cutoff_in_kHz > 0);
   assert(c13_abundance >= 0 && c13_abundance <= 1);
-  assert(!(using_input_lattice && set_cell_radius));
+  assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
-
-  if(pair_search){
-    assert(pair_A_min > 0);
-  }
-  assert(!(pair_search && set_cell_radius));
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
@@ -154,6 +147,11 @@ int main(int arg_num, const char *arg_vec[]) {
 
   assert(seed > 0); // seeds of 0 and 1 give the same result, so don't allow nonpositive seeds
 
+  // set some variables based on iputs
+  hyperfine_cutoff = hyperfine_cutoff_in_kHz*1000;
+  static_B = static_B_norm_in_gauss*gauss;
+  scan_time = scan_time_in_ms*1e-3;
+
   // define path of input or output file defining system configuration
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
@@ -167,14 +165,15 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
   } else{ // if !using_input_lattice
+    cell_radius = pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3);
+    cout << "Setting cell radius to: " << cell_radius << endl;
+    cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size())
+         << endl << endl;
+
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
     boost::replace_all(lattice_file, "[seed]", to_string(seed));
     lattice_path = output_dir/fs::path(lattice_file);
   }
-
-  // set some variables based on iputs
-  static_B = static_B_norm_in_gauss*gauss;
-  scan_time = scan_time_in_ms*1e-3;
 
   srand(seed); // initialize random number generator
   fs::create_directory(output_dir); // create data directory
@@ -182,13 +181,6 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
   // Construct spin lattice
   // -----------------------------------------------------------------------------------------
-
-  if(!pair_search){
-    cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size())
-         << endl << endl;
-  } else{
-    cell_radius = pow(abs(ge*gC13)/(4*pi*a0*a0*a0*pair_A_min),1.0/3);
-  }
 
   // vector of C-13 nuclei
   vector<spin> nuclei;
@@ -274,7 +266,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nuclei.size(); i++){
 
       const Vector3d A_i = A(nuclei.at(i));
-      if((A_i).norm() < pair_A_min) continue;
+      if((A_i).norm() < hyperfine_cutoff) continue;
 
       const double A_i_z = dot(A_i,zhat);
       const double A_i_xy = (A_i - dot(A_i,zhat)*zhat).norm();
@@ -282,7 +274,7 @@ int main(int arg_num, const char *arg_vec[]) {
       for(uint j = i+1; j < nuclei.size(); j++){
 
         const Vector3d A_j = A(nuclei.at(j));
-        if((A_j).norm() < pair_A_min) continue;
+        if((A_j).norm() < hyperfine_cutoff) continue;
 
         const double A_j_z = dot(A_j,zhat);
         const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();

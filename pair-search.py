@@ -7,12 +7,11 @@ if len(sys.argv) != 2:
 
 searches = int(sys.argv[1])
 
-devnull = open(os.devnull, 'w')
-subprocess.call(['fac'],stdout=devnull)
-devnull.close()
+with open(os.devnull, 'w') as null:
+    subprocess.call(['fac'],stdout=null)
 
-found = 0
-for s in range(searches):
-    found += subprocess.call(['./simulate','--pair_search','--seed',str(s+1)])
+    found = 0
+    for s in range(searches):
+        found += subprocess.call(['./simulate','--pair_search','--seed',str(s+1)],stdout=null)
 
 print("pairs found in",found,"of",searches,"searches")
