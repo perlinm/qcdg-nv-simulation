@@ -206,8 +206,8 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     const uint lattice_sites = 2 * pow(2*cell_radius+1 ,3) - 2;
-    cout << "Nuclei occupy " << nuclei.size() << " of " << lattice_sites << " lattice sites"
-         << endl << endl;
+    cout << "C-13 nuclei occupy " << nuclei.size() << " of "
+         << lattice_sites << " lattice sites" << endl << endl;
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
