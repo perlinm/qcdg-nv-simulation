@@ -15,9 +15,6 @@ const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
 const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
 const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 
-// vector of lattice sites in a diamond unit cell
-const vector<Vector3d> cell_sites { Vector3d::Zero(), a1, a2, a3, ao, ao+a1, ao+a2, ao+a3 };
-
 // unit vectors along bonding axes
 const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from V to N
 const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);

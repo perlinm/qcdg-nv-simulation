@@ -4,6 +4,7 @@ import os, sys, subprocess
 
 if len(sys.argv) != 2:
     print("please specify a number of searches to perform")
+    exit(1)
 
 searches = int(sys.argv[1])
 

@@ -31,7 +31,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   // define inputs and parameters
-  uint cell_radius;
+  int cell_radius;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
   double c13_abundance;
@@ -148,7 +148,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(seed > 0); // seeds of 0 and 1 give the same result, so don't allow nonpositive seeds
 
   // set some variables based on iputs
-  hyperfine_cutoff = hyperfine_cutoff_in_kHz*1000;
+  hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   static_B = static_B_norm_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
@@ -167,8 +167,6 @@ int main(int arg_num, const char *arg_vec[]) {
   } else{ // if !using_input_lattice
     cell_radius = pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3);
     cout << "Setting cell radius to: " << cell_radius << endl;
-    cout << "Total number of lattice sites: " << int(pow(2*cell_radius,3)*cell_sites.size())
-         << endl << endl;
 
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
     boost::replace_all(lattice_file, "[seed]", to_string(seed));
@@ -188,16 +186,12 @@ int main(int arg_num, const char *arg_vec[]) {
   if(!using_input_lattice){ // place nuclei at lattice cites
 
     // set positions of nuclei at lattice sites
-    Vector3d cell_pos; // position of unit cell indexed by i,j,k
-    for(int i = -cell_radius; i < cell_radius; i++){ // loop over all unit cell indices
-      cell_pos(0) = i;
-      for(int j = -cell_radius; j < cell_radius; j++){
-        cell_pos(1) = j;
-        for(int k = -cell_radius; k < cell_radius; k++){
-          cell_pos(2) = k;
-          for(uint ls = 0; ls < cell_sites.size(); ls++){ // loop over lattice sites in cell
+    for(int b = 0; b <= 1; b++){
+      for(int l = -cell_radius; l <= cell_radius; l++){
+        for(int m = -cell_radius; m <= cell_radius; m++){
+          for(int n = -cell_radius; n <= cell_radius; n++){
             if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              nuclei.push_back(spin(cell_pos+cell_sites.at(ls),gC13,s_vec/2));
+              nuclei.push_back(spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2));
             }
           }
         }
@@ -210,6 +204,10 @@ int main(int arg_num, const char *arg_vec[]) {
         nuclei.erase(nuclei.begin()+i);
       }
     }
+
+    const uint lattice_sites = 2 * pow(2*cell_radius+1 ,3) - 2;
+    cout << "Nuclei occupy " << nuclei.size() << " of " << lattice_sites << " lattice sites"
+         << endl << endl;
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
@@ -280,11 +278,13 @@ int main(int arg_num, const char *arg_vec[]) {
         const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
 
         if(abs(A_i_z/A_j_z-1) < tolerance && abs(A_i_xy/A_j_xy-1) < tolerance){
+          cout << "found larmor pair: " << i << ", " << j << " of " << nuclei.size() << endl;
           return 1;
         }
       }
     }
 
+    cout << "no larmor pairs found" << endl;
     return 0;
   }
 
@@ -292,11 +292,6 @@ int main(int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
-  if(max_cluster_size > 1){
-    cout << "Clustering " << nuclei.size() << " nuclei" << endl;
-  } else {
-    cout << "Placed " << nuclei.size() << " nuclei" << endl;
-  }
   const double cluster_coupling_guess = 100; // this value doesn't really matter
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 

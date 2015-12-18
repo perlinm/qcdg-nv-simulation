@@ -24,6 +24,7 @@ const double gC13 = gC13_SI * ge/ge_SI; // gyromagnetic ratio of C-13 (s)
 const double gN15 = gN15_SI * ge/ge_SI; // gyromagnetic ratio of N-15 (s)
 
 // SI values in natural units
+const double kHz = 1000; // one kilohertz (s)
 const double meter = 1 / c_SI; // one meter (s)
 const double nm = 1e-9*meter; // one nanometer (s)
 const double coulomb = qe / qe_SI; // one coulomb
