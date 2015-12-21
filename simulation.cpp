@@ -77,7 +77,7 @@ int main(int arg_num, const char *arg_vec[]) {
      po::value<bool>(&compute_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iswap fidelities?")
 
-    ("hyperfine_cutoff,c", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(1,"1"),
+    ("hyperfine_cutoff,c", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
      "set cutoff scale for hyperfine field (in kHz)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
@@ -260,7 +260,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(pair_search){
 
-    const double tolerance = 1e-5;
+    const double tolerance = 1e-5; // to account for numerical error
     for(uint i = 0; i < nuclei.size(); i++){
 
       const Vector3d A_i = A(nuclei.at(i));
@@ -278,7 +278,7 @@ int main(int arg_num, const char *arg_vec[]) {
         const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
 
         if(abs(A_i_z/A_j_z-1) < tolerance && abs(A_i_xy/A_j_xy-1) < tolerance){
-          cout << "found larmor pair: " << i << ", " << j << " of " << nuclei.size() << endl;
+          cout << "found larmor pair: " << i << ", " << j << endl;
           return 1;
         }
       }
