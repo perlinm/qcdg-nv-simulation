@@ -187,9 +187,9 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // set positions of nuclei at lattice sites
     for(int b = 0; b <= 1; b++){
-      for(int l = -cell_radius; l <= cell_radius; l++){
-        for(int m = -cell_radius; m <= cell_radius; m++){
-          for(int n = -cell_radius; n <= cell_radius; n++){
+      for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
+        for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
+          for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
             if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
               nuclei.push_back(spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2));
             }

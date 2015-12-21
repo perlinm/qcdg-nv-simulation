@@ -18,9 +18,10 @@ with open(os.devnull, 'w') as null:
 
     found = 0
     for s in range(int(samples)):
-        found += subprocess.call(["./simulate",
-                                  "--pair_search",
-                                  "--hyperfine_cutoff",hyperfine_cutoff,
-                                  "--seed",str(rnd())],stdout=null)
+        commands = ["./simulate",
+                    "--pair_search",
+                    "--hyperfine_cutoff",hyperfine_cutoff,
+                    "--seed",str(rnd())]
+        found += subprocess.call(commands,stdout=null)
 
 print(sys.argv[2],found,samples)
