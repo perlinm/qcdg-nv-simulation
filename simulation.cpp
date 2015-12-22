@@ -183,15 +183,19 @@ int main(int arg_num, const char *arg_vec[]) {
   // vector of C-13 nuclei
   vector<spin> nuclei;
 
-  if(!using_input_lattice){ // place nuclei at lattice cites
+  if(!using_input_lattice){ // place nuclei at lattice sites
 
     // set positions of nuclei at lattice sites
     for(int b = 0; b <= 1; b++){
       for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
         for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
           for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
-            if(rnd() <= c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              nuclei.push_back(spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2));
+            if(rnd() < c13_abundance){ // if we pass a check for C-13 isotopic abundance
+              const spin nucleus = spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
+              // only place C-13 nuclei with a hyperfine field strength above the cutoff
+              if(A(nucleus).norm() > hyperfine_cutoff){
+                nuclei.push_back(nucleus);
+              }
             }
           }
         }
@@ -202,12 +206,11 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nuclei.size(); i++){
       if((nuclei.at(i).pos == n.pos) || (nuclei.at(i).pos == e(ms).pos)){
         nuclei.erase(nuclei.begin()+i);
+        i--;
       }
     }
 
-    const uint lattice_sites = 2 * pow(2*cell_radius+1 ,3) - 2;
-    cout << "C-13 nuclei occupy " << nuclei.size() << " of "
-         << lattice_sites << " lattice sites" << endl << endl;
+    cout << "Placed " << nuclei.size() << " C-13 nuclei" << endl << endl;
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
@@ -264,16 +267,12 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nuclei.size(); i++){
 
       const Vector3d A_i = A(nuclei.at(i));
-      if((A_i).norm() < hyperfine_cutoff) continue;
-
       const double A_i_z = dot(A_i,zhat);
       const double A_i_xy = (A_i - dot(A_i,zhat)*zhat).norm();
 
       for(uint j = i+1; j < nuclei.size(); j++){
 
         const Vector3d A_j = A(nuclei.at(j));
-        if((A_j).norm() < hyperfine_cutoff) continue;
-
         const double A_j_z = dot(A_j,zhat);
         const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
 
