@@ -1,31 +1,36 @@
 #!/usr/bin/env python3
 
-import sys, math, itertools, functools
+import sys, itertools
 import numpy as np
 
 if len(sys.argv) not in [2,3]:
     print("usage: {} hyperfine_cutoff_in_kHz [c13_abundance]".format(sys.argv[0]))
     exit(1)
 
+# process inputs
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
 try:
     c13_abundance = float(sys.argv[2])
 except:
-    c13_abundance = 0.0107
+    c13_abundance = 0.0107 # natural abundance of C-13
 
-# return the sum/product of all elements in a list
-def sum(list):
-    return functools.reduce(lambda x,y: x+y, list)
+# flatten a list of lists
+def flatten(list):
+    out = []
+    for el in list: out += el
+    return out
 
+# return product of elements in a list
 def product(list):
-    return functools.reduce(lambda x,y: x*y, list)
+    out = 1
+    for el in list: out *= el
+    return out
 
 # physical constants in SI
 c_SI = 299792458 # speed of light (meters/second)
 hbar_SI = 6.582119514e-16 # reduced Planck constant (eV/second)
 ge_SI = 1.760859708e11 # gyromagnetic ratio of NV electron (Hz/tesla)
 gc_SI = 67.28284e6 # gyromagnetic ratio of C-13 (Hz/tesla)
-
 
 # physical constants in natural units (s or Hz)
 alpha = 1/137.035999074 # fine structure constant
@@ -73,27 +78,28 @@ for N in range(1, int(np.ceil(M))+1):
                                  for sign_m in [1,-1]
                                  for sign_n in [1,-1] ])
 
-    # if we have no solutions, skip ahead to the next value of N
+    # if the above set is empty, skip ahead to the next value of N
     if(len(square_solution_sets) == 0): continue
 
     # get all unique purmutations of integer sets in square_solution_sets
-    square_solutions = set(sum([ list(itertools.permutations(sss))
-                                 for sss in square_solution_sets ]))
+    square_solutions = set(flatten([ list(itertools.permutations(sss))
+                                     for sss in square_solution_sets ]))
 
     # determine all equivalence classes of integers (b,l,m,n) for this value of N
     for b in [0,1]:
-        blmn_sums = list(set([ abs(1.5*b+l+m+n) for (l,m,n) in square_solutions
-                               if A(b,l,m,n) > hyperfine_cutoff ]))
+        blmn_sums = set([ abs(1.5*b+l+m+n) for (l,m,n) in square_solutions
+                          if A(b,l,m,n) > hyperfine_cutoff ])
         for s in blmn_sums:
             equivalence_class = [ (b,l,m,n) for (l,m,n) in square_solutions
                                   if abs(1.5*b+l+m+n) == s ]
             if len(equivalence_class) > 1:
                 equivalence_classes.append(equivalence_class)
 
-# list of all sizes of the equivalence classes
-ring_sizes = [ len(equivalence_class) for equivalence_class in equivalence_classes ]
+equivalence_class_sizes = [ len(equivalence_class)
+                            for equivalence_class in equivalence_classes ]
 
+# probability of having at least one larmor pair
 probability = 1 - product([ (1-c13_abundance)**R * (1 + R*c13_abundance/(1-c13_abundance))
-                            for R in ring_sizes ])
+                            for R in equivalence_class_sizes ])
 
 print(probability)
