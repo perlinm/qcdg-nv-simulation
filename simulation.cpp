@@ -387,10 +387,10 @@ int main(int arg_num, const char *arg_vec[]) {
     // print coherence scan results to output file
     if(!no_output){
       ofstream scan_file(scan_path.string());
-      scan_file << "# cluster coupling factor: " << cluster_coupling << endl;
+      scan_file << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
       scan_file << "# f_DD: " << f_DD << endl;
       scan_file << "# scan time: " << scan_time << endl;
-      cout << endl;
+      scan_file << endl;
       scan_file << "# w_scan coherence\n";
       for(uint i = 0; i < scan_bins; i++){
         scan_file << w_scan.at(i) << " " << coherence.at(i) << endl;
@@ -413,9 +413,13 @@ int main(int arg_num, const char *arg_vec[]) {
       const fidelity_info target_info =
         iswap_fidelity(target, nuclei, ind_clusters, static_B,
                        ms, k_DD, cluster_coupling, scale_factor);
+      cout << "(" << target << "/" << nuclei.size() << ") ";
       if(target_info.valid){
         addressable_targets.push_back(target);
         iswap_summaries.push_back(target_info);
+        cout << target_info.operation_time << " " << target_info.fidelity << endl;
+      } else{
+        cout << "---\n";
       }
     }
 
