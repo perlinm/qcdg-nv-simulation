@@ -60,7 +60,7 @@ int main(int arg_num, const char *arg_vec[]) {
   fs::path lattice_path;
   fs::path larmor_path;
   fs::path scan_path;
-  fs::path fidelities_path;
+  fs::path fidelity_path;
   string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
   string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
 
@@ -360,12 +360,12 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // print effective larmor frequencies and NV couping strengths to output file
     if(!no_output){
-      ofstream larmor(larmor_path.string());
-      larmor << "# w_larmor A_perp\n";
+      ofstream larmor_file(larmor_path.string());
+      larmor_file << "# w_larmor A_perp\n";
       for(uint i = 0; i < nuclei.size(); i++){
-        larmor << w_larmor.at(i) << " " << A_perp.at(i) << endl;
+        larmor_file << w_larmor.at(i) << " " << A_perp.at(i) << endl;
       }
-      larmor.close();
+      larmor_file.close();
     }
 
     // perform coherence scan
@@ -386,16 +386,16 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // print coherence scan results to output file
     if(!no_output){
-      ofstream scan(scan_path.string());
-      scan << "# cluster coupling factor: " << cluster_coupling << endl;
-      scan << "# f_DD: " << f_DD << endl;
-      scan << "# scan time: " << scan_time << endl;
+      ofstream scan_file(scan_path.string());
+      scan_file << "# cluster coupling factor: " << cluster_coupling << endl;
+      scan_file << "# f_DD: " << f_DD << endl;
+      scan_file << "# scan time: " << scan_time << endl;
       cout << endl;
-      scan << "# w_scan coherence\n";
+      scan_file << "# w_scan coherence\n";
       for(uint i = 0; i < scan_bins; i++){
-        scan << w_scan.at(i) << " " << coherence.at(i) << endl;
+        scan_file << w_scan.at(i) << " " << coherence.at(i) << endl;
       }
-      scan.close();
+      scan_file.close();
     }
   }
 
@@ -404,7 +404,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(compute_fidelities){
-    fidelities_path = output_dir/fs::path("fidelities-"+output_suffix);
+    fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
 
     vector<uint> addressable_targets;
     vector<double> larmor_effs;
@@ -459,22 +459,24 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     if(!no_output){
-      ofstream info_file(fidelities_path.string());
-      info_file << "# index fidelity\n";
-      info_file << "# cluster coupling factor: " << cluster_coupling << endl;
-      info_file << "# scale factor: " << scale_factor << endl;
-      cout << endl;
+      ofstream fidelity_file(fidelity_path.string());
+      fidelity_file << "# index fidelity\n";
+      fidelity_file << "# cluster coupling factor: " << cluster_coupling << endl;
+      fidelity_file << "# scale factor: " << scale_factor << endl;
+      fidelity_file << endl;
+      fidelity_file << "# nucleus larmor_eff hyperfine hyperfine_perp dw_min f_DD"
+                    << " operation_time iswap_idelity\n";
       for(uint t = 0; t < addressable_targets.size(); t++){
-        info_file << addressable_targets.at(t) << " "
-                  << larmor_effs.at(t) << " "
-                  << hyperfines.at(t) << " "
-                  << hyperfine_perps.at(t) << " "
-                  << dw_mins.at(t) << " "
-                  << f_DDs.at(t) << " "
-                  << operation_times.at(t) << " "
-                  << fidelities.at(t) << endl;
+        fidelity_file << addressable_targets.at(t) << " "
+                      << larmor_effs.at(t) << " "
+                      << hyperfines.at(t) << " "
+                      << hyperfine_perps.at(t) << " "
+                      << dw_mins.at(t) << " "
+                      << f_DDs.at(t) << " "
+                      << operation_times.at(t) << " "
+                      << fidelities.at(t) << endl;
       }
-      info_file.close();
+      fidelity_file.close();
     }
   }
 
