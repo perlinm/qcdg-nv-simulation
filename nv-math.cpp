@@ -516,7 +516,7 @@ bool larmor_group(const spin& s1, const spin& s2, const double static_B, const i
                   const double cluster_coupling, const double scale_factor){
   const double dw = (effective_larmor(s2, static_B, ms).norm()
                      - effective_larmor(s1, static_B, ms).norm());
-  return dw < cluster_coupling/scale_factor;
+  return abs(dw) < cluster_coupling/scale_factor;
 }
 
 // group together clusters close nuclei have similar larmor frequencies
