@@ -449,7 +449,8 @@ fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
     if(dw < dw_min) dw_min = dw;
   }
 
-  // if this larmor frequency is too close to another, we cannot (yet) address the nucleus
+  // if the target's larmor frequency is too close to another,
+  //   it is unaddressable via the default protocol
   if(dw_min < cluster_coupling/scale_factor) return fidelity_info();
 
   // AXY sequence parameters
@@ -508,4 +509,55 @@ fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
 
   return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
                        dw_min, f_DD, operation_time, fidelity);
+}
+
+// determine whether two spins are in the same larmor group
+bool larmor_group(const spin& s1, const spin& s2, const double static_B, const int ms,
+                  const double cluster_coupling, const double scale_factor){
+  const double dw = (effective_larmor(s2, static_B, ms).norm()
+                     - effective_larmor(s1, static_B, ms).norm());
+  return dw < cluster_coupling/scale_factor;
+}
+
+// group together clusters close nuclei have similar larmor frequencies
+vector<vector<uint>> group_clusters(const vector<spin>& nuclei,
+                                    vector<vector<uint>> old_clusters,
+                                    const double static_B, const int ms,
+                                    const double cluster_coupling, const double scale_factor){
+  vector<vector<uint>> new_clusters;
+
+  while(old_clusters.size() > 0){
+
+    new_clusters.push_back(old_clusters.at(0));
+    old_clusters.erase(old_clusters.begin());
+
+    bool grouped = false;
+    vector<uint> new_cluster = new_clusters.back();
+    for(uint i = 0; i < new_cluster.size(); i++){
+
+      for(uint c = 0; c < old_clusters.size(); c++){
+        const vector<uint> old_cluster = old_clusters.at(c);
+
+        for(uint j = 0; j < old_clusters.at(c).size(); j++){
+          if(larmor_group(nuclei.at(new_cluster.at(i)), nuclei.at(old_cluster.at(j)),
+                          static_B, ms, cluster_coupling, scale_factor)){
+
+            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
+            old_clusters.erase(old_clusters.begin()+c);
+            c--;
+
+            grouped = true;
+            break;
+          }
+        }
+
+      }
+    }
+
+    if(grouped){
+      new_clusters.at(new_clusters.size()-1) = new_cluster;
+    }
+  }
+
+  return new_clusters;
 }

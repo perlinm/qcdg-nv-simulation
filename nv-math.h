@@ -256,3 +256,11 @@ fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
                              const double static_B, const int ms, const uint k_DD,
                              const double cluster_coupling, const double scale_factor);
 
+// determine whether two spins are in the same larmor group
+bool larmor_group(const spin& s1, const spin& s2, const double static_B, const int ms);
+
+// group together clusters close nuclei have similar larmor frequencies
+vector<vector<uint>> group_clusters(const vector<spin>& nuclei,
+                                    vector<vector<uint>> old_clusters,
+                                    const double static_B, const int ms,
+                                    const double cluster_coupling, const double scale_factor);
