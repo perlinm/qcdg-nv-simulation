@@ -262,6 +262,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(pair_search){
+    uint pairs_found = 0;
 
     const double tolerance = 1e-5; // to account for numerical error
     for(uint i = 0; i < nuclei.size(); i++){
@@ -277,14 +278,14 @@ int main(int arg_num, const char *arg_vec[]) {
         const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
 
         if(abs(A_i_z/A_j_z-1) < tolerance && abs(A_i_xy/A_j_xy-1) < tolerance){
-          cout << "found larmor pair: " << i << ", " << j << endl;
-          return 1;
+          cout << "larmor pair: " << i << ", " << j << endl;
+          pairs_found++;
         }
       }
     }
 
-    cout << "no larmor pairs found" << endl;
-    return 0;
+    if(!pairs_found){ cout << "no larmor pairs found" << endl; }
+    return pairs_found;
   }
 
   // -----------------------------------------------------------------------------------------

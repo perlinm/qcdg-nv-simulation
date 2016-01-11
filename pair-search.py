@@ -27,6 +27,7 @@ with open(os.devnull, 'w') as null:
                     "--seed",str(rnd())]
         if len(sys.argv) == 4:
             commands += ["--c13_abundance", sys.argv[3]]
-        found += subprocess.call(commands,stdout=null)
+        pairs = subprocess.call(commands,stdout=null)
+        found += 1 if pairs > 0 else 0
 
 print(found/samples)
