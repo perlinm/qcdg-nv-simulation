@@ -266,18 +266,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
     const double tolerance = 1e-5; // to account for numerical error
     for(uint i = 0; i < nuclei.size(); i++){
-
-      const Vector3d A_i = A(nuclei.at(i));
-      const double A_i_z = dot(A_i,zhat);
-      const double A_i_xy = (A_i - dot(A_i,zhat)*zhat).norm();
-
       for(uint j = i+1; j < nuclei.size(); j++){
-
-        const Vector3d A_j = A(nuclei.at(j));
-        const double A_j_z = dot(A_j,zhat);
-        const double A_j_xy = (A_j - dot(A_j,zhat)*zhat).norm();
-
-        if(abs(A_i_z/A_j_z-1) < tolerance && abs(A_i_xy/A_j_xy-1) < tolerance){
+        if(larmor_pair(nuclei.at(i),nuclei.at(j))){
           cout << "larmor pair: " << i << ", " << j << endl;
           pairs_found++;
         }

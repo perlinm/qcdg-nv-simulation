@@ -91,6 +91,9 @@ inline MatrixXcd rotate(const double phi, const Vector3d axis){
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
 
+// determine whether two spins are a larmor pair
+bool larmor_pair(const spin& s1, const spin& s2, const double tolerance = 1e-10);
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
 

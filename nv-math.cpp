@@ -12,6 +12,18 @@ using namespace Eigen;
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
 
+// determine whether two spins are a larmor pair
+bool larmor_pair(const spin& s1, const spin& s2, const double tolerance){
+
+  const double r1z = dot(s1.pos,zhat);
+  const double r2z = dot(s2.pos,zhat);
+
+  const double r1xy = (s1.pos - r1z*zhat).norm();
+  const double r2xy = (s2.pos - r2z*zhat).norm();
+
+  return abs(abs(r1z/r2z)-1) < tolerance && abs(abs(r1xy/r2xy)-1) < tolerance;
+}
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
 inline double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
