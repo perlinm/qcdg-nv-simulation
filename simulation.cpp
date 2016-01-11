@@ -324,57 +324,6 @@ int main(int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD));
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
 
-  {
-
-    vector<vector<uint>> clusters;
-    vector<uint> pairs;
-    for(uint i = 0; i < nuclei.size(); i++){
-      for(uint j = i+1; j < nuclei.size(); j++){
-        if(larmor_pair(nuclei.at(i),nuclei.at(j))){
-          pairs.push_back(i);
-        }
-      }
-    }
-
-    clusters = ind_clusters;
-    for(uint p = 0; p < pairs.size(); p++){
-      for(uint c = 0; c < clusters.size(); c++){
-        for(uint i = 0; i < clusters.at(c).size(); i++){
-          if(clusters.at(c).at(i) == pairs.at(p)){
-            cout << clusters.at(c).at(0);
-            for(uint j = 1; j < clusters.at(c).size(); j++){
-              cout << ", " << clusters.at(c).at(j);
-            }
-            cout << endl;
-            break;
-          }
-        }
-      }
-    }
-
-    cout << endl;
-
-    clusters = group_clusters(nuclei, ind_clusters, static_B, ms,
-                              cluster_coupling, scale_factor);
-    for(uint p = 0; p < pairs.size(); p++){
-      for(uint c = 0; c < clusters.size(); c++){
-        for(uint i = 0; i < clusters.at(c).size(); i++){
-          if(clusters.at(c).at(i) == pairs.at(p)){
-            cout << clusters.at(c).at(0);
-            for(uint j = 1; j < clusters.at(c).size(); j++){
-              cout << ", " << clusters.at(c).at(j);
-            }
-            cout << endl;
-            break;
-          }
-        }
-      }
-    }
-
-  }
-
-  return 0;
-
   // -----------------------------------------------------------------------------------------
   // Coherence scan
   // -----------------------------------------------------------------------------------------
