@@ -263,8 +263,6 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(pair_search){
     uint pairs_found = 0;
-
-    const double tolerance = 1e-5; // to account for numerical error
     for(uint i = 0; i < nuclei.size(); i++){
       for(uint j = i+1; j < nuclei.size(); j++){
         if(larmor_pair(nuclei.at(i),nuclei.at(j))){
