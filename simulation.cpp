@@ -407,55 +407,16 @@ int main(int arg_num, const char *arg_vec[]) {
     fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
 
     vector<uint> addressable_targets;
-    vector<double> larmor_effs;
-    vector<double> hyperfines;
-    vector<double> hyperfine_perps;
-    vector<double> dw_mins;
-    vector<double> f_DDs;
-    vector<double> operation_times;
-    vector<double> fidelities;
+    vector<fidelity_info> iswap_summaries;
 
     for(uint target = 0; target < nuclei.size(); target++){
-
-      // larmor frequency of and hyperfine field at target nucleus
-      const Vector3d larmor_eff = effective_larmor(nuclei.at(target), static_B, ms);
-      const Vector3d hyperfine = A(nuclei.at(target));
-      const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
-      const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
-
-      // if our interaction strength is too weak, we can't address this nucleus
-      if(hyperfine_perp.norm() < cluster_coupling) continue;
-
-      // minimum difference in larmor frequencies between target nucleus and other nuclei
-      double dw_min = DBL_MAX;
-      for(uint s = 0; s < nuclei.size(); s++){
-        if(s == target) continue;
-        const double dw = abs(larmor_eff.norm()
-                              - effective_larmor(nuclei.at(s), static_B, ms).norm());
-        if(dw < dw_min) dw_min = dw;
+      const fidelity_info target_info =
+        iswap_fidelity(target, nuclei, ind_clusters, static_B,
+                       ms, k_DD, cluster_coupling, scale_factor);
+      if(target_info.valid){
+        addressable_targets.push_back(target);
+        iswap_summaries.push_back(target_info);
       }
-
-      // if this larmor frequency is too close to another, we cannot (yet) address the nucleus
-      if(dw_min < cluster_coupling/scale_factor) continue;
-
-      // AXY sequence parameters
-      const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale_factor);
-      const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
-      const double t_DD = 2*pi/w_DD; // AXY protocol period
-      const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
-
-      // iSWAP gate fidelity
-      const double fidelity = iswap_fidelity(target, nuclei, ind_clusters, static_B, ms,
-                                             k_DD, cluster_coupling, scale_factor);
-
-      addressable_targets.push_back(target);
-      larmor_effs.push_back(larmor_eff.norm());
-      hyperfines.push_back(hyperfine.norm());
-      hyperfine_perps.push_back(hyperfine_perp.norm());
-      dw_mins.push_back(dw_min);
-      f_DDs.push_back(f_DD);
-      operation_times.push_back(operation_time);
-      fidelities.push_back(fidelity);
     }
 
     if(!no_output){
@@ -464,17 +425,17 @@ int main(int arg_num, const char *arg_vec[]) {
       fidelity_file << "# cluster coupling factor: " << cluster_coupling << endl;
       fidelity_file << "# scale factor: " << scale_factor << endl;
       fidelity_file << endl;
-      fidelity_file << "# nucleus larmor_eff hyperfine hyperfine_perp dw_min f_DD"
+      fidelity_file << "# target_index larmor_eff hyperfine hyperfine_perp dw_min f_DD"
                     << " operation_time iswap_idelity\n";
       for(uint t = 0; t < addressable_targets.size(); t++){
         fidelity_file << addressable_targets.at(t) << " "
-                      << larmor_effs.at(t) << " "
-                      << hyperfines.at(t) << " "
-                      << hyperfine_perps.at(t) << " "
-                      << dw_mins.at(t) << " "
-                      << f_DDs.at(t) << " "
-                      << operation_times.at(t) << " "
-                      << fidelities.at(t) << endl;
+                      << iswap_summaries.at(t).larmor_eff << " "
+                      << iswap_summaries.at(t).hyperfine << " "
+                      << iswap_summaries.at(t).hyperfine_perp << " "
+                      << iswap_summaries.at(t).dw_min << " "
+                      << iswap_summaries.at(t).f_DD << " "
+                      << iswap_summaries.at(t).operation_time << " "
+                      << iswap_summaries.at(t).fidelity << endl;
       }
       fidelity_file.close();
     }

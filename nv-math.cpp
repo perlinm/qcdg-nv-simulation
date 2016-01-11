@@ -402,10 +402,10 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 }
 
 // compute fidelity of SWAP operation between NV center and target spin
-double iswap_fidelity(const uint target, const vector<spin>& nuclei,
-                      const vector<vector<uint>>& ind_clusters,
-                      const double static_B, const int ms, const uint k_DD,
-                      const double cluster_coupling, const double scale_factor){
+fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double static_B, const int ms, const uint k_DD,
+                             const double cluster_coupling, const double scale_factor){
   // identify cluster of target nucleus
   const vector<vector<spin>> clusters = group_nuclei(nuclei, ind_clusters);
   vector<spin> cluster;
@@ -426,7 +426,7 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
   const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
 
   // if our interaction strength is too weak, we can't address this nucleus
-  if(hyperfine_perp.norm() < cluster_coupling) return 0;
+  if(hyperfine_perp.norm() < cluster_coupling) return fidelity_info();
 
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
@@ -438,7 +438,7 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
   }
 
   // if this larmor frequency is too close to another, we cannot (yet) address the nucleus
-  if(dw_min < cluster_coupling/scale_factor) return 0;
+  if(dw_min < cluster_coupling/scale_factor) return fidelity_info();
 
   // AXY sequence parameters
   const double f_DD = -ms*dw_min/(hyperfine_perp.norm()*scale_factor);
@@ -491,5 +491,9 @@ double iswap_fidelity(const uint target, const vector<spin>& nuclei,
   const MatrixXcd iSWAP_exact = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
                                                     {0,cluster_target+1}, cluster.size()+1));
 
-  return gate_fidelity(iSWAP,iSWAP_exact);
+  // compute iSWAP gate fidelity
+  const double fidelity = gate_fidelity(iSWAP,iSWAP_exact);
+
+  return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
+                       dw_min, f_DD, operation_time, fidelity);
 }

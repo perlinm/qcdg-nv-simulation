@@ -221,9 +221,35 @@ control_fields nuclear_decoupling_field(const spin& s, const double static_B, co
 // return AXY sequence pulses with given offset
 vector<double> offset_pulses(vector<double> xs, const double x_offset);
 
+// struct containing gate fidelity info
+struct fidelity_info{
+  bool valid;
+  double larmor_eff = 0;
+  double hyperfine = 0;
+  double hyperfine_perp = 0;
+  double dw_min = 0;
+  double f_DD = 0;
+  double operation_time = 0;
+  double fidelity = 0;
+
+  fidelity_info(){ valid = false; };
+  fidelity_info(const double larmor_eff, const double hyperfine, const double hyperfine_perp,
+                const double dw_min, const double f_DD, const double operation_time,
+                const double fidelity){
+    valid = true;
+    this->larmor_eff = larmor_eff;
+    this->hyperfine = hyperfine;
+    this->hyperfine_perp = hyperfine_perp;
+    this->dw_min = dw_min;
+    this->f_DD = f_DD;
+    this->operation_time = operation_time;
+    this->fidelity = fidelity;
+  };
+};
+
 // compute fidelity of SWAP operation between NV center and target nucleus
-double iswap_fidelity(const uint target, const vector<spin>& nuclei,
-                      const vector<vector<uint>>& ind_clusters,
-                      const double static_B, const int ms, const uint k_DD,
-                      const double cluster_coupling, const double scale_factor);
+fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
+                             const vector<vector<uint>>& ind_clusters,
+                             const double static_B, const int ms, const uint k_DD,
+                             const double cluster_coupling, const double scale_factor);
 
