@@ -30,126 +30,139 @@ int main(int arg_num, const char *arg_vec[]) {
   // Parse and process input options
   // -----------------------------------------------------------------------------------------
 
-  // define inputs and parameters
-  int cell_radius;
-  double hyperfine_cutoff;
-  double hyperfine_cutoff_in_kHz;
-  double c13_abundance;
+  const uint help_text_length = 95;
+
+  int seed;
+
+  po::options_description general("General options", help_text_length);
+  general.add_options()
+    ("help,h", "produce help message")
+    ("seed", po::value<int>(&seed)->default_value(1),
+     "seed for random number generator (>=1)")
+    ;
+
   string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
+  fs::path output_dir;
+  fs::path lattice_path; // determined by output_dir and lattice_file
+  string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
+  string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
+  fs::path larmor_path; // determined by output_dir and output_suffix
+  fs::path scan_path; // determined by output_dir and output_suffix
+  fs::path fidelity_path; // determined by output_dir and output_suffix
+  bool no_output;
+
+  po::options_description file_io("File IO",help_text_length);
+  file_io.add_options()
+    ("lattice_file", po::value<string>(&lattice_file),
+     "input file defining system configuration")
+    ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
+     "directory for storing data")
+    ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
+    ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
+     "don't generate output files")
+    ;
 
   bool pair_search;
-  bool perform_scan;
-  bool compute_fidelities;
+  bool coherence_scan;
+  bool iswap_fidelities;
 
+  po::options_description simulations("Available simulations",help_text_length);
+  simulations.add_options()
+    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+     "search for larmor pairs")
+    ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
+     "perform coherence scan of effective larmor frequencies")
+    ("iswap_fidelities",
+     po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
+     "compute expected iswap fidelities")
+    ;
+
+  double hyperfine_cutoff;
+  double hyperfine_cutoff_in_kHz;
+  int cell_radius; // determined by hyperfine_cutoff
+  double c13_abundance;
   uint max_cluster_size;
   int ms;
   double static_B;
-  double static_B_norm_in_gauss;
+  double static_B_in_gauss;
   uint k_DD;
   double scale_factor;
+
+  po::options_description simulation_options("Simulation options",help_text_length);
+  simulation_options.add_options()
+    ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(100),
+     "set cutoff scale for hyperfine field (kHz)")
+    ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
+     "relative isotopic abundance of C-13")
+    ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
+     "maximum allowable size of C-13 clusters")
+    ("ms", po::value<int>(&ms)->default_value(1),
+     "NV center spin state used with |0> for an effective two-level system (+/-1)")
+    ("static_B", po::value<double>(&static_B_in_gauss)->default_value(140.1,"140.1"),
+     "strength of static magnetic field along the NV axis (gauss)")
+    ("k_DD", po::value<uint>(&k_DD)->default_value(1),
+     "resonance harmonic used in spin addressing (1 or 3)")
+    ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
+     "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
+    ;
 
   uint scan_bins;
   double f_DD;
   double scan_time;
   double scan_time_in_ms;
 
-  fs::path output_dir;
-  int seed;
-  bool no_output;
-
-  fs::path lattice_path;
-  fs::path larmor_path;
-  fs::path scan_path;
-  fs::path fidelity_path;
-  string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
-  string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
-
-  // define input options
-  po::options_description options("Allowed options", 95);
-  options.add_options()
-    ("help,h", "produce help message")
-
-    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
-     "search for larmor pairs of nuclei")
-    ("scan", po::value<bool>(&perform_scan)->default_value(false)->implicit_value(true),
-     "perform coherence scan of effective larmor frequencies?")
-    ("fidelities",
-     po::value<bool>(&compute_fidelities)->default_value(false)->implicit_value(true),
-     "compute expected iswap fidelities?")
-
-    ("hyperfine_cutoff,c", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
-     "set cutoff scale for hyperfine field (in kHz)")
-    ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
-     "relative isotopic abundance of C-13")
-    ("lattice_file", po::value<string>(&lattice_file),
-     "specify file defining system configuration")
-    ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
-
-    ("max_cluster_size,m", po::value<uint>(&max_cluster_size)->default_value(6),
-     "maximum allowable size of C-13 clusters")
-    ("ms", po::value<int>(&ms)->default_value(1),
-     "NV center spin state used with |0> for an effective two-level system (+/-1)")
-    ("static_B,B", po::value<double>(&static_B_norm_in_gauss)->default_value(140.1,"140.1"),
-     "strength of static magnetic field along the NV axis (in gauss)")
-    ("k_DD,k", po::value<uint>(&k_DD)->default_value(1),
-     "resonance harmonic used in spin addressing (1 or 3)")
-    ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
-     "factor used to define different scales")
-
+  po::options_description scan_options("Coherence scanning options",help_text_length);
+  scan_options.add_options()
     ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
     ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
-     "time for each coherence measurement (in microseconds)")
-
-    ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
-     "directory for storing data")
-    ("seed,s", po::value<int>(&seed)->default_value(1),
-     "seed for random number generator (>=1)")
-    ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
-     "don't generate output files")
+     "time for each coherence measurement (microseconds)")
     ;
+
+  po::options_description all("Allowed options");
+  all.add(general).add(file_io).add(simulations).add(simulation_options).add(scan_options);
 
   // collect inputs
   po::variables_map inputs;
-  po::store(parse_command_line(arg_num, arg_vec, options), inputs);
+  po::store(parse_command_line(arg_num, arg_vec, all), inputs);
   po::notify(inputs);
 
   // if requested, print help text
   if(inputs.count("help")){
-    cout << options;
+    cout << all;
     return 0;
   }
 
   // determine whether certain options were used
-  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
-  bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_output_suffix = inputs.count("output_suffix");
+  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
+  bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
 
   // run a sanity check on inputs and parameter values
-  assert(hyperfine_cutoff_in_kHz > 0);
-  assert(c13_abundance >= 0 && c13_abundance <= 1);
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
+  assert(hyperfine_cutoff_in_kHz > 0);
+  assert(c13_abundance >= 0 && c13_abundance <= 1);
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
-  assert(static_B_norm_in_gauss >= 0);
+  assert(static_B_in_gauss >= 0);
   assert((k_DD == 1) || (k_DD == 3));
-  assert(scale_factor > 1);
+  assert(scale_factor > 10);
 
-  if(perform_scan){
+  if(coherence_scan){
     assert(scan_bins > 0);
     assert(scan_time_in_ms > 0);
   }
 
-  assert(seed > 0); // seeds of 0 and 1 give the same result, so don't allow nonpositive seeds
+  assert(seed > 0); // seeds of 0 and 1 give the same result
 
   // set some variables based on iputs
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
-  static_B = static_B_norm_in_gauss*gauss;
+  static_B = static_B_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
   // define path of input or output file defining system configuration
@@ -328,7 +341,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // Coherence scan
   // -----------------------------------------------------------------------------------------
 
-  if(perform_scan){
+  if(coherence_scan){
     // define paths of output files
     larmor_path = output_dir/fs::path("larmor-"+output_suffix);
     scan_path = output_dir/fs::path("scan-"+output_suffix);
@@ -392,7 +405,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  if(compute_fidelities){
+  if(iswap_fidelities){
     fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
 
     vector<uint> addressable_targets;
