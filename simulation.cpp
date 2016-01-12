@@ -43,12 +43,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
   string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
   fs::path output_dir;
-  fs::path lattice_path; // determined by output_dir and lattice_file
   string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
   string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
-  fs::path larmor_path; // determined by output_dir and output_suffix
-  fs::path scan_path; // determined by output_dir and output_suffix
-  fs::path fidelity_path; // determined by output_dir and output_suffix
   bool no_output;
 
   po::options_description file_io("File IO",help_text_length);
@@ -141,7 +137,7 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
 
-  // run a sanity check on inputs and parameter values
+  // run a sanity check on inputs
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(hyperfine_cutoff_in_kHz > 0);
@@ -165,7 +161,8 @@ int main(int arg_num, const char *arg_vec[]) {
   static_B = static_B_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
-  // define path of input or output file defining system configuration
+  // define path of lattice file defining system configuration
+  fs::path lattice_path;
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
       cout << "file does not exist: " << lattice_file << endl;
@@ -190,7 +187,7 @@ int main(int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // -----------------------------------------------------------------------------------------
-  // Construct spin lattice
+  // Construct lattice of nuclei
   // -----------------------------------------------------------------------------------------
 
   // vector of C-13 nuclei
@@ -223,7 +220,7 @@ int main(int arg_num, const char *arg_vec[]) {
       }
     }
 
-    cout << "Placed " << nuclei.size() << " C-13 nuclei" << endl << endl;
+    cout << "Placed " << nuclei.size() << " C-13 nuclei\n\n";
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
@@ -264,7 +261,7 @@ int main(int arg_num, const char *arg_vec[]) {
     // assert that no C-13 nuclei lie at the NV lattice sites
     for(uint i = 0; i < nuclei.size(); i++){
       if((nuclei.at(i).pos == n.pos) || (nuclei.at(i).pos == e(ms).pos)){
-        cout << "we have a C-13 nucleus at one of the NV lattice sites!" << endl;
+        cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
         return 2;
       }
     }
@@ -285,7 +282,7 @@ int main(int arg_num, const char *arg_vec[]) {
       }
     }
 
-    if(!pairs_found){ cout << "no larmor pairs found" << endl; }
+    if(!pairs_found){ cout << "no larmor pairs found\n"; }
     return pairs_found;
   }
 
@@ -313,7 +310,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(max_cluster_size > 1){
     cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
-         << " with a coupling factor of "  << cluster_coupling << " Hz" << endl;
+         << " with a coupling factor of "  << cluster_coupling << " Hz\n";
 
     // collect and print histogram of cluster sizes
     max_cluster_size = largest_cluster_size(ind_clusters);
@@ -321,13 +318,13 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < ind_clusters.size(); i++){
       size_hist.at(ind_clusters.at(i).size()-1) += 1;
     }
-    cout << "Cluster size histogram: " << endl;
+    cout << "Cluster size histogram:\n";
     for(uint i = 0; i < size_hist.size(); i++){
       cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
     }
     cout << endl;
   } else {
-    cout << "Largest internuclear coupling: " << cluster_coupling << " Hz" << endl;
+    cout << "Largest internuclear coupling: " << cluster_coupling << " Hz\n";
   }
 
   // now that we are done with initialization, fix up the output filename suffix
@@ -342,10 +339,6 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(coherence_scan){
-    // define paths of output files
-    larmor_path = output_dir/fs::path("larmor-"+output_suffix);
-    scan_path = output_dir/fs::path("scan-"+output_suffix);
-
     // identify effictive larmor frequencies and NV coupling strengths
     vector<double> w_larmor(nuclei.size());
     vector<double> A_perp(nuclei.size());
@@ -362,6 +355,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // print effective larmor frequencies and NV couping strengths to output file
     if(!no_output){
+      fs::path larmor_path = output_dir/fs::path("larmor-"+output_suffix);
       ofstream larmor_file(larmor_path.string());
       larmor_file << "# w_larmor A_perp\n";
       for(uint i = 0; i < nuclei.size(); i++){
@@ -371,7 +365,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // perform coherence scan
-    cout << "Beginning coherence scan" << endl;
+    cout << "Beginning coherence scan\n";
     vector<double> w_scan(scan_bins);
     vector<double> coherence(scan_bins);
 
@@ -388,6 +382,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // print coherence scan results to output file
     if(!no_output){
+      fs::path scan_path = output_dir/fs::path("scan-"+output_suffix);
       ofstream scan_file(scan_path.string());
       scan_file << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
       scan_file << "# f_DD: " << f_DD << endl;
@@ -406,8 +401,8 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(iswap_fidelities){
-    fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
 
+    // collect iswap_fidelity summaries for individually addressable nuclei
     vector<uint> addressable_targets;
     vector<fidelity_info> iswap_summaries;
 
@@ -419,13 +414,14 @@ int main(int arg_num, const char *arg_vec[]) {
       if(target_info.valid){
         addressable_targets.push_back(target);
         iswap_summaries.push_back(target_info);
-        cout << target_info.operation_time << " " << target_info.fidelity << endl;
+        cout << target_info.operation_time*1e3 << " " << target_info.fidelity << endl;
       } else{
         cout << "---\n";
       }
     }
 
     if(!no_output){
+      fs::path fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
       ofstream fidelity_file(fidelity_path.string());
       fidelity_file << "# index fidelity\n";
       fidelity_file << "# cluster coupling factor: " << cluster_coupling << endl;
