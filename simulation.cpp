@@ -60,16 +60,16 @@ int main(int arg_num, const char *arg_vec[]) {
 
   bool pair_search;
   bool coherence_scan;
-  bool iswap_fidelities;
+  bool compute_iswap_fidelities;
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
-    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+    ("pairs", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies")
-    ("iswap_fidelities",
-     po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
+    ("iswap",
+     po::value<bool>(&compute_iswap_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iswap fidelities")
     ;
 
@@ -137,6 +137,7 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
 
   // run a sanity check on inputs
+  assert(int(pair_search)+int(coherence_scan)+int(compute_iswap_fidelities) == 1);
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(hyperfine_cutoff_in_kHz > 0);
@@ -163,7 +164,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
       cout << "file does not exist: " << lattice_file << endl;
-      return 1;
+      return 2;
     }
     lattice_path = lattice_file;
 
@@ -259,7 +260,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nv.nuclei.size(); i++){
       if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
         cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
-        return 2;
+        return 3;
       }
     }
   }
@@ -290,20 +291,32 @@ int main(int arg_num, const char *arg_vec[]) {
   const double cluster_coupling_guess = 100; // this value doesn't really matter
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
-  // get cluster_coupling for which the largest cluster size is >= max_cluster_size
-  nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
-                                             max_cluster_size, dcc_cutoff);
-  nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
-  // if (largest cluster size > max_cluster_size),
-  //   which can occur when (largest cluster size == max_cluster_size) is impossible,
-  //   find largest cluster_coupling for which (largest cluster size < max_cluster_size)
-  while(largest_cluster_size(nv.clusters) > max_cluster_size){
-    int cluster_size_target
-      = largest_cluster_size(get_index_clusters(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
-    nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
+  uint cluster_size_target = max_cluster_size+1;
+  do{
+    assert(cluster_size_target > 0);
+    // get cluster_coupling for which the largest cluster size is >= cluster_size_target
+    nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
                                                cluster_size_target, dcc_cutoff);
     nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
-  }
+    // if (largest cluster size > cluster_size_target),
+    //   which can occur when (largest cluster size == cluster_size_target) is impossible,
+    //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
+    while(largest_cluster_size(nv.clusters) > cluster_size_target){
+      int cluster_size_target
+        = largest_cluster_size(get_index_clusters(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
+      nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
+                                                 cluster_size_target, dcc_cutoff);
+      nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
+    }
+
+    // if we are going to perform an actual simulation instead of just a coherence scan,
+    //   we want to group together clusters sharing nuclei with similar larmor frequencies.
+    if(!coherence_scan) nv.clusters = group_clusters(nv);
+    cluster_size_target--; // decrease cluster_size_target every time we perform this loop
+
+    // grouping together clusters might create a cluster greater than max_cluster_size,
+    //   so we check to make sure that we do not go over the limit
+  } while(largest_cluster_size(nv.clusters) > max_cluster_size);
 
   if(max_cluster_size > 1){
     cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
@@ -396,7 +409,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  if(iswap_fidelities){
+  if(compute_iswap_fidelities){
 
     // collect iswap_fidelity summaries for individually addressable nuclei
     vector<uint> addressable_targets;

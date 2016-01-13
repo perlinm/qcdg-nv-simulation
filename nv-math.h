@@ -279,7 +279,7 @@ struct fidelity_info{
 bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
 
 // group together clusters close nuclei have similar larmor frequencies
-vector<vector<spin>> group_clusters(const nv_system& nv);
+vector<vector<uint>> group_clusters(const nv_system& nv);
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index);

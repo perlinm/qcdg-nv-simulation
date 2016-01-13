@@ -415,7 +415,7 @@ bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
 }
 
 // group together clusters close nuclei have similar larmor frequencies
-vector<vector<spin>> group_clusters(const nv_system& nv){
+vector<vector<uint>> group_clusters(const nv_system& nv){
   vector<vector<uint>> old_clusters = nv.clusters;
   vector<vector<uint>> new_clusters;
 
@@ -445,13 +445,13 @@ vector<vector<spin>> group_clusters(const nv_system& nv){
     }
   }
 
-  return spin_clusters(nv.nuclei,new_clusters);
+  return new_clusters;
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
   // identify cluster of target nucleus
-  const vector<vector<spin>> clusters = group_clusters(nv);
+  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters);
   vector<spin> cluster;
   uint cluster_index;
   for(uint c = 0; c < clusters.size(); c++){
