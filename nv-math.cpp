@@ -9,6 +9,17 @@ using namespace Eigen;
 #include "nv-math.h"
 
 //--------------------------------------------------------------------------------------------
+// Spin vectors and structs
+//--------------------------------------------------------------------------------------------
+
+nv_system::nv_system(const int ms, const uint k_DD,
+                     const double static_Bz, const double scale_factor) :
+  e(spin(Vector3d::Zero(), ge,
+         mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
+  ms(ms), k_DD(k_DD), static_Bz(static_Bz), scale_factor(scale_factor)
+{};
+
+//--------------------------------------------------------------------------------------------
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
 

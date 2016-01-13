@@ -75,13 +75,6 @@ struct spin{
 
 };
 
-// initialize nitrogen and vacancy centers
-const spin n(ao, 0., s_vec/2);
-inline spin e(const int ms){
-  return spin(Vector3d::Zero(), ge,
-              mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat));
-}
-
 // perform spin-1/2 rotation about arbitrary axis
 inline MatrixXcd rotate(const double phi, const Vector3d axis){
   return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,axis);
@@ -100,12 +93,7 @@ struct nv_system{
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
-nv_system(const int ms, const uint k_DD,
-          const double static_Bz, const double scale_factor) :
-  e(spin(Vector3d::Zero(), ge,
-         mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
-    ms(ms), k_DD(k_DD), static_Bz(static_Bz), scale_factor(scale_factor)
-  {};
+  nv_system(const int ms, const uint k_DD, const double static_Bz, const double scale_factor);
 };
 
 
