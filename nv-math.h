@@ -104,6 +104,9 @@ struct nv_system{
 // determine whether two spins are a larmor pair
 bool larmor_pair(const spin& s1, const spin& s2, const double tolerance = 1e-10);
 
+// determine whether two spins are in the same larmor group
+bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
 
@@ -111,14 +114,17 @@ double coupling_strength(const spin& s1, const spin& s2);
 vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
                                         const double min_coupling_strength);
 
+// group together clusters close nuclei have similar larmor frequencies
+vector<vector<uint>> group_clusters(const nv_system& nv);
+
 // get size of largest spin cluster
-uint largest_cluster_size(const vector<vector<uint>>& ind_clusters);
+uint largest_cluster_size(const vector<vector<uint>>& clusters);
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
 double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
                             const uint cluster_size_target, const double dcc_cutoff);
 
-// group nuclei into clusters according to index_clusters
+// convert cluster of indices into cluster of spins
 vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
                                    const vector<vector<uint>>& index_clusters);
 
@@ -262,12 +268,6 @@ struct fidelity_info{
     this->fidelity = fidelity;
   };
 };
-
-// determine whether two spins are in the same larmor group
-bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
-
-// group together clusters close nuclei have similar larmor frequencies
-vector<vector<uint>> group_clusters(const nv_system& nv);
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index);

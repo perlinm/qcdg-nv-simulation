@@ -35,6 +35,12 @@ bool larmor_pair(const spin& s1, const spin& s2, const double tolerance){
   return abs(abs(r1z/r2z)-1) < tolerance && abs(abs(r1xy/r2xy)-1) < tolerance;
 }
 
+// determine whether two spins are in the same larmor group
+bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
+  const double dw = (effective_larmor(nv,idx2).norm() - effective_larmor(nv,idx1).norm());
+  return abs(dw) < nv.cluster_coupling/nv.scale_factor;
+}
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
 inline double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
@@ -45,7 +51,7 @@ inline double coupling_strength(const spin& s1, const spin& s2){
 vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
                                         const double min_coupling_strength){
 
-  vector<vector<uint>> ind_clusters; // all clusters
+  vector<vector<uint>> clusters; // all clusters
   vector<uint> clustered; // indices of nuclei we have already clustered
 
   // loop over indices of all nuclei
@@ -73,17 +79,51 @@ vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
           }
         }
       }
-      ind_clusters.push_back(cluster);
+      clusters.push_back(cluster);
     }
   }
-  return ind_clusters;
+  return clusters;
+}
+
+// group together clusters close nuclei have similar larmor frequencies
+vector<vector<uint>> group_clusters(const nv_system& nv){
+  vector<vector<uint>> old_clusters = nv.clusters;
+  vector<vector<uint>> new_clusters;
+
+  while(old_clusters.size() > 0){
+
+    new_clusters.push_back(old_clusters.at(0));
+    old_clusters.erase(old_clusters.begin());
+
+    bool grouped = false;
+    vector<uint> new_cluster = new_clusters.back();
+    for(uint i = 0; i < new_cluster.size(); i++){
+      for(uint c = 0; c < old_clusters.size(); c++){
+        const vector<uint> old_cluster = old_clusters.at(c);
+        for(uint j = 0; j < old_clusters.at(c).size(); j++){
+          if(larmor_group(nv, new_cluster.at(i), old_cluster.at(j))){
+            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
+            old_clusters.erase(old_clusters.begin()+c);
+            c--;
+            grouped = true;
+            break;
+          }
+        }
+      }
+    }
+    if(grouped){
+      new_clusters.at(new_clusters.size()-1) = new_cluster;
+    }
+  }
+
+  return new_clusters;
 }
 
 // get size of largest cluster
-uint largest_cluster_size(const vector<vector<uint>>& ind_clusters){
+uint largest_cluster_size(const vector<vector<uint>>& clusters){
   uint largest_size = 0;
-  for(uint i = 0; i < ind_clusters.size(); i++){
-    if(ind_clusters.at(i).size() > largest_size) largest_size = ind_clusters.at(i).size();
+  for(uint i = 0; i < clusters.size(); i++){
+    if(clusters.at(i).size() > largest_size) largest_size = clusters.at(i).size();
   }
   return largest_size;
 }
@@ -108,8 +148,8 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   double cluster_coupling = initial_cluster_coupling;
   double dcc = cluster_coupling/4;
 
-  vector<vector<uint>> ind_clusters = get_index_clusters(nuclei, cluster_coupling);
-  bool coupling_too_small = largest_cluster_size(ind_clusters) >= cluster_size_target;
+  vector<vector<uint>> clusters = get_index_clusters(nuclei, cluster_coupling);
+  bool coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
   bool last_coupling_too_small;
   bool crossed_correct_coupling = false;
 
@@ -118,8 +158,8 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
     last_coupling_too_small = coupling_too_small;
 
     cluster_coupling += coupling_too_small ? dcc : -dcc;
-    ind_clusters = get_index_clusters(nuclei,cluster_coupling);
-    coupling_too_small = largest_cluster_size(ind_clusters) >= cluster_size_target;
+    clusters = get_index_clusters(nuclei,cluster_coupling);
+    coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
 
     if(coupling_too_small != last_coupling_too_small) crossed_correct_coupling = true;
 
@@ -132,7 +172,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   return cluster_coupling;
 }
 
-// group nuclei into clusters according to index_clusters
+// convert cluster of indices into cluster of spins
 vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
                                    const vector<vector<uint>>& index_clusters){
   vector<vector<spin>> spin_clusters;
@@ -417,46 +457,6 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   const double V_rfd = w_rfd/(s.g*nv.scale_factor);
   const Vector3d n_rfd = cos(theta_rfd)*hat(w_j) + sin(theta_rfd)*hat(w_j.cross(zhat));
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
-}
-
-// determine whether two spins are in the same larmor group
-bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
-  const double dw = (effective_larmor(nv,idx2).norm() - effective_larmor(nv,idx1).norm());
-  return abs(dw) < nv.cluster_coupling/nv.scale_factor;
-}
-
-// group together clusters close nuclei have similar larmor frequencies
-vector<vector<uint>> group_clusters(const nv_system& nv){
-  vector<vector<uint>> old_clusters = nv.clusters;
-  vector<vector<uint>> new_clusters;
-
-  while(old_clusters.size() > 0){
-
-    new_clusters.push_back(old_clusters.at(0));
-    old_clusters.erase(old_clusters.begin());
-
-    bool grouped = false;
-    vector<uint> new_cluster = new_clusters.back();
-    for(uint i = 0; i < new_cluster.size(); i++){
-      for(uint c = 0; c < old_clusters.size(); c++){
-        const vector<uint> old_cluster = old_clusters.at(c);
-        for(uint j = 0; j < old_clusters.at(c).size(); j++){
-          if(larmor_group(nv, new_cluster.at(i), old_cluster.at(j))){
-            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
-            old_clusters.erase(old_clusters.begin()+c);
-            c--;
-            grouped = true;
-            break;
-          }
-        }
-      }
-    }
-    if(grouped){
-      new_clusters.at(new_clusters.size()-1) = new_cluster;
-    }
-  }
-
-  return new_clusters;
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
