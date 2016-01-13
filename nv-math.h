@@ -131,8 +131,8 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
                             const uint cluster_size_target, const double dcc_cutoff);
 
 // group nuclei into clusters according to index_clusters
-vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
-                                  const vector<vector<uint>>& index_clusters);
+vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
+                                   const vector<vector<uint>>& index_clusters);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods
@@ -275,11 +275,11 @@ struct fidelity_info{
   };
 };
 
-// compute fidelity of iSWAP operation between NV center and target nucleus
-fidelity_info iswap_fidelity(const nv_system& nv, const uint index);
-
 // determine whether two spins are in the same larmor group
 bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
 
 // group together clusters close nuclei have similar larmor frequencies
-vector<vector<uint>> group_clusters(const nv_system& nv);
+vector<vector<spin>> group_clusters(const nv_system& nv);
+
+// compute fidelity of iSWAP operation between NV center and target nucleus
+fidelity_info iswap_fidelity(const nv_system& nv, const uint index);

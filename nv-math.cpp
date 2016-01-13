@@ -68,7 +68,7 @@ vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
   return ind_clusters;
 }
 
-// get size of largest spin cluster
+// get size of largest cluster
 uint largest_cluster_size(const vector<vector<uint>>& ind_clusters){
   uint largest_size = 0;
   for(uint i = 0; i < ind_clusters.size(); i++){
@@ -122,8 +122,8 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
 }
 
 // group nuclei into clusters according to index_clusters
-vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
-                                  const vector<vector<uint>>& index_clusters){
+vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
+                                   const vector<vector<uint>>& index_clusters){
   vector<vector<spin>> spin_clusters;
   for(uint c = 0; c < index_clusters.size(); c++){
     vector<spin> spin_cluster;
@@ -242,7 +242,7 @@ inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d&
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time){
-  const vector<vector<spin>> clusters = group_nuclei(nv.nuclei,nv.clusters); // spin clusters
+  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters); // spin clusters
 
   const double w_DD = w_scan/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
@@ -313,7 +313,7 @@ MatrixXcd H_int_large_static_B(const nv_system& nv, const vector<spin>& cluster)
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time, const control_fields& controls,
                              const uint integration_factor){
-  const vector<vector<spin>> clusters = group_nuclei(nv.nuclei,nv.clusters); // spin clusters
+  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters); // spin clusters
 
   const double w_DD = w_scan/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
@@ -408,10 +408,50 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
+// determine whether two spins are in the same larmor group
+bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
+  const double dw = (effective_larmor(nv,idx2).norm() - effective_larmor(nv,idx1).norm());
+  return abs(dw) < nv.cluster_coupling/nv.scale_factor;
+}
+
+// group together clusters close nuclei have similar larmor frequencies
+vector<vector<spin>> group_clusters(const nv_system& nv){
+  vector<vector<uint>> old_clusters = nv.clusters;
+  vector<vector<uint>> new_clusters;
+
+  while(old_clusters.size() > 0){
+
+    new_clusters.push_back(old_clusters.at(0));
+    old_clusters.erase(old_clusters.begin());
+
+    bool grouped = false;
+    vector<uint> new_cluster = new_clusters.back();
+    for(uint i = 0; i < new_cluster.size(); i++){
+      for(uint c = 0; c < old_clusters.size(); c++){
+        const vector<uint> old_cluster = old_clusters.at(c);
+        for(uint j = 0; j < old_clusters.at(c).size(); j++){
+          if(larmor_group(nv, new_cluster.at(i), old_cluster.at(j))){
+            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
+            old_clusters.erase(old_clusters.begin()+c);
+            c--;
+            grouped = true;
+            break;
+          }
+        }
+      }
+    }
+    if(grouped){
+      new_clusters.at(new_clusters.size()-1) = new_cluster;
+    }
+  }
+
+  return spin_clusters(nv.nuclei,new_clusters);
+}
+
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
   // identify cluster of target nucleus
-  const vector<vector<spin>> clusters = group_nuclei(nv.nuclei,nv.clusters);
+  const vector<vector<spin>> clusters = group_clusters(nv);
   vector<spin> cluster;
   uint cluster_index;
   for(uint c = 0; c < clusters.size(); c++){
@@ -500,44 +540,4 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
 
   return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
                        dw_min, f_DD, operation_time, fidelity);
-}
-
-// determine whether two spins are in the same larmor group
-bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
-  const double dw = (effective_larmor(nv,idx2).norm() - effective_larmor(nv,idx1).norm());
-  return abs(dw) < nv.cluster_coupling/nv.scale_factor;
-}
-
-// group together clusters close nuclei have similar larmor frequencies
-vector<vector<uint>> group_clusters(const nv_system& nv){
-  vector<vector<uint>> old_clusters = nv.clusters;
-  vector<vector<uint>> new_clusters;
-
-  while(old_clusters.size() > 0){
-
-    new_clusters.push_back(old_clusters.at(0));
-    old_clusters.erase(old_clusters.begin());
-
-    bool grouped = false;
-    vector<uint> new_cluster = new_clusters.back();
-    for(uint i = 0; i < new_cluster.size(); i++){
-      for(uint c = 0; c < old_clusters.size(); c++){
-        const vector<uint> old_cluster = old_clusters.at(c);
-        for(uint j = 0; j < old_clusters.at(c).size(); j++){
-          if(larmor_group(nv, new_cluster.at(i), old_cluster.at(j))){
-            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
-            old_clusters.erase(old_clusters.begin()+c);
-            c--;
-            grouped = true;
-            break;
-          }
-        }
-      }
-    }
-    if(grouped){
-      new_clusters.at(new_clusters.size()-1) = new_cluster;
-    }
-  }
-
-  return new_clusters;
 }
