@@ -87,6 +87,28 @@ inline MatrixXcd rotate(const double phi, const Vector3d axis){
   return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,axis);
 }
 
+// struct containing system and simulation info
+struct nv_system{
+  const spin n = spin(ao, 0., s_vec/2);
+  const spin e;
+  const int ms;
+  const uint k_DD;
+  const double static_Bz;
+  const double scale_factor;
+
+  vector<spin> nuclei;
+  double cluster_coupling;
+  vector<vector<uint>> clusters;
+
+nv_system(const int ms, const uint k_DD,
+          const double static_Bz, const double scale_factor) :
+  e(spin(Vector3d::Zero(), ge,
+         mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
+    ms(ms), k_DD(k_DD), static_Bz(static_Bz), scale_factor(scale_factor)
+  {};
+};
+
+
 //--------------------------------------------------------------------------------------------
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
@@ -105,26 +127,32 @@ vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
 uint largest_cluster_size(const vector<vector<uint>>& ind_clusters);
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(const vector<spin>& nuclei, const uint cluster_size_target,
-                            const double initial_cluster_coupling, const double dcc_cutoff);
+double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
+                            const uint cluster_size_target, const double dcc_cutoff);
 
-// group nuclei into clusters according to cluster_indices
+// group nuclei into clusters according to index_clusters
 vector<vector<spin>> group_nuclei(const vector<spin>& nuclei,
-                                  const vector<vector<uint>>& cluster_indices);
+                                  const vector<vector<uint>>& index_clusters);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
-// hyperfine field experienced by spin s
-inline Vector3d A(const spin& s){
-  const Vector3d r = s.pos - e(1).pos;
-  return e(1).g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
+// hyperfine field experienced by target nucleus
+inline Vector3d A(const nv_system& nv, const spin& s){
+  const Vector3d r = s.pos - nv.e.pos;
+  return nv.e.g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
+};
+inline Vector3d A(const nv_system& nv, const uint index){
+  return A(nv,nv.nuclei.at(index));
 };
 
-// effective larmor frequency of spin s
-inline Vector3d effective_larmor(const spin& s, const double static_B, const int ms){
-  return s.g*static_B*zhat - ms/2.*A(s);
+// effective larmor frequency of target nucleus
+inline Vector3d effective_larmor(const nv_system& nv, const spin& s){
+  return s.g*nv.static_Bz*zhat - nv.ms/2.*A(nv,s);
+};
+inline Vector3d effective_larmor(const nv_system& nv, const uint index){
+  return effective_larmor(nv,nv.nuclei.at(index));
 };
 
 // pulse times for harmonic h and fourier component f
@@ -149,10 +177,8 @@ MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
 inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const vector<spin>& nuclei,
-                             const vector<vector<uint>>& ind_clusters,
-                             const double scan_time, const double w_scan, const uint k_DD,
-                             const double f_DD, const double static_B, const int ms);
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const double scan_time);
 
 //--------------------------------------------------------------------------------------------
 // Control field scanning and targeting
@@ -199,17 +225,16 @@ struct control_fields{
 };
 
 // Hamiltoninan coupling two spins
-inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2);
+inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2){
+  return coupling_strength(s1,s2) * (3*tp(dot(s1.S,zhat), dot(s2.S,zhat)) - dot(s1.S,s2.S));
+}
 
 // spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
 
 // perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(const vector<spin>& nuclei,
-                             const vector<vector<uint>>& ind_clusters,
-                             const double scan_time, const double w_scan, const uint k_DD,
-                             const double f_DD, const double static_B, const int ms,
-                             const control_fields& controls,
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const double scan_time, const control_fields& controls,
                              const uint integration_factor = 100);
 
 //--------------------------------------------------------------------------------------------
@@ -217,8 +242,8 @@ double coherence_measurement(const vector<spin>& nuclei,
 //--------------------------------------------------------------------------------------------
 
 // return control field for decoupling spin s from other nuclei
-control_fields nuclear_decoupling_field(const spin& s, const double static_B, const int ms,
-                                        const double scale_factor, const double phi_rfd = 0,
+control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
+                                        const double phi_rfd = 0,
                                         const double theta_rfd = pi/2);
 
 // return AXY sequence pulses with given offset
@@ -250,17 +275,11 @@ struct fidelity_info{
   };
 };
 
-// compute fidelity of SWAP operation between NV center and target nucleus
-fidelity_info iswap_fidelity(const uint target, const vector<spin>& nuclei,
-                             const vector<vector<uint>>& ind_clusters,
-                             const double static_B, const int ms, const uint k_DD,
-                             const double cluster_coupling, const double scale_factor);
+// compute fidelity of iSWAP operation between NV center and target nucleus
+fidelity_info iswap_fidelity(const nv_system& nv, const uint index);
 
 // determine whether two spins are in the same larmor group
-bool larmor_group(const spin& s1, const spin& s2, const double static_B, const int ms);
+bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
 
 // group together clusters close nuclei have similar larmor frequencies
-vector<vector<uint>> group_clusters(const vector<spin>& nuclei,
-                                    vector<vector<uint>> old_clusters,
-                                    const double static_B, const int ms,
-                                    const double cluster_coupling, const double scale_factor);
+vector<vector<uint>> group_clusters(const nv_system& nv);

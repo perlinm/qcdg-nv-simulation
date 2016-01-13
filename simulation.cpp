@@ -73,31 +73,30 @@ int main(int arg_num, const char *arg_vec[]) {
      "compute expected iswap fidelities")
     ;
 
+  double c13_abundance;
+  uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
   int cell_radius; // determined by hyperfine_cutoff
-  double c13_abundance;
-  uint max_cluster_size;
   int ms;
-  double static_B;
-  double static_B_in_gauss;
   uint k_DD;
+  double static_Bz_in_gauss;
   double scale_factor;
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
-    ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(100),
-     "set cutoff scale for hyperfine field (kHz)")
     ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
      "relative isotopic abundance of C-13")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
+    ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(100),
+     "set cutoff scale for hyperfine field (kHz)")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
-    ("static_B", po::value<double>(&static_B_in_gauss)->default_value(140.1,"140.1"),
-     "strength of static magnetic field along the NV axis (gauss)")
     ("k_DD", po::value<uint>(&k_DD)->default_value(1),
      "resonance harmonic used in spin addressing (1 or 3)")
+    ("static_Bz", po::value<double>(&static_Bz_in_gauss)->default_value(140.1,"140.1"),
+     "strength of static magnetic field along the NV axis (gauss)")
     ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
     ;
@@ -134,7 +133,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // determine whether certain options were used
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_output_suffix = inputs.count("output_suffix");
-  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
+  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff_in_kHz"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
 
   // run a sanity check on inputs
@@ -145,7 +144,6 @@ int main(int arg_num, const char *arg_vec[]) {
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
-  assert(static_B_in_gauss >= 0);
   assert((k_DD == 1) || (k_DD == 3));
   assert(scale_factor > 10);
 
@@ -158,7 +156,6 @@ int main(int arg_num, const char *arg_vec[]) {
 
   // set some variables based on iputs
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
-  static_B = static_B_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
   // define path of lattice file defining system configuration
@@ -186,12 +183,12 @@ int main(int arg_num, const char *arg_vec[]) {
   srand(seed); // initialize random number generator
   fs::create_directory(output_dir); // create data directory
 
+  // initialize nv_system object
+  nv_system nv(ms, k_DD, static_Bz_in_gauss*gauss, scale_factor);
+
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei
   // -----------------------------------------------------------------------------------------
-
-  // vector of C-13 nuclei
-  vector<spin> nuclei;
 
   if(!using_input_lattice){ // place nuclei at lattice sites
 
@@ -203,8 +200,8 @@ int main(int arg_num, const char *arg_vec[]) {
             if(rnd() < c13_abundance){ // if we pass a check for C-13 isotopic abundance
               const spin nucleus = spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
               // only place C-13 nuclei with a hyperfine field strength above the cutoff
-              if(A(nucleus).norm() > hyperfine_cutoff){
-                nuclei.push_back(nucleus);
+              if(A(nv,nucleus).norm() > hyperfine_cutoff){
+                nv.nuclei.push_back(nucleus);
               }
             }
           }
@@ -213,23 +210,23 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
     // remove any nuclei at the NV lattice sites
-    for(uint i = 0; i < nuclei.size(); i++){
-      if((nuclei.at(i).pos == n.pos) || (nuclei.at(i).pos == e(ms).pos)){
-        nuclei.erase(nuclei.begin()+i);
+    for(uint i = 0; i < nv.nuclei.size(); i++){
+      if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
+        nv.nuclei.erase(nv.nuclei.begin()+i);
         i--;
       }
     }
 
-    cout << "Placed " << nuclei.size() << " C-13 nuclei\n\n";
+    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
-      for(uint i = 0; i < nuclei.size(); i++){
-        lattice << nuclei.at(i).pos(0) << ' '
-                << nuclei.at(i).pos(1) << ' '
-                << nuclei.at(i).pos(2) << endl;
+      for(uint i = 0; i < nv.nuclei.size(); i++){
+        lattice << nv.nuclei.at(i).pos(0) << ' '
+                << nv.nuclei.at(i).pos(1) << ' '
+                << nv.nuclei.at(i).pos(2) << endl;
       }
       lattice.close();
     }
@@ -254,13 +251,13 @@ int main(int arg_num, const char *arg_vec[]) {
       y = stod(line);
       getline(lattice,line);
       z = stod(line);
-      nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec/2));
+      nv.nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec/2));
     }
     lattice.close();
 
     // assert that no C-13 nuclei lie at the NV lattice sites
-    for(uint i = 0; i < nuclei.size(); i++){
-      if((nuclei.at(i).pos == n.pos) || (nuclei.at(i).pos == e(ms).pos)){
+    for(uint i = 0; i < nv.nuclei.size(); i++){
+      if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
         cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
         return 2;
       }
@@ -273,9 +270,9 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(pair_search){
     uint pairs_found = 0;
-    for(uint i = 0; i < nuclei.size(); i++){
-      for(uint j = i+1; j < nuclei.size(); j++){
-        if(larmor_pair(nuclei.at(i),nuclei.at(j))){
+    for(uint i = 0; i < nv.nuclei.size(); i++){
+      for(uint j = i+1; j < nv.nuclei.size(); j++){
+        if(larmor_pair(nv.nuclei.at(i),nv.nuclei.at(j))){
           cout << "larmor pair: " << i << ", " << j << endl;
           pairs_found++;
         }
@@ -294,29 +291,29 @@ int main(int arg_num, const char *arg_vec[]) {
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
   // get cluster_coupling for which the largest cluster size is >= max_cluster_size
-  double cluster_coupling = find_target_coupling(nuclei, max_cluster_size,
-                                                 cluster_coupling_guess, dcc_cutoff);
-  vector<vector<uint>> ind_clusters = get_index_clusters(nuclei, cluster_coupling);
+  nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
+                                             max_cluster_size, dcc_cutoff);
+  nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
   // if (largest cluster size > max_cluster_size),
   //   which can occur when (largest cluster size == max_cluster_size) is impossible,
   //   find largest cluster_coupling for which (largest cluster size < max_cluster_size)
-  while(largest_cluster_size(ind_clusters) > max_cluster_size){
+  while(largest_cluster_size(nv.clusters) > max_cluster_size){
     int cluster_size_target
-      = largest_cluster_size(get_index_clusters(nuclei, cluster_coupling+dcc_cutoff));
-    cluster_coupling = find_target_coupling(nuclei, cluster_size_target,
-                                            cluster_coupling, dcc_cutoff);
-    ind_clusters = get_index_clusters(nuclei, cluster_coupling);
+      = largest_cluster_size(get_index_clusters(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
+    nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
+                                               cluster_size_target, dcc_cutoff);
+    nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
   }
 
   if(max_cluster_size > 1){
-    cout << "Nuclei grouped into " << ind_clusters.size() << " clusters"
-         << " with a coupling factor of "  << cluster_coupling << " Hz\n";
+    cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
+         << " with a coupling factor of "  << nv.cluster_coupling << " Hz\n";
 
     // collect and print histogram of cluster sizes
-    max_cluster_size = largest_cluster_size(ind_clusters);
+    max_cluster_size = largest_cluster_size(nv.clusters);
     vector<uint> size_hist(max_cluster_size);
-    for(uint i = 0; i < ind_clusters.size(); i++){
-      size_hist.at(ind_clusters.at(i).size()-1) += 1;
+    for(uint i = 0; i < nv.clusters.size(); i++){
+      size_hist.at(nv.clusters.at(i).size()-1) += 1;
     }
     cout << "Cluster size histogram:\n";
     for(uint i = 0; i < size_hist.size(); i++){
@@ -324,7 +321,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
     cout << endl;
   } else {
-    cout << "Largest internuclear coupling: " << cluster_coupling << " Hz\n";
+    cout << "Largest internuclear coupling: " << nv.cluster_coupling << " Hz\n";
   }
 
   // now that we are done with initialization, fix up the output filename suffix
@@ -340,14 +337,14 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(coherence_scan){
     // identify effictive larmor frequencies and NV coupling strengths
-    vector<double> w_larmor(nuclei.size());
-    vector<double> A_perp(nuclei.size());
+    vector<double> w_larmor(nv.nuclei.size());
+    vector<double> A_perp(nv.nuclei.size());
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
-    for(uint i = 0; i < nuclei.size(); i++){
-      const Vector3d A_i = A(nuclei.at(i));
+    for(uint i = 0; i < nv.nuclei.size(); i++){
+      const Vector3d A_i = A(nv,i);
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
-      w_larmor.at(i) = effective_larmor(nuclei.at(i), static_B, ms).norm();
+      w_larmor.at(i) = effective_larmor(nv,i).norm();
 
       if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
       if(w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
@@ -358,7 +355,7 @@ int main(int arg_num, const char *arg_vec[]) {
       fs::path larmor_path = output_dir/fs::path("larmor-"+output_suffix);
       ofstream larmor_file(larmor_path.string());
       larmor_file << "# w_larmor A_perp\n";
-      for(uint i = 0; i < nuclei.size(); i++){
+      for(uint i = 0; i < nv.nuclei.size(); i++){
         larmor_file << w_larmor.at(i) << " " << A_perp.at(i) << endl;
       }
       larmor_file.close();
@@ -374,8 +371,7 @@ int main(int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(nuclei, ind_clusters, scan_time,
-                                              w_scan.at(i), k_DD, f_DD, static_B, ms);
+      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -384,7 +380,7 @@ int main(int arg_num, const char *arg_vec[]) {
     if(!no_output){
       fs::path scan_path = output_dir/fs::path("scan-"+output_suffix);
       ofstream scan_file(scan_path.string());
-      scan_file << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
+      scan_file << "# cluster coupling factor (Hz): " << nv.cluster_coupling << endl;
       scan_file << "# f_DD: " << f_DD << endl;
       scan_file << "# scan time: " << scan_time << endl;
       scan_file << endl;
@@ -406,11 +402,9 @@ int main(int arg_num, const char *arg_vec[]) {
     vector<uint> addressable_targets;
     vector<fidelity_info> iswap_summaries;
 
-    for(uint target = 0; target < nuclei.size(); target++){
-      const fidelity_info target_info =
-        iswap_fidelity(target, nuclei, ind_clusters, static_B,
-                       ms, k_DD, cluster_coupling, scale_factor);
-      cout << "(" << target << "/" << nuclei.size() << ") ";
+    for(uint target = 0; target < nv.nuclei.size(); target++){
+      const fidelity_info target_info = iswap_fidelity(nv,target);
+      cout << "(" << target << "/" << nv.nuclei.size() << ") ";
       if(target_info.valid){
         addressable_targets.push_back(target);
         iswap_summaries.push_back(target_info);
@@ -423,9 +417,8 @@ int main(int arg_num, const char *arg_vec[]) {
     if(!no_output){
       fs::path fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
       ofstream fidelity_file(fidelity_path.string());
-      fidelity_file << "# index fidelity\n";
-      fidelity_file << "# cluster coupling factor: " << cluster_coupling << endl;
-      fidelity_file << "# scale factor: " << scale_factor << endl;
+      fidelity_file << "# cluster coupling factor: " << nv.cluster_coupling << endl;
+      fidelity_file << "# scale factor: " << nv.scale_factor << endl;
       fidelity_file << endl;
       fidelity_file << "# target_index larmor_eff hyperfine hyperfine_perp dw_min f_DD"
                     << " operation_time iswap_idelity\n";
