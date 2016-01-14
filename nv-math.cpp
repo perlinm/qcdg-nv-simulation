@@ -379,11 +379,11 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
   // todo: compute freq_scale, dt, dx, and integration_steps for each cluster
   //   for the event that we simulate heteronuclear systems
   const double freq_scale = max(w_DD,gC13*max_possible_B.norm());
-  const double dt = 1/(freq_scale*integration_factor); // integration time step
+  const double dt = 1/(freq_scale*integration_factor);
   const double dx = 1/(t_DD*freq_scale*integration_factor);
 
   // use an integer number of integration steps to scan an integer number of AXY sequences
-  const uint integration_steps = int (int(scan_time/t_DD)*t_DD / dt);
+  const uint integration_steps = int(int(scan_time/t_DD)*t_DD / dt);
 
   double coherence = 1;
   for(uint c = 0; c < clusters.size(); c++){
@@ -433,7 +433,6 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
       U_m = ((Id - j*dt*H_m)*U_m).eval();
       U_0 = ((Id - j*dt*H_0)*U_0).eval();
 
-      // normalize propagators
       U_m /= sqrt(real(trace(U_m.adjoint()*U_m)/cHD));
       U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)/cHD));
     }
@@ -551,4 +550,77 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
 
   return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
                        dw_min, f_DD, operation_time, fidelity);
+}
+
+// realization of propagator U = exp(-i * phi * sigma_{axis}^{index})
+MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const Vector3d axis,
+                const uint interaction_factor, const double threshold){
+  assert(abs(dot(hat(axis),zhat)) < threshold);
+
+  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters);
+  vector<spin> cluster;
+  uint cluster_index;
+  for(uint c = 0; c < clusters.size(); c++){
+    for(uint s = 0; s < clusters.at(c).size(); s++){
+      if(clusters.at(c).at(s) == nv.nuclei.at(index)){
+        cluster = clusters.at(c);
+        cluster_index = s;
+      }
+    }
+  }
+  const uint spins = cluster.size()+1;
+
+  // control field frequency = effective larmor frequency of target nucleus
+  const double larmor_eff = effective_larmor(nv,index).norm();
+
+  double w_min = DBL_MAX; // minimum larmor frequency of all nuclei
+  double dw_min = DBL_MAX; // min{ |w_s - w_{target}| for all s }
+  for(uint s = 0; s < nv.nuclei.size(); s++){
+    const double larmor_eff_s = effective_larmor(nv,s).norm();
+    if(larmor_eff_s < w_min) w_min = larmor_eff_s;
+    if(s == index) continue;
+    const double dw = abs(larmor_eff - larmor_eff_s);
+    if(dw < dw_min) dw_min = dw;
+  }
+
+  // AXY protocol frequency and period
+  const double w_DD = w_min/2;
+  const double t_DD = 2*pi/w_DD;
+
+  // todo: try w_ctl = gC13*nv.static_Bz/2;
+  const double w_ctl = larmor_eff; // control field frequency
+  const double g_B = dw_min/nv.scale_factor; // control field strength * gyromagnetic ratio
+  const double operation_time = 4*phi/g_B; // control operation time
+
+  const double dt = 1/(w_ctl*integration_factor); // integration step size
+  const uint integration_steps = int(operation_time/dt); // number of integration steps
+
+  // initial propagator
+  const MatrixXcd Id = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  MatrixXcd U = Id;
+
+  for(uint t_i = 1; t_i < integration_steps; t_i++){
+    const double t = t_i*dt;
+
+    const MatrixXcd H = H_int_large_static_B(nv,cluster) + H_nZ(cluster,B);
+    // flip electron spin according to the AXY sequence
+    const double t_hAXY = t - floor(t/0.5)*0.5; // time in current AXY half-sequence
+    // if we are within dx/2 of an AXY pulse time, flip the projections
+    if(min({abs(t_hAXY-pulses.at(0)), abs(t_hAXY-pulses.at(1)), abs(t_hAXY-pulses.at(2)),
+            abs(t_hAXY-pulses.at(3)), abs(t_hAXY-pulses.at(4))}) < dt/2){
+      U *= act(X, {0}, spins);
+    }
+
+    // control field and Hamiltonian
+    const Vector3d B = g_B/nv.nuclei.at(index).g * cos(w_ctl*t) * hat(axis);
+    const MatrixXcd H = H_int_large_static_B(nv,clusters.at(c)) + H_nZ(clusters.at(c),B);
+
+    // update and normalize propagator
+    // U = (exp(-j*dt*H)*U).eval();
+    // U = ((Id - j*dt*H - dt*dt*H*H/2)*U).eval();
+    U = ((Id - j*dt*H)*U).eval();
+    U /= sqrt(real(trace(U.adjoint()*U)/cHD));
+  }
+
+  return U;
 }
