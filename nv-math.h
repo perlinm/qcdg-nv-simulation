@@ -158,8 +158,16 @@ vector<double> delayed_pulses(const vector<double> pulses, const double delay);
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
 
+// Hamiltoninan coupling two spins; assumes large static Bz
+inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
+  return coupling_strength(s1,s2) * (3*tp(dot(s1.S,zhat), dot(s2.S,zhat)) - dot(s1.S,s2.S));
+}
+
 // spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
+
+// spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
+MatrixXcd H_int_large_static_Bz(const spin& e, const vector<spin>& cluster);
 
 // NV zero-field splitting plus Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const spin& e, const vector<spin>& cluster, const Vector3d& B);
@@ -175,8 +183,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
                              const double scan_time);
 
 //--------------------------------------------------------------------------------------------
-// Control field scanning and targeting
-// (assume large static magnetic field along NV axis)
+// Control field struct
 //--------------------------------------------------------------------------------------------
 
 struct control_fields{
@@ -217,19 +224,6 @@ struct control_fields{
 
   uint num() const { return Bs.size(); }
 };
-
-// Hamiltoninan coupling two spins
-inline MatrixXcd H_ss_large_static_B(const spin& s1, const spin& s2){
-  return coupling_strength(s1,s2) * (3*tp(dot(s1.S,zhat), dot(s2.S,zhat)) - dot(s1.S,s2.S));
-}
-
-// spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int_large_static_B(const spin& e, const vector<spin>& cluster);
-
-// perform NV coherence measurement with a static magnetic field and additional control fields
-double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
-                             const double scan_time, const control_fields& controls,
-                             const uint integration_factor = 100);
 
 //--------------------------------------------------------------------------------------------
 // Single nuclear targeting
