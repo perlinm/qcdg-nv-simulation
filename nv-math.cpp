@@ -505,7 +505,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const V
   const double g_B = dw_min/nv.scale_factor; // control field strength * gyromagnetic ratio
   const double operation_time = 4*phi/g_B; // control operation time
 
-  const double dt = 1/(w_ctl*integration_factor); // integration step size
+  const double freq_scale = max(w_ctl,g_B); // largest frequency scale of system evolution
+  const double dt = 1/(freq_scale*integration_factor); // integration step size
   const uint integration_steps = int(operation_time/dt); // number of integration steps
 
   // initial propagator
@@ -515,15 +516,15 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const V
   for(uint t_i = 1; t_i < integration_steps; t_i++){
     const double t = t_i*dt;
 
-    // flip electron spin according to the AXY sequence
-    const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5; // time in current AXY half-sequence
+    // normzlized time into current AXY half-sequence
+    const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5;
     // if we are within dx/2 of an AXY pulse time, flip the projections
     if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
             abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dt/t_DD*0.5){
       U = act(sx, {0}, spins)*U;
     }
 
-    // control field and Hamiltonian
+    // current control field and Hamiltonian
     const Vector3d B = g_B/nv.nuclei.at(index).g * cos(w_ctl*t) * hat(axis);
     const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
 
