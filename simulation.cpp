@@ -61,6 +61,7 @@ int main(int arg_num, const char *arg_vec[]) {
   bool pair_search;
   bool coherence_scan;
   bool compute_iswap_fidelities;
+  bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
@@ -71,6 +72,8 @@ int main(int arg_num, const char *arg_vec[]) {
     ("iswap",
      po::value<bool>(&compute_iswap_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iswap fidelities")
+    ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
+     "enable testing mode")
     ;
 
   double c13_abundance;
@@ -137,7 +140,9 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
 
   // run a sanity check on inputs
-  assert(int(pair_search)+int(coherence_scan)+int(compute_iswap_fidelities) == 1);
+  if(!testing){
+    assert(int(pair_search)+int(coherence_scan)+int(compute_iswap_fidelities) == 1);
+  }
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(hyperfine_cutoff_in_kHz > 0);
