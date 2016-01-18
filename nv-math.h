@@ -164,19 +164,19 @@ inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
 }
 
 // spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int(const spin& e, const vector<spin>& cluster);
+MatrixXcd H_int(const nv_system& nv, const vector<spin>& cluster);
 
 // spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const spin& e, const vector<spin>& cluster);
+MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<spin>& cluster);
 
 // NV zero-field splitting plus Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const spin& e, const vector<spin>& cluster, const Vector3d& B);
+inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B);
 
 // nuclear Zeeman Hamiltonian
 MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
 
 // Zeeman Hamiltonian for NV center with cluster
-inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B);
+inline MatrixXcd H_Z(const nv_system& nv, const vector<spin>& cluster, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,

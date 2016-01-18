@@ -254,12 +254,12 @@ MatrixXcd H_ss(const spin& s1, const spin& s2){
 }
 
 // spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int(const spin& e, const vector<spin>& cluster){
+MatrixXcd H_int(const nv_system& nv, const vector<spin>& cluster){
   const int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
-    H += act(H_ss(e, cluster.at(s)), {0,s+1}, spins);
+    H += act(H_ss(nv.e, cluster.at(s)), {0,s+1}, spins);
     for(uint r = 0; r < s; r++){
       // interaction betwen spin r and spin s
       H += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
@@ -284,8 +284,8 @@ MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<spin>& cluster
 }
 
 // NV zero-field splitting plus Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const spin& e, const vector<spin>& cluster, const Vector3d& B){
-  return act(NV_ZFS*dot(e.S,zhat)*dot(e.S,zhat) - e.g*dot(B,e.S), {0}, cluster.size()+1);
+inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
+  return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) - nv.e.g*dot(B,nv.e.S);
 }
 
 // nuclear Zeeman Hamiltonian
@@ -301,8 +301,8 @@ MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B){
 }
 
 // Zeeman Hamiltonian for NV+cluster system
-inline MatrixXcd H_Z(const spin& e, const vector<spin>& cluster, const Vector3d& B){
-  return H_nZ(cluster, B) + H_NV_GS(e, cluster, B);
+inline MatrixXcd H_Z(const nv_system& nv, const vector<spin>& cluster, const Vector3d& B){
+  return H_nZ(cluster,B) + act(H_NV_GS(nv,B), {0}, cluster.size()+1);
 }
 
 // perform NV coherence measurement with a static magnetic field
@@ -321,8 +321,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
     const MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, clusters.at(c).size()+1); // |0><0|
 
     // construct full Hamiltonian
-    const MatrixXcd H = H_int(nv.e,clusters.at(c)) + H_Z(nv.e,clusters.at(c),
-                                                         nv.static_Bz*zhat);
+    const MatrixXcd H = H_int(nv,clusters.at(c)) + H_Z(nv,clusters.at(c),nv.static_Bz*zhat);
 
       // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
@@ -417,7 +416,7 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
   const vector<double> sy_pulses = delayed_pulses(axy_pulses(nv.k_DD, f_DD), 0.25);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv.e, cluster) + H_Z(nv.e, cluster, nv.static_Bz*zhat);
+  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
 
   // NV center spin flip pulse
   const MatrixXcd X = act(sx,{0},cluster.size()+1);
@@ -545,6 +544,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3
 
     // current Hamiltonian
     // const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
+    // const MatrixXcd H = H_int(nv,cluster) + H_nZ(cluster,B);
     const MatrixXcd H = H_nZ(cluster,B);
 
     // update and normalize propagator
