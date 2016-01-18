@@ -454,5 +454,38 @@ int main(int arg_num, const char *arg_vec[]) {
     }
   }
 
-}
 
+  // -----------------------------------------------------------------------------------------
+  // Testing code
+  // -----------------------------------------------------------------------------------------
+
+  uint target_cluster;
+  for(uint c = 0; c < nv.clusters.size(); c++){
+    if(nv.clusters.at(c).size() == 1){
+      target_cluster = c;
+      break;
+    }
+  }
+  uint index = nv.clusters.at(target_cluster).at(0);
+  cout << "Targeting nucleus " << index << endl << endl;
+
+  Vector3d axis = yhat;
+  MatrixXcd U_full = U_ctl(nv,index,-pi/2,axis);
+
+  MatrixXcd U_desired = dot(s_vec,axis);
+  cout << "desired propagator:\n";
+  cout << U_desired << endl << endl;
+
+  uint start = 0;
+  if(U_full.rows() > 2 && abs(U_full(0,2)) > abs(U_full(0,0))){
+    start = 2;
+  }
+
+  MatrixXcd U = U_full.block<2,2>(0,start);
+  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
+
+  cout << "actual propagator:\n";
+  cout << clean(U) << endl << endl;
+
+  cout << "gate fidelity: " << gate_fidelity(U,U_desired) << endl;
+}

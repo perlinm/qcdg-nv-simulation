@@ -465,9 +465,11 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
 }
 
 // realization of propagator U = exp(-i * phi * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const Vector3d axis,
-                const uint integration_factor, const double threshold){
+MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3d axis,
+                const double threshold){
   assert(abs(dot(hat(axis),zhat)) < threshold);
+  while(phi > 2*pi) phi -= 2*pi;
+  while(phi < 0) phi += 2*pi;
 
   const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters);
   vector<spin> cluster;
@@ -483,7 +485,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const V
   const uint spins = cluster.size()+1;
 
   // control field frequency = effective larmor frequency of target nucleus
-  const double larmor_eff = effective_larmor(nv,index).norm();
+  // const double larmor_eff = effective_larmor(nv,index).norm();
+  const double larmor_eff = gC13*nv.static_Bz;
+  const double t_larmor = 2*pi/larmor_eff; // larmor period
 
   double w_min = DBL_MAX; // minimum larmor frequency of all nuclei
   double dw_min = DBL_MAX; // min{ |w_s - w_{target}| for all s }
@@ -496,25 +500,36 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const V
   }
 
   // AXY protocol frequency, period, and pulses
-  const double w_DD = w_min/2;
+  // const double w_DD = w_min/2;
+  const double w_DD = larmor_eff/2;
   const double t_DD = 2*pi/w_DD;
   const vector<double> pulses = axy_pulses(nv.k_DD, 0.);
 
-  // todo: try w_ctl = gC13*nv.static_Bz/2;
   const double w_ctl = larmor_eff; // control field frequency
   const double g_B = dw_min/nv.scale_factor; // control field strength * gyromagnetic ratio
-  const double operation_time = 4*phi/g_B; // control operation time
+  const double control_time = 4*phi/g_B; // control operation time
+  const double operation_time = int(control_time/t_larmor+1)*t_larmor;
 
-  const double freq_scale = max(w_ctl,g_B); // largest frequency scale of system evolution
-  const double dt = 1/(freq_scale*integration_factor); // integration step size
-  const uint integration_steps = int(operation_time/dt); // number of integration steps
+  const double dt = min(t_larmor,t_DD)/nv.scale_factor; // integration step size
+  const uint integration_steps = int(operation_time/dt);
+
+  cout << "operation_time: " << operation_time << endl;
+  cout << "integration steps: "  << integration_steps << endl;
+  const uint print_steps = 100;
+  uint p = 0;
 
   // initial propagator
   const MatrixXcd Id = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   MatrixXcd U = Id;
 
-  for(uint t_i = 1; t_i < integration_steps; t_i++){
+  for(uint t_i = 1; t_i <= integration_steps; t_i++){
     const double t = t_i*dt;
+
+    if(t_i%(integration_steps/print_steps) == 0){
+      p++;
+      cout << p << " " << flush;
+    }
+
 
     // normzlized time into current AXY half-sequence
     const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5;
@@ -524,16 +539,21 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double phi, const V
       U = act(sx, {0}, spins)*U;
     }
 
-    // current control field and Hamiltonian
-    const Vector3d B = g_B/nv.nuclei.at(index).g * cos(w_ctl*t) * hat(axis);
-    const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
+    // current magnetic field
+    Vector3d B = nv.static_Bz*zhat;
+    if(t <= control_time) B += g_B/nv.nuclei.at(index).g*cos(w_ctl*t)*hat(axis);
+
+    // current Hamiltonian
+    // const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
+    const MatrixXcd H = H_nZ(cluster,B);
 
     // update and normalize propagator
-    // U = (exp(-j*dt*H)*U).eval();
+    U = (exp(-j*dt*H)*U).eval();
     // U = ((Id - j*dt*H - dt*dt*H*H/2)*U).eval();
-    U = ((Id - j*dt*H)*U).eval();
+    // U = ((Id - j*dt*H)*U).eval();
     U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
   }
 
+  cout << "\n\n";
   return U;
 }
