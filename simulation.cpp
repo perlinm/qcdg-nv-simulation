@@ -481,10 +481,12 @@ int main(int arg_num, const char *arg_vec[]) {
     start = 2;
   }
 
+  U_full *= conj(U_full(0,1))/abs(U_full(0,1));
+
   MatrixXcd U = U_full.block<2,2>(0,start);
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
 
-  cout << "actual propagator:\n";
+  cout << "reduced propagator:\n";
   cout << clean(U) << endl << endl;
 
   cout << "gate fidelity: " << gate_fidelity(U,U_desired) << endl;
