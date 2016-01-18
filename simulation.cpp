@@ -296,7 +296,7 @@ int main(int arg_num, const char *arg_vec[]) {
   const double cluster_coupling_guess = 100; // this value doesn't really matter
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
-  uint cluster_size_target = max_cluster_size+1;
+  uint cluster_size_target = max_cluster_size;
   do{
     assert(cluster_size_target > 0);
     // get cluster_coupling for which the largest cluster size is >= cluster_size_target
