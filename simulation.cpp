@@ -467,7 +467,6 @@ int main(int arg_num, const char *arg_vec[]) {
     }
   }
   uint index = nv.clusters.at(target_cluster).at(0);
-  cout << "Targeting nucleus " << index << endl << endl;
 
   Vector3d axis = yhat;
   MatrixXcd U_full = U_ctl(nv,index,-pi/2,axis);
@@ -480,8 +479,6 @@ int main(int arg_num, const char *arg_vec[]) {
   if(U_full.rows() > 2 && abs(U_full(0,2)) > abs(U_full(0,0))){
     start = 2;
   }
-
-  U_full *= conj(U_full(0,1))/abs(U_full(0,1));
 
   MatrixXcd U = U_full.block<2,2>(0,start);
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));

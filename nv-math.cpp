@@ -411,6 +411,13 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
   const double t_DD = 2*pi/w_DD; // AXY protocol period
   const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
 
+  cout << "Running iSWAP protocol with the following parameters:"
+       << " target nucleus index: " << index << endl
+       << " w_DD: " << w_DD << endl
+       << " f_" << nv.k_DD << ": " << f_DD << endl
+       << " operation_time: " << operation_time << endl
+       << endl;
+
   // AXY pulse sequence matching target larmor frequency
   const vector<double> sx_pulses = axy_pulses(nv.k_DD, f_DD);
   const vector<double> sy_pulses = delayed_pulses(axy_pulses(nv.k_DD, f_DD), 0.25);
@@ -487,7 +494,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3
   const double larmor_eff = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/larmor_eff; // larmor period
 
-  double dw_min = DBL_MAX; // min{ |w_s - w_{target}| for all s }
+  double dw_min = DBL_MAX; // min{ |w_s - w_{target}| for all s != index }
   for(uint s = 0; s < nv.nuclei.size(); s++){
     if(s == index) continue;
     const double dw = abs(larmor_eff - effective_larmor(nv,s).norm());
@@ -495,56 +502,81 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3
   }
 
   // AXY protocol frequency, period, and pulses
-  const double w_DD = larmor_eff/2;
+  const double A_j = A(nv,index).norm();
+  double w_DD;
+  if(larmor_eff >= nv.scale_factor*A_j){
+    uint k_M = int(larmor_eff/(nv.scale_factor*A_j)-1);
+    if(k_M % 2 == 0) k_M--;
+    w_DD = (larmor_eff-nv.scale_factor*A_j)/k_M;
+  }
+  if(larmor_eff < nv.scale_factor*A_j || w_DD < nv.scale_factor*A_j){
+    w_DD = (larmor_eff+nv.scale_factor*A_j)/3.;
+  }
+  uint k_DD = abs(w_DD - larmor_eff) > abs(3*w_DD - larmor_eff) ? 1 : 3;
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulses = axy_pulses(nv.k_DD, 0.);
+  const vector<double> pulses = axy_pulses(k_DD, 0.);
 
   const double w_ctl = larmor_eff; // control field frequency
-  const double g_B = dw_min/nv.scale_factor; // control field strength * gyromagnetic ratio
-  const double control_time = 4*phi/g_B; // control operation time
+  const double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
+  const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
+  const double control_time = 4*phi/g_B_ctl; // control operation time
   const double operation_time = int(control_time/t_larmor+1)*t_larmor;
+
+  cout << "Running targeting protocol with the following parameters:" << endl
+       << " target nucleus index: " << index << endl
+       << " w_DD: " << w_DD << endl
+       << " f_" << nv.k_DD << ": 0" << endl
+       << " w_ctl: " << w_ctl << endl
+       << " B_ctl: ";
+  if(B_ctl/gauss < 1) cout << B_ctl/gauss*1000 << " mG" << endl;
+  else cout << B_ctl/gauss << " G" << endl;
+  cout << " control_time: " << control_time << endl
+       << endl;
+
+  cout << "Additional information:" << endl
+       << " dw_min: " << dw_min << endl
+       << " A: " << A_j << endl
+       << " cluster size: " << cluster.size() << endl
+       << endl;
 
   const double dt = min(t_larmor,t_DD)/nv.scale_factor; // integration step size
   const uint integration_steps = int(operation_time/dt);
 
-  const uint print_steps = 100;
-  uint p = 0;
-
   // initial propagator
-  const MatrixXcd Id = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  MatrixXcd U = Id;
+  MatrixXcd U = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
 
+  // gate to flip NV spin
+  const MatrixXcd X = act(sx, {0}, spins);
+
+  const uint print_steps = int(nv.scale_factor);
   for(uint t_i = 1; t_i <= integration_steps; t_i++){
     const double t = t_i*dt;
 
     if(t_i%(integration_steps/print_steps) == 0){
-      p++;
-      cout << "(" << p << "/" << print_steps << ")\n";
+      cout << "(" << int(print_steps*double(t_i)/integration_steps)
+           << "/" << print_steps << ")" << endl;
     }
 
-    // // normzlized time into current AXY half-sequence
-    // const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5;
-    // // if we are within dx/2 of an AXY pulse time, flip the projections
-    // if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
-    //         abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dt/t_DD*0.5){
-    //   U = act(sx, {0}, spins)*U;
-    // }
-    U = act(sx, {0}, spins)*U;
+    // normzlized time into current AXY half-sequence
+    const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5;
+    // if we are within dx/2 of an AXY pulse time, flip the projections
+    if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
+            abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dt/t_DD*0.5){
+      U = X*U;
+    }
 
     // current magnetic field
     Vector3d B = nv.static_Bz*zhat;
-    if(t <= control_time) B += g_B/nv.nuclei.at(index).g*cos(w_ctl*t)*hat(axis);
+    if(t <= control_time) B += B_ctl*cos(w_ctl*t)*hat(axis);
 
     // current Hamiltonian
     const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
-    // const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,B);
 
     // update and normalize propagator
     U = (exp(-j*dt*H)*U).eval();
-    // U = ((Id - j*dt*H - dt*dt*H*H/2)*U).eval();
-    // U = ((Id - j*dt*H)*U).eval();
     U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
   }
 
+  cout << endl;
   return U;
 }
