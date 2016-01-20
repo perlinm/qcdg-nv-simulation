@@ -436,7 +436,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
 
     // net magnetic field
     Vector3d B = nv.static_Bz*zhat;
-      // + controls.Bs.at(0) * cos(controls.freqs.at(0)*x*t_DD);
     for(uint c = 0; c < controls.num(); c++){
       B += controls.Bs.at(c) * cos(controls.freqs.at(c)*x*t_DD + controls.phases.at(c));
     }
@@ -612,6 +611,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const double control_time = 4*phi/g_B_ctl; // control operation time
   const double operation_time = int(control_time/t_larmor+1)*t_larmor;
+  const control_fields controls(B_ctl*axis, w_ctl, 0.);
 
   cout << "Running targeting protocol with the following parameters:" << endl
        << " target nucleus index: " << index << endl
@@ -619,7 +619,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " f_" << k_DD << ": 0" << endl
        << " w_ctl: " << w_ctl << endl
        << " B_ctl: " << B_ctl/gauss*1000 << " mG" << endl
-       << " control_time: " << control_time*1000 << " ms" << endl
+       << " operation_time: " << operation_time*1000 << " ms" << endl
        << endl;
 
   cout << "Additional information:" << endl
@@ -628,6 +628,5 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " cluster size: " << cluster.size() << endl
        << endl;
 
-  const control_fields controls(B_ctl*axis, w_ctl, 0.);
   return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, controls);
 }
