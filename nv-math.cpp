@@ -471,9 +471,10 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index){
 }
 
 // realization of propagator U = exp(-i * phi * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3d axis,
+MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, double phi,
                 const double threshold){
   assert(abs(dot(hat(axis),zhat)) < threshold);
+  phi *= -1;
   while(phi > 2*pi) phi -= 2*pi;
   while(phi < 0) phi += 2*pi;
 
@@ -485,6 +486,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3
       if(clusters.at(c).at(s) == nv.nuclei.at(index)){
         cluster = clusters.at(c);
         cluster_index = s;
+        break;
       }
     }
   }
@@ -499,6 +501,12 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, double phi, const Vector3
     if(s == index) continue;
     const double dw = abs(larmor_eff - effective_larmor(nv,s).norm());
     if(dw < dw_min) dw_min = dw;
+  }
+
+  if(dw_min < threshold){
+    cout << "Cannot target nuclei with larmor pairs"
+         << " (target nucleus: " << index << ")" << endl;
+    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   }
 
   // AXY protocol frequency, period, and pulses

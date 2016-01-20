@@ -61,6 +61,8 @@ int main(int arg_num, const char *arg_vec[]) {
   bool pair_search;
   bool coherence_scan;
   bool compute_iswap_fidelities;
+  bool single_control;
+  bool single_coupling;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -72,6 +74,12 @@ int main(int arg_num, const char *arg_vec[]) {
     ("iswap",
      po::value<bool>(&compute_iswap_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iswap fidelities")
+    ("control",
+     po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
+     "control individual nucleus")
+    ("coupling",
+     po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
+     "couple individual nucleus to NV center")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -119,8 +127,42 @@ int main(int arg_num, const char *arg_vec[]) {
      "time for each coherence measurement (microseconds)")
     ;
 
+  uint target_index;
+  double rotation_angle;
+  double rotation_angle_over_2pi;
+  double target_axis_angle;
+  double target_axis_angle_over_2pi;
+
+  po::options_description addressing_options("Single nucleus addressing options",
+                                             help_text_length);
+  addressing_options.add_options()
+    ("target", po::value<uint>(&target_index)->default_value(0),
+     "index of nucleus to target (if applicable)")
+    ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0),
+     "rotation angle in units of 2*pi")
+    ("target_axis", po::value<double>(&target_axis_angle_over_2pi)->default_value(0),
+     "azimuthal angle of target rotation axis in units of 2*pi"
+     " (e.g. 0 for xhat, 0.25 or for yhat)")
+    ;
+
+  double nv_axis_angle;
+  double nv_axis_angle_over_2pi;
+
+  po::options_description single_coupling_options("NV coupling options",help_text_length);
+  single_coupling_options.add_options()
+    ("nv_axis", po::value<double>(&nv_axis_angle_over_2pi)->default_value(0),
+     "azimuthal angle of NV rotation axis in units of 2*pi"
+     " (e.g. 0 for xhat, 0.25 or for yhat)")
+    ;
+
   po::options_description all("Allowed options");
-  all.add(general).add(file_io).add(simulations).add(simulation_options).add(scan_options);
+  all.add(general);
+  all.add(file_io);
+  all.add(simulations);
+  all.add(simulation_options);
+  all.add(scan_options);
+  all.add(addressing_options);
+  all.add(single_coupling_options);
 
   // collect inputs
   po::variables_map inputs;
@@ -136,12 +178,18 @@ int main(int arg_num, const char *arg_vec[]) {
   // determine whether certain options were used
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_output_suffix = inputs.count("output_suffix");
-  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff_in_kHz"].defaulted();
+  bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
+  bool set_target_index = !inputs["target"].defaulted();
 
   // run a sanity check on inputs
   if(!testing){
-    assert(int(pair_search)+int(coherence_scan)+int(compute_iswap_fidelities) == 1);
+    assert(int(pair_search)
+           + int(coherence_scan)
+           + int(compute_iswap_fidelities)
+           + int(single_control)
+           + int(single_coupling)
+           == 1);
   }
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
@@ -163,6 +211,9 @@ int main(int arg_num, const char *arg_vec[]) {
   // set some variables based on iputs
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   scan_time = scan_time_in_ms*1e-3;
+  rotation_angle = rotation_angle_over_2pi*2*pi;
+  target_axis_angle = target_axis_angle_over_2pi*2*pi;
+  nv_axis_angle = nv_axis_angle_over_2pi*2*pi;
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
@@ -456,35 +507,34 @@ int main(int arg_num, const char *arg_vec[]) {
 
 
   // -----------------------------------------------------------------------------------------
-  // Testing code
+  // Individual addressing -- control
   // -----------------------------------------------------------------------------------------
 
-  uint target_cluster;
-  for(uint c = 0; c < nv.clusters.size(); c++){
-    if(nv.clusters.at(c).size() == 1){
-      target_cluster = c;
-      break;
+  if(single_control){
+
+    const Vector3d axis = cos(target_axis_angle)*xhat+sin(target_axis_angle)*yhat;
+    const MatrixXcd U_full = U_ctl(nv,target_index,axis,rotation_angle);
+
+    const MatrixXcd U_desired = exp(-j*rotation_angle*dot(s_vec,axis));
+    cout << "desired propagator:\n";
+    cout << clean(U_desired) << endl << endl;
+
+    uint target_U_block_column = 0;
+    if(U_full.rows() > 2){
+      while(abs(U_full(0,target_U_block_column)) < 1e-10){
+        target_U_block_column += 2;
+      }
     }
-  }
-  uint index = nv.clusters.at(target_cluster).at(0);
 
-  Vector3d axis = yhat;
-  MatrixXcd U_full = U_ctl(nv,index,-pi/2,axis);
+    const MatrixXcd U_target = U_full.block<2,2>(0,target_U_block_column);
 
-  MatrixXcd U_desired = dot(s_vec,axis);
-  cout << "desired propagator:\n";
-  cout << U_desired << endl << endl;
+    const complex<double> phase =
+      abs(U_target(0,0)) > abs(U_target(0,1)) ? U_target(0,0) : U_target(0,1);
 
-  uint start = 0;
-  if(U_full.rows() > 2 && abs(U_full(0,2)) > abs(U_full(0,0))){
-    start = 2;
+    cout << "reduced propagator:\n";
+    cout << U_target*conj(phase)/abs(phase) << endl << endl;
+
+    cout << "gate fidelity: " << gate_fidelity(U_target,U_desired) << endl;
   }
 
-  MatrixXcd U = U_full.block<2,2>(0,start);
-  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-
-  cout << "reduced propagator:\n";
-  cout << clean(U) << endl << endl;
-
-  cout << "gate fidelity: " << gate_fidelity(U,U_desired) << endl;
 }
