@@ -526,7 +526,8 @@ int main(int arg_num, const char *arg_vec[]) {
       }
     }
 
-    const MatrixXcd U_target = U_full.block<2,2>(0,target_U_block_column);
+    MatrixXcd U_target = U_full.block<2,2>(0,target_U_block_column);
+    U_target /= sqrt(real(trace(U_target.adjoint()*U_target)/double(U_target.rows())));
 
     const complex<double> phase =
       abs(U_target(0,0)) > abs(U_target(0,1)) ? U_target(0,0) : U_target(0,1);

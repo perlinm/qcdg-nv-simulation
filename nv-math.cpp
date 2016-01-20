@@ -359,8 +359,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 
 MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
-                              const double simulation_time,
-                              const double axy_pulse_delay){
+                              const double simulation_time, const double axy_pulse_delay){
   // AXY sequence period and pulses
   const double t_DD = 2*pi/w_DD;
   const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
@@ -380,6 +379,75 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
 
   // propagator for entire simulation
   U = pow(U, int(simulation_time/t_DD+0.5));
+
+  // normalize propagator
+  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
+
+  return U;
+}
+
+MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double simulation_time, const control_fields& controls,
+                              const double axy_pulse_delay){
+  const uint spins = cluster.size()+1;
+
+  // AXY sequence period and pulses
+  const double t_DD = 2*pi/w_DD;
+  const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
+
+  // maximim frequency scale of simulation
+  double max_freq_scale = w_DD;
+  for(uint c = 0; c < controls.num(); c++){
+    max_freq_scale = max(max_freq_scale,controls.freqs.at(c));
+  }
+
+  // integration step size and number
+  const double dt = 1/(max_freq_scale*nv.scale_factor);
+  const double dx = 1/(t_DD*max_freq_scale*nv.scale_factor);
+  const uint integration_steps = int(simulation_time/dt+0.5);
+
+  // static NV+cluster Hamiltonian
+  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster);
+
+  // initial propagator
+  MatrixXcd U = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+
+  // NV center spin flip pulse
+  const MatrixXcd X = act(sx, {0}, spins);
+
+  const uint print_steps = int(nv.scale_factor);
+  cout << "Progress (out of " << print_steps << ")...";
+
+  for(uint x_i = 1; x_i <= integration_steps; x_i++){
+    const double x = x_i*dx; // normalized time
+
+    if(x_i%(integration_steps/print_steps) == 0){
+      cout << " " << int(print_steps*double(x_i)/integration_steps) << flush;
+    }
+
+    // normzlized time into current AXY half-sequence
+    const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
+    // if we are within dx/2 of an AXY pulse time, flip the projections
+    if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
+            abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dx/2){
+      U = (X*U).eval();
+    }
+
+    // net magnetic field
+    Vector3d B = nv.static_Bz*zhat;
+      // + controls.Bs.at(0) * cos(controls.freqs.at(0)*x*t_DD);
+    for(uint c = 0; c < controls.num(); c++){
+      B += controls.Bs.at(c) * cos(controls.freqs.at(c)*x*t_DD + controls.phases.at(c));
+    }
+
+    // current Hamiltonian
+    const MatrixXcd H = H_static + H_nZ(cluster,B);
+
+    // update propagator
+    U = (exp(-j*dx*t_DD*H)*U).eval();
+  }
+  cout << endl << endl;
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -448,7 +516,7 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
        << " target nucleus index: " << index << endl
        << " w_DD: " << w_DD << endl
        << " f_" << k_DD << ": " << f_DD << endl
-       << " operation_time: " << operation_time*1e3 << " ms" << endl;
+       << " operation_time: " << operation_time*1000 << " ms" << endl;
 
   // spin addressing propagators
   const MatrixXcd U_sx = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
@@ -535,8 +603,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
     w_DD = (larmor_eff+nv.scale_factor*A_j)/3.;
   }
   const double t_DD = 2*pi/w_DD;
-  const uint k_DD = abs(w_DD - larmor_eff) > abs(3*w_DD - larmor_eff) ? 1 : 3;
-  const vector<double> pulses = axy_pulses(k_DD, 0.);
+  const uint k_DD = abs(w_DD - larmor_eff) < abs(3*w_DD - larmor_eff) ? 1 : 3;
+  const double f_DD = 0;
+  const vector<double> pulses = axy_pulses(k_DD, f_DD);
 
   const double w_ctl = larmor_eff; // control field frequency
   const double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
@@ -549,10 +618,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " w_DD: " << w_DD << endl
        << " f_" << k_DD << ": 0" << endl
        << " w_ctl: " << w_ctl << endl
-       << " B_ctl: ";
-  if(B_ctl/gauss < 1) cout << B_ctl/gauss*1000 << " mG" << endl;
-  else cout << B_ctl/gauss << " G" << endl;
-  cout << " control_time: " << control_time << endl
+       << " B_ctl: " << B_ctl/gauss*1000 << " mG" << endl
+       << " control_time: " << control_time*1000 << " ms" << endl
        << endl;
 
   cout << "Additional information:" << endl
@@ -561,7 +628,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " cluster size: " << cluster.size() << endl
        << endl;
 
-  const double dt = min(t_larmor,t_DD)/nv.scale_factor; // integration step size
+  const double max_freq_scale = max(larmor_eff,w_DD);
+  const double dt = 1/(max_freq_scale*nv.scale_factor); // integration step size
   const uint integration_steps = int(operation_time/dt);
 
   // initial propagator
@@ -585,7 +653,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
     // if we are within dx/2 of an AXY pulse time, flip the projections
     if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
             abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dt/t_DD*0.5){
-      U = X*U;
+      U = (X*U).eval();
     }
 
     // current magnetic field
