@@ -477,10 +477,11 @@ int main(int arg_num, const char *arg_vec[]) {
       if(target_info.valid){
         addressable_targets.push_back(target);
         iswap_summaries.push_back(target_info);
-        cout << target_info.operation_time*1e3 << " " << target_info.fidelity << endl;
+        cout << target_info.fidelity << endl;
       } else{
         cout << "---\n";
       }
+      cout << endl;
     }
 
     if(!no_output){
@@ -504,7 +505,6 @@ int main(int arg_num, const char *arg_vec[]) {
       fidelity_file.close();
     }
   }
-
 
   // -----------------------------------------------------------------------------------------
   // Individual addressing -- control

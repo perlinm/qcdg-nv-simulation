@@ -224,6 +224,11 @@ struct control_fields{
   uint num() const { return Bs.size(); }
 };
 
+MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double simulation_time,
+                              const double axy_pulse_delay = 0);
+
 //--------------------------------------------------------------------------------------------
 // Single nuclear targeting
 //--------------------------------------------------------------------------------------------

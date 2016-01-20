@@ -354,6 +354,40 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 }
 
 //--------------------------------------------------------------------------------------------
+// Control fields and simulation
+//--------------------------------------------------------------------------------------------
+
+MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double simulation_time,
+                              const double axy_pulse_delay){
+  // AXY sequence period and pulses
+  const double t_DD = 2*pi/w_DD;
+  const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
+
+  // NV+cluster Hamiltonian
+  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
+
+  // NV center spin flip pulse
+  const MatrixXcd X = act(sx,{0},cluster.size()+1);
+
+  // propagator for one AXY sequence
+  MatrixXcd U = X * exp(-j*H*t_DD*pulses.at(0));
+  for(uint i = 1; i < pulses.size(); i++){
+    U = (X * exp(-j*H*t_DD*(pulses.at(i)-pulses.at(i-1))) * U).eval();
+  }
+  U = (exp(-j*H*t_DD*(1.-pulses.back())) * U).eval();
+
+  // propagator for entire simulation
+  U = pow(U, int(simulation_time/t_DD+0.5));
+
+  // normalize propagator
+  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
+
+  return U;
+}
+
+//--------------------------------------------------------------------------------------------
 // Single nuclear targeting
 //--------------------------------------------------------------------------------------------
 
@@ -414,31 +448,12 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
        << " target nucleus index: " << index << endl
        << " w_DD: " << w_DD << endl
        << " f_" << k_DD << ": " << f_DD << endl
-       << " operation_time: " << operation_time << endl
-       << endl;
-
-  // AXY pulse sequence matching target larmor frequency
-  const vector<double> sx_pulses = axy_pulses(k_DD, f_DD);
-  const vector<double> sy_pulses = delayed_pulses(axy_pulses(k_DD, f_DD), 0.25);
-
-  // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
-
-  // NV center spin flip pulse
-  const MatrixXcd X = act(sx,{0},cluster.size()+1);
+       << " operation_time: " << operation_time*1e3 << " ms" << endl;
 
   // spin addressing propagators
-  MatrixXcd U_sx = X * exp(-j*H*t_DD*sx_pulses.at(0));
-  MatrixXcd U_sy = X * exp(-j*H*t_DD*sy_pulses.at(0));
-  for(uint i = 1; i < sx_pulses.size(); i++){
-    U_sx = (X * exp(-j*H*t_DD*(sx_pulses.at(i)-sx_pulses.at(i-1))) * U_sx).eval();
-    U_sy = (X * exp(-j*H*t_DD*(sy_pulses.at(i)-sy_pulses.at(i-1))) * U_sy).eval();
-  }
-  U_sx = (exp(-j*H*t_DD*(1.-sx_pulses.back())) * U_sx).eval();
-  U_sy = (exp(-j*H*t_DD*(1.-sy_pulses.back())) * U_sy).eval();
-
-  U_sx = pow(U_sx, int(operation_time/t_DD));
-  U_sy = pow(U_sy, int(operation_time/t_DD));
+  const MatrixXcd U_sx = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
+  const MatrixXcd U_sy = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
+                                             operation_time, 0.25);
 
   // "natural" basis vectors for target nucleus
   const Vector3d target_zhat = hat(larmor_eff);
@@ -449,8 +464,8 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
   const Matrix2cd Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
   const Matrix2cd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
 
-  // iSWAP operation
-  const MatrixXcd iSWAP =
+  // propagator for the iSWAP operation
+  const MatrixXcd U_iSWAP =
     act(Z_to_tX,{0},cluster.size()+1) * U_sx * act(Z_to_tX.inverse(),{0},cluster.size()+1) *
     act(Z_to_tY,{0},cluster.size()+1) * U_sy * act(Z_to_tY.inverse(),{0},cluster.size()+1);
 
@@ -459,11 +474,11 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
   const Matrix2cd syp = dot(s_vec,target_yhat);
 
   // exact iSWAP gate
-  const MatrixXcd iSWAP_exact = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
-                                                    {0,cluster_index+1}, cluster.size()+1));
+  const MatrixXcd iSWAP= exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
+                                              {0,cluster_index+1}, cluster.size()+1));
 
   // compute iSWAP gate fidelity
-  const double fidelity = gate_fidelity(iSWAP,iSWAP_exact);
+  const double fidelity = gate_fidelity(U_iSWAP,iSWAP);
 
   return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
                        dw_min, f_DD, operation_time, fidelity);
