@@ -628,48 +628,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " cluster size: " << cluster.size() << endl
        << endl;
 
-  const double max_freq_scale = max(larmor_eff,w_DD);
-  const double dt = 1/(max_freq_scale*nv.scale_factor); // integration step size
-  const uint integration_steps = int(operation_time/dt);
-
-  // initial propagator
-  MatrixXcd U = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-
-  // gate to flip NV spin
-  const MatrixXcd X = act(sx, {0}, spins);
-
-  const uint print_steps = int(nv.scale_factor);
-  cout << "Progress (out of " << print_steps << ")...";
-
-  for(uint t_i = 1; t_i <= integration_steps; t_i++){
-    const double t = t_i*dt;
-
-    if(t_i%(integration_steps/print_steps) == 0){
-      cout << " " << int(print_steps*double(t_i)/integration_steps) << flush;
-    }
-
-    // normzlized time into current AXY half-sequence
-    const double x_hAXY = t/t_DD - floor(t/t_DD/0.5)*0.5;
-    // if we are within dx/2 of an AXY pulse time, flip the projections
-    if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
-            abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dt/t_DD*0.5){
-      U = (X*U).eval();
-    }
-
-    // current magnetic field
-    Vector3d B = nv.static_Bz*zhat;
-    if(t <= control_time) B += B_ctl*cos(w_ctl*t)*hat(axis);
-
-    // current Hamiltonian
-    const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(cluster,B);
-
-    // update propagator
-    U = (exp(-j*dt*H)*U).eval();
-  }
-  cout << endl << endl;
-
-  // normalize propagator
-  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-
-  return U;
+  const control_fields controls(B_ctl*axis, w_ctl, 0.);
+  return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, controls);
 }
