@@ -237,7 +237,7 @@ vector<double> delayed_pulses(const vector<double> pulses, const double delay){
   // delayed pulses
   vector<double> delayed_pulses;
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulses.at(p%N) - delay > 0){
+    if(p/N + pulses.at(p%N) - delay >= 0){
       delayed_pulses.push_back(p/N + pulses.at(p%N) - delay);
     }
     if(delayed_pulses.size() == N) break;
@@ -601,7 +601,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   if(larmor_eff < nv.scale_factor*A_j || w_DD < nv.scale_factor*A_j){
     w_DD = (larmor_eff+nv.scale_factor*A_j)/3.;
   }
-  const double t_DD = 2*pi/w_DD;
   const uint k_DD = abs(w_DD - larmor_eff) < abs(3*w_DD - larmor_eff) ? 1 : 3;
   const double f_DD = 0;
   const vector<double> pulses = axy_pulses(k_DD, f_DD);
@@ -609,9 +608,10 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   const double w_ctl = larmor_eff; // control field frequency
   const double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
+  const control_fields controls(B_ctl*axis, w_ctl, 0.); // control field object
+
   const double control_time = 4*phi/g_B_ctl; // control operation time
-  const double operation_time = int(control_time/t_larmor+1)*t_larmor;
-  const control_fields controls(B_ctl*axis, w_ctl, 0.);
+  const double operation_time = int(control_time/t_larmor+1)*t_larmor; // total operation time
 
   cout << "Running targeting protocol with the following parameters:" << endl
        << " target nucleus index: " << index << endl
