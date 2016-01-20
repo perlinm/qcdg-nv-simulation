@@ -241,7 +241,7 @@ int main(int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, k_DD, static_Bz_in_gauss*gauss, scale_factor);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor);
 
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei
@@ -440,7 +440,7 @@ int main(int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, scan_time);
+      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), k_DD, f_DD, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -472,7 +472,7 @@ int main(int arg_num, const char *arg_vec[]) {
     vector<fidelity_info> iswap_summaries;
 
     for(uint target = 0; target < nv.nuclei.size(); target++){
-      const fidelity_info target_info = iswap_fidelity(nv,target);
+      const fidelity_info target_info = iswap_fidelity(nv,target,k_DD);
       cout << "(" << target << "/" << nv.nuclei.size() << ") ";
       if(target_info.valid){
         addressable_targets.push_back(target);
