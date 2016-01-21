@@ -145,14 +145,17 @@ int main(int arg_num, const char *arg_vec[]) {
      " (e.g. 0 for xhat, 0.25 or for yhat)")
     ;
 
-  double nv_axis_angle;
-  double nv_axis_angle_over_2pi;
+  double nv_axis_azimuth;
+  double nv_axis_azimuth_over_2pi;
+  double nv_axis_polar;
+  double nv_axis_polar_over_2pi;
 
   po::options_description single_coupling_options("NV coupling options",help_text_length);
   single_coupling_options.add_options()
-    ("nv_axis", po::value<double>(&nv_axis_angle_over_2pi)->default_value(0),
-     "azimuthal angle of NV rotation axis in units of 2*pi"
-     " (e.g. 0 for xhat, 0.25 or for yhat)")
+    ("nv_azimuth", po::value<double>(&nv_axis_azimuth_over_2pi)->default_value(0),
+     "azimuthal angle of NV rotation axis in units of 2*pi")
+    ("nv_polar", po::value<double>(&nv_axis_polar_over_2pi)->default_value(0),
+     "polar angle of NV rotation axis in units of 2*pi")
     ;
 
   po::options_description all("Allowed options");
@@ -199,7 +202,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert((k_DD == 1) || (k_DD == 3));
-  assert(scale_factor > 10);
+  assert(scale_factor > 1);
 
   if(coherence_scan){
     assert(scan_bins > 0);
@@ -213,7 +216,8 @@ int main(int arg_num, const char *arg_vec[]) {
   scan_time = scan_time_in_ms*1e-3;
   rotation_angle = rotation_angle_over_2pi*2*pi;
   target_axis_angle = target_axis_angle_over_2pi*2*pi;
-  nv_axis_angle = nv_axis_angle_over_2pi*2*pi;
+  nv_axis_azimuth = nv_axis_azimuth_over_2pi*2*pi;
+  nv_axis_polar = nv_axis_polar_over_2pi*2*pi;
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
@@ -513,11 +517,12 @@ int main(int arg_num, const char *arg_vec[]) {
   if(single_control){
 
     const Vector3d axis = cos(target_axis_angle)*xhat+sin(target_axis_angle)*yhat;
-    const MatrixXcd U_full = U_ctl(nv,target_index,axis,rotation_angle);
 
     const MatrixXcd U_desired = exp(-j*rotation_angle*dot(s_vec,axis));
     cout << "desired propagator:\n";
     cout << clean(U_desired) << endl << endl;
+
+    const MatrixXcd U_full = U_ctl(nv,target_index,axis,rotation_angle);
 
     uint target_U_block_column = 0;
     if(U_full.rows() > 2){
@@ -538,4 +543,17 @@ int main(int arg_num, const char *arg_vec[]) {
     cout << "gate fidelity: " << gate_fidelity(U_target,U_desired) << endl;
   }
 
+  // -----------------------------------------------------------------------------------------
+  // Individual addressing -- NV coupling
+  // -----------------------------------------------------------------------------------------
+
+  if(single_coupling){
+
+    const Vector3d target_axis = cos(target_axis_angle)*xhat+sin(target_axis_angle)*yhat;
+    const Vector3d nv_axis = cos(nv_axis_polar) * zhat
+      + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
+
+    U_int(nv,target_index,k_DD,nv_axis,target_axis,rotation_angle);
+
+  }
 }

@@ -198,7 +198,7 @@ uint get_index_in_cluster(const nv_system& nv, const uint index){
 //--------------------------------------------------------------------------------------------
 
 // pulse times for harmonic h and fourier component f
-vector<double> axy_pulses(const uint k, const double f){
+vector<double> axy_pulse_times(const uint k, const double f){
 
   assert((k == 1) || (k == 3));
 
@@ -224,33 +224,37 @@ vector<double> axy_pulses(const uint k, const double f){
   }
 
   // construct vector of all pulse times (normalized to one AXY period)
-  vector<double> pulses;
-  pulses.push_back(x1);
-  pulses.push_back(x2);
-  pulses.push_back(0.25);
-  pulses.push_back(0.5 - x2);
-  pulses.push_back(0.5 - x1);
-  pulses.push_back(0.5 + x1);
-  pulses.push_back(0.5 + x2);
-  pulses.push_back(0.75);
-  pulses.push_back(1. - x2);
-  pulses.push_back(1. - x1);
-  return pulses;
+  vector<double> pulse_times;
+  pulse_times.push_back(0);
+  pulse_times.push_back(x1);
+  pulse_times.push_back(x2);
+  pulse_times.push_back(0.25);
+  pulse_times.push_back(0.5 - x2);
+  pulse_times.push_back(0.5 - x1);
+  pulse_times.push_back(0.5 + x1);
+  pulse_times.push_back(0.5 + x2);
+  pulse_times.push_back(0.75);
+  pulse_times.push_back(1. - x2);
+  pulse_times.push_back(1. - x1);
+  pulse_times.push_back(1);
+  return pulse_times;
 }
 
-vector<double> delayed_pulses(const vector<double> pulses, const double delay){
+vector<double> delayed_pulse_times(const vector<double> pulse_times, const double delay){
   // number of pulses
-  const uint N = pulses.size();
+  const uint N = pulse_times.size()-2;
 
-  // delayed pulses
-  vector<double> delayed_pulses;
+  // delayed pulse_times
+  vector<double> delayed_pulse_times;
+  delayed_pulse_times.push_back(0);
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulses.at(p%N) - delay >= 0){
-      delayed_pulses.push_back(p/N + pulses.at(p%N) - delay);
+    if(p/N + pulse_times.at(p%N+1) - delay >= 0){
+      delayed_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - delay);
     }
-    if(delayed_pulses.size() == N) break;
+    if(delayed_pulse_times.size() == N+1) break;
   }
-  return delayed_pulses;
+  delayed_pulse_times.push_back(1);
+  return delayed_pulse_times;
 }
 
 // Hamiltoninan coupling two spins
@@ -324,7 +328,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
                              const double f_DD, const double scan_time){
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  const vector<double> pulses = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
+  const vector<double> pulse_times = axy_pulse_times(k_DD,f_DD); // AXY protocol pulse times
 
   double coherence = 1;
   for(uint cluster = 0; cluster < nv.clusters.size(); cluster++){
@@ -342,13 +346,13 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
     const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
 
     // propagators for sections of the AXY sequence
-    const MatrixXcd U1_m = exp(-j*H_m*t_DD*pulses.at(0));
-    const MatrixXcd U2_m = exp(-j*H_0*t_DD*(pulses.at(1)-pulses.at(0)));
-    const MatrixXcd U3_m = exp(-j*H_m*t_DD*(pulses.at(2)-pulses.at(1)));
+    const MatrixXcd U1_m = exp(-j*H_m*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
+    const MatrixXcd U2_m = exp(-j*H_0*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
+    const MatrixXcd U3_m = exp(-j*H_m*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
 
-    const MatrixXcd U1_0 = exp(-j*H_0*t_DD*pulses.at(0));
-    const MatrixXcd U2_0 = exp(-j*H_m*t_DD*(pulses.at(1)-pulses.at(0)));
-    const MatrixXcd U3_0 = exp(-j*H_0*t_DD*(pulses.at(2)-pulses.at(1)));
+    const MatrixXcd U1_0 = exp(-j*H_0*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
+    const MatrixXcd U2_0 = exp(-j*H_m*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
+    const MatrixXcd U3_0 = exp(-j*H_0*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
 
     // single AXY sequence propagators
     MatrixXcd U_m = U1_m*U2_m*U3_m*U3_0*U2_0*U1_0 * U1_0*U2_0*U3_0*U3_m*U2_m*U1_m;
@@ -375,25 +379,41 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const double axy_pulse_delay){
-  // AXY sequence period and pulses
+  // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
+  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD),
+                                                         axy_pulse_delay);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
+  // const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
+  const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat);
 
   // NV center spin flip pulse
   const MatrixXcd X = act(sx,{0},nv.clusters.at(cluster).size()+1);
 
-  // propagator for one AXY sequence
-  MatrixXcd U = X * exp(-j*H*t_DD*pulses.at(0));
-  for(uint i = 1; i < pulses.size(); i++){
-    U = (X * exp(-j*H*t_DD*(pulses.at(i)-pulses.at(i-1))) * U).eval();
-  }
-  U = (exp(-j*H*t_DD*(1.-pulses.back())) * U).eval();
+  MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols());
 
-  // propagator for entire simulation
-  U = pow(U, int(simulation_time/t_DD+0.5));
+  // propagator for whole AXY sequences
+  if(simulation_time > t_DD){
+    for(uint i = 1; i < pulse_times.size(); i++){
+      U = (X * exp(-j*H*t_DD*(pulse_times.at(i)-pulse_times.at(i-1))) * U).eval();
+    }
+    U = pow(X*U, int(simulation_time/t_DD));
+  }
+
+  // propagator for AXY sequence remainder
+  const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
+  uint pulse_count = 0;
+  for(uint i = 1; i < pulse_times.size(); i++){
+    if(pulse_times.at(i)*t_DD < remaining_time){
+      U = (X * exp(-j*H*t_DD*(pulse_times.at(i)-pulse_times.at(i-1))) * U).eval();
+      pulse_count++;
+    } else{
+      U = (exp(-j*H*(remaining_time-pulse_times.at(i-1)*t_DD)) * U).eval();
+      break;
+    }
+  }
+  if(pulse_count%2 != 0) U = (X*U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -407,9 +427,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double axy_pulse_delay){
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // AXY sequence period and pulses
+  // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
+  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD),
+                                                         axy_pulse_delay);
 
   // maximim frequency scale of simulation
   double max_freq_scale = w_DD;
@@ -434,6 +455,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const uint print_steps = int(nv.scale_factor);
   cout << "Progress (out of " << print_steps << ")...";
 
+  uint pulse_count = 0;
   for(uint x_i = 1; x_i <= integration_steps; x_i++){
     const double x = x_i*dx; // normalized time
 
@@ -444,9 +466,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     // normzlized time into current AXY half-sequence
     const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
     // if we are within dx/2 of an AXY pulse time, flip the projections
-    if(min({abs(x_hAXY-pulses.at(0)), abs(x_hAXY-pulses.at(1)), abs(x_hAXY-pulses.at(2)),
-            abs(x_hAXY-pulses.at(3)), abs(x_hAXY-pulses.at(4))}) < dx/2){
+    if(min({abs(x_hAXY-pulse_times.at(1)), abs(x_hAXY-pulse_times.at(2)),
+            abs(x_hAXY-pulse_times.at(3)), abs(x_hAXY-pulse_times.at(4)),
+            abs(x_hAXY-pulse_times.at(5))}) < dx/2){
       U = (X*U).eval();
+      pulse_count++;
     }
 
     // net magnetic field
@@ -461,6 +485,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     // update propagator
     U = (exp(-j*dx*t_DD*H)*U).eval();
   }
+  if(pulse_count%2 != 0) U = (X*U).eval();
+
   cout << endl << endl;
 
   // normalize propagator
@@ -515,7 +541,6 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
   // AXY sequence parameters
   const double f_DD = -nv.ms*dw_min/(hyperfine_perp.norm()*nv.scale_factor);
   const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
-  const double t_DD = 2*pi/w_DD; // AXY protocol period
   const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
 
   cout << "Running iSWAP protocol with the following parameters:"
@@ -525,10 +550,10 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
        << " operation_time: " << operation_time*1000 << " ms" << endl;
 
   // spin addressing propagators
-  const MatrixXcd U_sx =
-    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
-  const MatrixXcd U_sy =
-    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, 0.25);
+
+  const MatrixXcd U_sx = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
+  const MatrixXcd U_sy = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
+                                             operation_time, 0.25);
 
   // "natural" basis vectors for target nucleus
   const Vector3d target_zhat = hat(larmor_eff);
@@ -549,8 +574,8 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
   const Matrix2cd syp = dot(s_vec,target_yhat);
 
   // exact iSWAP gate
-  const MatrixXcd iSWAP= exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
-                                              {0,index_in_cluster+1}, spins));
+  const MatrixXcd iSWAP = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
+                                               {0,index_in_cluster+1}, spins));
 
   // compute iSWAP gate fidelity
   const double fidelity = gate_fidelity(U_iSWAP,iSWAP);
@@ -560,12 +585,9 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
 }
 
 // realization of propagator U = exp(-i * phi * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, double phi,
+MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, const double phi,
                 const double threshold){
   assert(abs(dot(hat(axis),zhat)) < threshold);
-  phi *= -1;
-  while(phi > 2*pi) phi -= 2*pi;
-  while(phi < 0) phi += 2*pi;
 
   const uint cluster = get_cluster_containing_index(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
@@ -587,7 +609,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
     return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   }
 
-  // AXY protocol frequency, period, and pulses
+  // AXY protocol parameters
   const double A_j = A(nv,index).norm();
   double w_DD;
   if(larmor_eff >= nv.scale_factor*A_j){
@@ -600,15 +622,22 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   }
   const uint k_DD = abs(w_DD - larmor_eff) < abs(3*w_DD - larmor_eff) ? 1 : 3;
   const double f_DD = 0;
-  const vector<double> pulses = axy_pulses(k_DD, f_DD);
 
   const double w_ctl = larmor_eff; // control field frequency
-  const double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
+  double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
+
+  const double control_period = 2*pi*4/g_B_ctl;
+  double control_time = -4*phi/g_B_ctl; // control operation time
+  while(control_time >= control_period) control_time -= control_period;
+  while(control_time < 0) control_time += control_period;
+  if(control_time > control_period/2){
+    g_B_ctl *= -1;
+    control_time = control_period-control_time;
+  }
+  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
+
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis, w_ctl, 0.); // control field object
-
-  const double control_time = 4*phi/g_B_ctl; // control operation time
-  const double operation_time = int(control_time/t_larmor+1)*t_larmor; // total operation time
 
   cout << "Running targeting protocol with the following parameters:" << endl
        << " target nucleus index: " << index << endl
@@ -616,7 +645,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " f_" << k_DD << ": 0" << endl
        << " w_ctl: " << w_ctl << endl
        << " B_ctl: " << B_ctl/gauss*1000 << " mG" << endl
-       << " operation_time: " << operation_time*1000 << " ms" << endl
+       << " control_time: " << control_time*1000 << " ms" << endl
        << endl;
 
   cout << "Additional information:" << endl
@@ -625,5 +654,84 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
        << " cluster size: " << nv.clusters.at(cluster).size() << endl
        << endl;
 
-  return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, controls);
+  return
+    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, flush_time) *
+    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
 }
+
+// propagator generated by t_0 H = phi * sigma_{axis_NV}^{NV} * sigma_{axis_ind}^{index}
+MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
+                const Vector3d& axis_NV, const Vector3d& axis_ind, const double phi,
+                const double threshold){
+
+  // identify cluster of target nucleus
+  const uint cluster = get_cluster_containing_index(nv, index);
+  const uint index_in_cluster = get_index_in_cluster(nv, index);
+  const uint spins = nv.clusters.at(cluster).size()+1;
+
+  // larmor frequency of and hyperfine field at target nucleus
+  const Vector3d larmor_eff = effective_larmor(nv,index);
+  const Vector3d hyperfine = A(nv,index);
+  const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+  const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
+  const double t_larmor = 2*pi/larmor_eff.norm();
+
+  // minimum difference in larmor frequencies between target nucleus and other nuclei
+  double dw_min = DBL_MAX;
+  for(uint s = 0; s < nv.nuclei.size(); s++){
+    if(s == index) continue;
+    const double dw = abs(larmor_eff.norm() - effective_larmor(nv,s).norm());
+    if(dw < dw_min) dw_min = dw;
+  }
+
+  // AXY sequence parameters
+  const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
+  double f_DD = dw_min/(hyperfine_perp.norm()*nv.scale_factor);
+
+  const double interaction_period = 2*pi/abs(f_DD*hyperfine_perp.norm()/8);
+  double interaction_time = phi/(nv.ms*f_DD*hyperfine_perp.norm()/8);
+  while(interaction_time >= interaction_period) interaction_time -= interaction_period;
+  while(interaction_time < 0) interaction_time += interaction_period;
+  if(interaction_time > interaction_period/2){
+    f_DD *= -1;
+    interaction_time = interaction_period-interaction_time;
+  }
+  const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
+
+  MatrixXcd U =
+    simulate_propagator(nv, cluster, w_DD, k_DD, 0, flush_time) *
+    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, interaction_time);
+
+
+  // "natural" basis vectors for target nucleus
+  const Vector3d target_zhat = hat(larmor_eff);
+  const Vector3d target_xhat = hat(hyperfine_perp);
+  const Vector3d target_yhat = target_zhat.cross(target_xhat);
+
+  // operators to rotate into the "natural" frame
+  const Matrix2cd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
+
+  // spin operators in the "natural" basis
+  const Matrix2cd sxp = dot(s_vec,target_xhat);
+  const Matrix2cd syp = dot(s_vec,target_yhat);
+
+  // desired propagator
+  MatrixXcd U_desired = exp(-j*phi * act(tp(sz,sxp), {0,index_in_cluster+1}, spins));
+
+  U =
+    act(Z_to_tX.inverse(), {index_in_cluster+1}, spins) *
+    U *
+    act(Z_to_tX, {index_in_cluster+1}, spins);
+
+  U_desired =
+    act(Z_to_tX.inverse(), {index_in_cluster+1}, spins) *
+    U_desired *
+    act(Z_to_tX, {index_in_cluster+1}, spins);
+
+  cout << remove_artifacts(remove_phase(U),1e-3) << endl << endl;
+  cout << remove_artifacts(remove_phase(U_desired),1e-3) << endl << endl;
+  cout << gate_fidelity(U,U_desired) << endl << endl;
+
+  return U;
+}
+
