@@ -353,16 +353,16 @@ int main(int arg_num, const char *arg_vec[]) {
     // get cluster_coupling for which the largest cluster size is >= cluster_size_target
     nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
                                                cluster_size_target, dcc_cutoff);
-    nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
+    nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
     // if (largest cluster size > cluster_size_target),
     //   which can occur when (largest cluster size == cluster_size_target) is impossible,
     //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
     while(largest_cluster_size(nv.clusters) > cluster_size_target){
       int cluster_size_target
-        = largest_cluster_size(get_index_clusters(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
+        = largest_cluster_size(cluster_nuclei(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
       nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
                                                  cluster_size_target, dcc_cutoff);
-      nv.clusters = get_index_clusters(nv.nuclei, nv.cluster_coupling);
+      nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
     }
 
     // if we are going to perform an actual simulation instead of just a coherence scan,

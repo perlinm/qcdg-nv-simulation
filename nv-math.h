@@ -95,7 +95,6 @@ struct nv_system{
   nv_system(const int ms, const double static_Bz, const double scale_factor);
 };
 
-
 //--------------------------------------------------------------------------------------------
 // Spin clustering methods
 //--------------------------------------------------------------------------------------------
@@ -110,8 +109,8 @@ bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
 double coupling_strength(const spin& s1, const spin& s2);
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
-                                        const double min_coupling_strength);
+vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
+                                    const double min_coupling_strength);
 
 // group together clusters close nuclei have similar larmor frequencies
 vector<vector<uint>> group_clusters(const nv_system& nv);
@@ -123,9 +122,9 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters);
 double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
                             const uint cluster_size_target, const double dcc_cutoff);
 
-// convert cluster of indices into cluster of spins
-vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
-                                   const vector<vector<uint>>& index_clusters);
+uint get_cluster_containing_index(const nv_system& nv, const uint index);
+
+uint get_index_in_cluster(const nv_system& nv, const uint index);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods
@@ -163,19 +162,19 @@ inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
 }
 
 // spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int(const nv_system& nv, const vector<spin>& cluster);
+MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<spin>& cluster);
+MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<uint>& cluster);
 
 // NV zero-field splitting plus Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B);
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B);
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // Zeeman Hamiltonian for NV center with cluster
-inline MatrixXcd H_Z(const nv_system& nv, const vector<spin>& cluster, const Vector3d& B);
+inline MatrixXcd H_Z(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const uint k_DD,
@@ -224,12 +223,12 @@ struct control_fields{
   uint num() const { return Bs.size(); }
 };
 
-MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time,
                               const double axy_pulse_delay = 0);
 
-MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
                               const double axy_pulse_delay = 0);

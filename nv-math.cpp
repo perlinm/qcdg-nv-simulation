@@ -47,8 +47,8 @@ inline double coupling_strength(const spin& s1, const spin& s2){
 }
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> get_index_clusters(const vector<spin>& nuclei,
-                                        const double min_coupling_strength){
+vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
+                                    const double min_coupling_strength){
 
   vector<vector<uint>> clusters; // all clusters
   vector<uint> clustered; // indices of nuclei we have already clustered
@@ -147,7 +147,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   double cluster_coupling = initial_cluster_coupling;
   double dcc = cluster_coupling/4;
 
-  vector<vector<uint>> clusters = get_index_clusters(nuclei, cluster_coupling);
+  vector<vector<uint>> clusters = cluster_nuclei(nuclei, cluster_coupling);
   bool coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
   bool last_coupling_too_small;
   bool crossed_correct_coupling = false;
@@ -157,7 +157,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
     last_coupling_too_small = coupling_too_small;
 
     cluster_coupling += coupling_too_small ? dcc : -dcc;
-    clusters = get_index_clusters(nuclei,cluster_coupling);
+    clusters = cluster_nuclei(nuclei,cluster_coupling);
     coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
 
     if(coupling_too_small != last_coupling_too_small) crossed_correct_coupling = true;
@@ -171,18 +171,26 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   return cluster_coupling;
 }
 
-// convert cluster of indices into cluster of spins
-vector<vector<spin>> spin_clusters(const vector<spin>& nuclei,
-                                   const vector<vector<uint>>& index_clusters){
-  vector<vector<spin>> spin_clusters;
-  for(uint c = 0; c < index_clusters.size(); c++){
-    vector<spin> spin_cluster;
-    for(uint s = 0; s < index_clusters.at(c).size(); s++){
-      spin_cluster.push_back(nuclei.at(index_clusters.at(c).at(s)));
+uint get_cluster_containing_index(const nv_system& nv, const uint index){
+  assert(index < nv.nuclei.size());
+  for(uint c = 0; c < nv.clusters.size(); c++){
+    for(uint s = 0; s < nv.clusters.at(c).size(); s++){
+      if(nv.clusters.at(c).at(s) == index){
+        return c;
+      }
     }
-    spin_clusters.push_back(spin_cluster);
   }
-  return spin_clusters;
+}
+
+uint get_index_in_cluster(const nv_system& nv, const uint index){
+  assert(index < nv.nuclei.size());
+  for(uint c = 0; c < nv.clusters.size(); c++){
+    for(uint s = 0; s < nv.clusters.at(c).size(); s++){
+      if(nv.clusters.at(c).at(s) == index){
+        return s;
+      }
+    }
+  }
 }
 
 //--------------------------------------------------------------------------------------------
@@ -253,30 +261,35 @@ MatrixXcd H_ss(const spin& s1, const spin& s2){
 }
 
 // spin-spin coupling Hamiltonian for NV center with cluster
-MatrixXcd H_int(const nv_system& nv, const vector<spin>& cluster){
+MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
+  const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
-    H += act(H_ss(nv.e, cluster.at(s)), {0,s+1}, spins);
+    H += act(H_ss(nv.e, nv.nuclei.at(cluster.at(s))), {0,s+1}, spins);
     for(uint r = 0; r < s; r++){
       // interaction betwen spin r and spin s
-      H += act(H_ss(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
+      H += act(H_ss(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
+               {r+1,s+1}, spins);
     }
   }
   return H;
 }
 
 // spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<spin>& cluster){
+MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index){
+  const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
-    H += act( tp(dot(nv.e.S,zhat), dot(A(nv,cluster.at(s)),cluster.at(s).S)), {0,s+1}, spins);
+    H += act( tp(dot(nv.e.S,zhat), dot(A(nv,cluster.at(s)),nv.nuclei.at(cluster.at(s)).S)),
+              {0,s+1}, spins);
     for(uint r = 0; r < s; r++){
       // interaction betwen spin r and spin s
-      H += act(H_ss_large_static_Bz(cluster.at(r), cluster.at(s)), {r+1,s+1}, spins);
+      H += act(H_ss_large_static_Bz(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
+               {r+1,s+1}, spins);
     }
   }
   return H;
@@ -288,39 +301,42 @@ inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
 }
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const vector<spin>& cluster, const Vector3d& B){
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B){
+  const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
   // zero-field splitting and interaction of NV center with magnetic field
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
     // interaction of spin s with magnetic field
-    H -= act(cluster.at(s).g*dot(B,cluster.at(s).S), {s+1}, spins);
+    H -= act(nv.nuclei.at(cluster.at(s)).g*dot(B,nv.nuclei.at(cluster.at(s)).S),
+             {s+1}, spins);
   }
   return H;
 }
 
 // Zeeman Hamiltonian for NV+cluster system
-inline MatrixXcd H_Z(const nv_system& nv, const vector<spin>& cluster, const Vector3d& B){
-  return H_nZ(cluster,B) + act(H_NV_GS(nv,B), {0}, cluster.size()+1);
+inline MatrixXcd H_Z(const nv_system& nv, const uint cluster_index, const Vector3d& B){
+  return H_nZ(nv,cluster_index,B) + act(H_NV_GS(nv,B),
+                                        {0}, nv.clusters.at(cluster_index).size()+1);
 }
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const uint k_DD,
                              const double f_DD, const double scan_time){
-  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters); // spin clusters
-
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
   const vector<double> pulses = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
 
   double coherence = 1;
-  for(uint c = 0; c < clusters.size(); c++){
+  for(uint cluster_index = 0; cluster_index < nv.clusters.size(); cluster_index++){
+    const uint cluster_size = nv.clusters.at(cluster_index).size();
+
     // projections onto |ms> and |0> NV states
-    const MatrixXcd proj_m = act(up*up.adjoint(), {0}, clusters.at(c).size()+1); // |ms><ms|
-    const MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, clusters.at(c).size()+1); // |0><0|
+    const MatrixXcd proj_m = act(up*up.adjoint(),{0},cluster_size+1); // |ms><ms|
+    const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
 
     // construct full Hamiltonian
-    const MatrixXcd H = H_int(nv,clusters.at(c)) + H_Z(nv,clusters.at(c),nv.static_Bz*zhat);
+    const MatrixXcd H = H_int(nv,cluster_index) + H_Z(nv,cluster_index,nv.static_Bz*zhat);
 
       // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
@@ -348,7 +364,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
     U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)/double(U_0.rows())));
 
     // update coherence
-    coherence *= real(trace(U_0.adjoint()*U_m)) / pow(2,clusters.at(c).size());
+    coherence *= real(trace(U_0.adjoint()*U_m)) / pow(2,cluster_size);
   }
   return coherence;
 }
@@ -357,7 +373,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 // Control fields and simulation
 //--------------------------------------------------------------------------------------------
 
-MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const double axy_pulse_delay){
   // AXY sequence period and pulses
@@ -365,10 +381,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
   const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
+  const MatrixXcd H = H_int(nv, cluster_index) + H_Z(nv, cluster_index, nv.static_Bz*zhat);
 
   // NV center spin flip pulse
-  const MatrixXcd X = act(sx,{0},cluster.size()+1);
+  const MatrixXcd X = act(sx,{0},nv.clusters.at(cluster_index).size()+1);
 
   // propagator for one AXY sequence
   MatrixXcd U = X * exp(-j*H*t_DD*pulses.at(0));
@@ -386,11 +402,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
   return U;
 }
 
-MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
                               const double axy_pulse_delay){
-  const uint spins = cluster.size()+1;
+  const uint spins = nv.clusters.at(cluster_index).size()+1;
 
   // AXY sequence period and pulses
   const double t_DD = 2*pi/w_DD;
@@ -408,7 +424,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
   const uint integration_steps = int(simulation_time/dt+0.5);
 
   // static NV+cluster Hamiltonian
-  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster);
+  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster_index);
 
   // initial propagator
   MatrixXcd U = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
@@ -441,7 +457,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const vector<spin>& cluster,
     }
 
     // current Hamiltonian
-    const MatrixXcd H = H_static + H_nZ(cluster,B);
+    const MatrixXcd H = H_static + H_nZ(nv,cluster_index,B);
 
     // update propagator
     U = (exp(-j*dx*t_DD*H)*U).eval();
@@ -472,17 +488,9 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
   // identify cluster of target nucleus
-  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters);
-  vector<spin> cluster;
-  uint cluster_index;
-  for(uint c = 0; c < clusters.size(); c++){
-    for(uint s = 0; s < clusters.at(c).size(); s++){
-      if(clusters.at(c).at(s) == nv.nuclei.at(index)){
-        cluster = clusters.at(c);
-        cluster_index = s;
-      }
-    }
-  }
+  const uint cluster_index = get_cluster_containing_index(nv, index);
+  const uint index_in_cluster = get_index_in_cluster(nv, index);
+  const uint spins = nv.clusters.at(cluster_index).size()+1;
 
   // larmor frequency of and hyperfine field at target nucleus
   const Vector3d larmor_eff = effective_larmor(nv,index);
@@ -518,9 +526,10 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
        << " operation_time: " << operation_time*1000 << " ms" << endl;
 
   // spin addressing propagators
-  const MatrixXcd U_sx = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
-  const MatrixXcd U_sy = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                             operation_time, 0.25);
+  const MatrixXcd U_sx =
+    simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time);
+  const MatrixXcd U_sy =
+    simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time, 0.25);
 
   // "natural" basis vectors for target nucleus
   const Vector3d target_zhat = hat(larmor_eff);
@@ -533,8 +542,8 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
 
   // propagator for the iSWAP operation
   const MatrixXcd U_iSWAP =
-    act(Z_to_tX,{0},cluster.size()+1) * U_sx * act(Z_to_tX.inverse(),{0},cluster.size()+1) *
-    act(Z_to_tY,{0},cluster.size()+1) * U_sy * act(Z_to_tY.inverse(),{0},cluster.size()+1);
+    act(Z_to_tX,{0},spins) * U_sx * act(Z_to_tX.inverse(),{0},spins) *
+    act(Z_to_tY,{0},spins) * U_sy * act(Z_to_tY.inverse(),{0},spins);
 
   // spin operators in the "natural" basis
   const Matrix2cd sxp = dot(s_vec,target_xhat);
@@ -542,7 +551,7 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
 
   // exact iSWAP gate
   const MatrixXcd iSWAP= exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
-                                              {0,cluster_index+1}, cluster.size()+1));
+                                              {0,index_in_cluster+1}, spins));
 
   // compute iSWAP gate fidelity
   const double fidelity = gate_fidelity(U_iSWAP,iSWAP);
@@ -559,19 +568,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   while(phi > 2*pi) phi -= 2*pi;
   while(phi < 0) phi += 2*pi;
 
-  const vector<vector<spin>> clusters = spin_clusters(nv.nuclei,nv.clusters);
-  vector<spin> cluster;
-  uint cluster_index;
-  for(uint c = 0; c < clusters.size(); c++){
-    for(uint s = 0; s < clusters.at(c).size(); s++){
-      if(clusters.at(c).at(s) == nv.nuclei.at(index)){
-        cluster = clusters.at(c);
-        cluster_index = s;
-        break;
-      }
-    }
-  }
-  const uint spins = cluster.size()+1;
+  const uint cluster_index = get_cluster_containing_index(nv, index);
+  const uint spins = nv.clusters.at(cluster_index).size()+1;
 
   // control field frequency = effective larmor frequency of target nucleus
   const double larmor_eff = effective_larmor(nv,index).norm();
@@ -625,8 +623,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   cout << "Additional information:" << endl
        << " dw_min: " << dw_min << endl
        << " A: " << A_j << endl
-       << " cluster size: " << cluster.size() << endl
+       << " cluster size: " << nv.clusters.at(cluster_index).size() << endl
        << endl;
 
-  return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, controls);
+  return simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time, controls);
 }
