@@ -315,9 +315,8 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B)
 }
 
 // Zeeman Hamiltonian for NV+cluster system
-inline MatrixXcd H_Z(const nv_system& nv, const uint cluster_index, const Vector3d& B){
-  return H_nZ(nv,cluster_index,B) + act(H_NV_GS(nv,B),
-                                        {0}, nv.clusters.at(cluster_index).size()+1);
+inline MatrixXcd H_Z(const nv_system& nv, const uint cluster, const Vector3d& B){
+  return H_nZ(nv,cluster,B) + act(H_NV_GS(nv,B), {0}, nv.clusters.at(cluster).size()+1);
 }
 
 // perform NV coherence measurement with a static magnetic field
@@ -328,15 +327,15 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
   const vector<double> pulses = axy_pulses(k_DD,f_DD); // AXY protocol pulse times
 
   double coherence = 1;
-  for(uint cluster_index = 0; cluster_index < nv.clusters.size(); cluster_index++){
-    const uint cluster_size = nv.clusters.at(cluster_index).size();
+  for(uint cluster = 0; cluster < nv.clusters.size(); cluster++){
+    const uint cluster_size = nv.clusters.at(cluster).size();
 
     // projections onto |ms> and |0> NV states
     const MatrixXcd proj_m = act(up*up.adjoint(),{0},cluster_size+1); // |ms><ms|
     const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
 
     // construct full Hamiltonian
-    const MatrixXcd H = H_int(nv,cluster_index) + H_Z(nv,cluster_index,nv.static_Bz*zhat);
+    const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
 
       // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
@@ -373,7 +372,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 // Control fields and simulation
 //--------------------------------------------------------------------------------------------
 
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const double axy_pulse_delay){
   // AXY sequence period and pulses
@@ -381,10 +380,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
   const vector<double> pulses = delayed_pulses(axy_pulses(k_DD, f_DD), axy_pulse_delay);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv, cluster_index) + H_Z(nv, cluster_index, nv.static_Bz*zhat);
+  const MatrixXcd H = H_int(nv, cluster) + H_Z(nv, cluster, nv.static_Bz*zhat);
 
   // NV center spin flip pulse
-  const MatrixXcd X = act(sx,{0},nv.clusters.at(cluster_index).size()+1);
+  const MatrixXcd X = act(sx,{0},nv.clusters.at(cluster).size()+1);
 
   // propagator for one AXY sequence
   MatrixXcd U = X * exp(-j*H*t_DD*pulses.at(0));
@@ -402,11 +401,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
   return U;
 }
 
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
                               const double axy_pulse_delay){
-  const uint spins = nv.clusters.at(cluster_index).size()+1;
+  const uint spins = nv.clusters.at(cluster).size()+1;
 
   // AXY sequence period and pulses
   const double t_DD = 2*pi/w_DD;
@@ -424,7 +423,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
   const uint integration_steps = int(simulation_time/dt+0.5);
 
   // static NV+cluster Hamiltonian
-  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster_index);
+  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster);
 
   // initial propagator
   MatrixXcd U = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
@@ -457,7 +456,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
     }
 
     // current Hamiltonian
-    const MatrixXcd H = H_static + H_nZ(nv,cluster_index,B);
+    const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
 
     // update propagator
     U = (exp(-j*dx*t_DD*H)*U).eval();
@@ -488,9 +487,9 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 // compute fidelity of iSWAP operation between NV center and target nucleus
 fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
   // identify cluster of target nucleus
-  const uint cluster_index = get_cluster_containing_index(nv, index);
+  const uint cluster = get_cluster_containing_index(nv, index);
   const uint index_in_cluster = get_index_in_cluster(nv, index);
-  const uint spins = nv.clusters.at(cluster_index).size()+1;
+  const uint spins = nv.clusters.at(cluster).size()+1;
 
   // larmor frequency of and hyperfine field at target nucleus
   const Vector3d larmor_eff = effective_larmor(nv,index);
@@ -527,9 +526,9 @@ fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k
 
   // spin addressing propagators
   const MatrixXcd U_sx =
-    simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time);
+    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
   const MatrixXcd U_sy =
-    simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time, 0.25);
+    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, 0.25);
 
   // "natural" basis vectors for target nucleus
   const Vector3d target_zhat = hat(larmor_eff);
@@ -568,8 +567,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   while(phi > 2*pi) phi -= 2*pi;
   while(phi < 0) phi += 2*pi;
 
-  const uint cluster_index = get_cluster_containing_index(nv, index);
-  const uint spins = nv.clusters.at(cluster_index).size()+1;
+  const uint cluster = get_cluster_containing_index(nv, index);
+  const uint spins = nv.clusters.at(cluster).size()+1;
 
   // control field frequency = effective larmor frequency of target nucleus
   const double larmor_eff = effective_larmor(nv,index).norm();
@@ -623,8 +622,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const Vector3d& axis, dou
   cout << "Additional information:" << endl
        << " dw_min: " << dw_min << endl
        << " A: " << A_j << endl
-       << " cluster size: " << nv.clusters.at(cluster_index).size() << endl
+       << " cluster size: " << nv.clusters.at(cluster).size() << endl
        << endl;
 
-  return simulate_propagator(nv, cluster_index, w_DD, k_DD, f_DD, operation_time, controls);
+  return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time, controls);
 }

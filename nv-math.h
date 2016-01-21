@@ -165,7 +165,7 @@ inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const nv_system& nv, const vector<uint>& cluster);
+MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index);
 
 // NV zero-field splitting plus Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B);
@@ -223,12 +223,12 @@ struct control_fields{
   uint num() const { return Bs.size(); }
 };
 
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time,
                               const double axy_pulse_delay = 0);
 
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster_index,
+MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
                               const double axy_pulse_delay = 0);
