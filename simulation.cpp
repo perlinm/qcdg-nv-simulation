@@ -130,8 +130,8 @@ int main(int arg_num, const char *arg_vec[]) {
   uint target_index;
   double rotation_angle;
   double rotation_angle_over_2pi;
-  double target_axis_angle;
-  double target_axis_angle_over_2pi;
+  double target_axis_azimuth;
+  double target_axis_azimuth_over_2pi;
 
   po::options_description addressing_options("Single nucleus addressing options",
                                              help_text_length);
@@ -140,7 +140,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "index of nucleus to target (if applicable)")
     ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0),
      "rotation angle in units of 2*pi")
-    ("target_axis", po::value<double>(&target_axis_angle_over_2pi)->default_value(0),
+    ("target_azimuth", po::value<double>(&target_axis_azimuth_over_2pi)->default_value(0),
      "azimuthal angle of target rotation axis in units of 2*pi"
      " (e.g. 0 for xhat, 0.25 or for yhat)")
     ;
@@ -215,7 +215,7 @@ int main(int arg_num, const char *arg_vec[]) {
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   scan_time = scan_time_in_ms*1e-3;
   rotation_angle = rotation_angle_over_2pi*2*pi;
-  target_axis_angle = target_axis_angle_over_2pi*2*pi;
+  target_axis_azimuth = target_axis_azimuth_over_2pi*2*pi;
   nv_axis_azimuth = nv_axis_azimuth_over_2pi*2*pi;
   nv_axis_polar = nv_axis_polar_over_2pi*2*pi;
 
@@ -516,13 +516,13 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(single_control){
 
-    const Vector3d axis = cos(target_axis_angle)*xhat+sin(target_axis_angle)*yhat;
+    const Vector3d axis = cos(target_axis_azimuth)*xhat+sin(target_axis_azimuth)*yhat;
 
     const MatrixXcd U_desired = exp(-j*rotation_angle*dot(s_vec,axis));
     cout << "desired propagator:\n";
     cout << clean(U_desired) << endl << endl;
 
-    const MatrixXcd U_full = U_ctl(nv,target_index,axis,rotation_angle);
+    const MatrixXcd U_full = U_ctl(nv,target_index,target_axis_azimuth,rotation_angle);
 
     uint target_U_block_column = 0;
     if(U_full.rows() > 2){
@@ -549,11 +549,10 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(single_coupling){
 
-    const Vector3d target_axis = cos(target_axis_angle)*xhat+sin(target_axis_angle)*yhat;
     const Vector3d nv_axis = cos(nv_axis_polar) * zhat
       + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
 
-    U_int(nv,target_index,k_DD,nv_axis,target_axis,rotation_angle);
+    U_int(nv,target_index,k_DD,nv_axis,target_axis_azimuth,rotation_angle);
 
   }
 }
