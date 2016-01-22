@@ -624,6 +624,10 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     if(dw < dw_min) dw_min = dw;
   }
 
+  if(dw_min < nv.cluster_coupling/nv.scale_factor){
+    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  }
+
   // AXY sequence parameters
   const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
@@ -659,8 +663,9 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     rotate(-acos(dot(zhat,target_nv_axis)),zhat.cross(target_nv_axis));
 
   return
+    U_flush *
     act(rotate_to_target_frame.inverse(),{0},spins) *
-    U_flush * U_interaction *
+    U_interaction *
     act(rotate_to_target_frame,{0},spins);
 }
 
