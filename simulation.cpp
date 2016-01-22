@@ -224,7 +224,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
       cout << "file does not exist: " << lattice_file << endl;
-      return 2;
+      return -1;
     }
     lattice_path = lattice_file;
 
@@ -320,7 +320,7 @@ int main(int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nv.nuclei.size(); i++){
       if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
         cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
-        return 3;
+        return -2;
       }
     }
   }
@@ -351,6 +351,19 @@ int main(int arg_num, const char *arg_vec[]) {
   const double cluster_coupling_guess = 100; // this value doesn't really matter
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
+  // if we are going to perform an actual simulation instead of just a coherence scan,
+  //   we want to group together clusters sharing nuclei with similar larmor frequencies.
+  const bool group_larmor_pairs = !coherence_scan;
+  if(group_larmor_pairs){
+    nv.clusters = cluster_nuclei(nv.nuclei, DBL_MAX);
+    nv.clusters = group_clusters(nv);
+    const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
+    cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
+    if(max_cluster_size < min_cluster_size_cap){
+      return -3;
+    }
+  }
+
   uint cluster_size_target = max_cluster_size;
   do{
     assert(cluster_size_target > 0);
@@ -362,7 +375,7 @@ int main(int arg_num, const char *arg_vec[]) {
     //   which can occur when (largest cluster size == cluster_size_target) is impossible,
     //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
     while(largest_cluster_size(nv.clusters) > cluster_size_target){
-      int cluster_size_target
+      const uint cluster_size_target
         = largest_cluster_size(cluster_nuclei(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
       nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
                                                  cluster_size_target, dcc_cutoff);
@@ -371,7 +384,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
     // if we are going to perform an actual simulation instead of just a coherence scan,
     //   we want to group together clusters sharing nuclei with similar larmor frequencies.
-    if(!coherence_scan) nv.clusters = group_clusters(nv);
+    if(group_larmor_pairs) nv.clusters = group_clusters(nv);
     cluster_size_target--; // decrease cluster_size_target every time we perform this loop
 
     // grouping together clusters might create a cluster greater than max_cluster_size,
@@ -466,81 +479,15 @@ int main(int arg_num, const char *arg_vec[]) {
   }
 
   // -----------------------------------------------------------------------------------------
-  // NV/nucleus SWAP fidelity
-  // -----------------------------------------------------------------------------------------
-
-  if(compute_iswap_fidelities){
-
-    // collect iswap_fidelity summaries for individually addressable nuclei
-    vector<uint> addressable_targets;
-    vector<fidelity_info> iswap_summaries;
-
-    for(uint target = 0; target < nv.nuclei.size(); target++){
-      const fidelity_info target_info = iswap_fidelity(nv,target,k_DD);
-      cout << "(" << target << "/" << nv.nuclei.size() << ") ";
-      if(target_info.valid){
-        addressable_targets.push_back(target);
-        iswap_summaries.push_back(target_info);
-        cout << target_info.fidelity << endl;
-      } else{
-        cout << "---\n";
-      }
-      cout << endl;
-    }
-
-    if(!no_output){
-      fs::path fidelity_path = output_dir/fs::path("fidelities-"+output_suffix);
-      ofstream fidelity_file(fidelity_path.string());
-      fidelity_file << "# cluster coupling factor: " << nv.cluster_coupling << endl;
-      fidelity_file << "# scale factor: " << nv.scale_factor << endl;
-      fidelity_file << endl;
-      fidelity_file << "# target_index larmor_eff hyperfine hyperfine_perp dw_min f_DD"
-                    << " operation_time iswap_idelity\n";
-      for(uint t = 0; t < addressable_targets.size(); t++){
-        fidelity_file << addressable_targets.at(t) << " "
-                      << iswap_summaries.at(t).larmor_eff << " "
-                      << iswap_summaries.at(t).hyperfine << " "
-                      << iswap_summaries.at(t).hyperfine_perp << " "
-                      << iswap_summaries.at(t).dw_min << " "
-                      << iswap_summaries.at(t).f_DD << " "
-                      << iswap_summaries.at(t).operation_time << " "
-                      << iswap_summaries.at(t).fidelity << endl;
-      }
-      fidelity_file.close();
-    }
-  }
-
-  // -----------------------------------------------------------------------------------------
   // Individual addressing -- control
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-
-    const Vector3d axis = cos(target_axis_azimuth)*xhat+sin(target_axis_azimuth)*yhat;
-
-    const MatrixXcd U_desired = exp(-j*rotation_angle*dot(s_vec,axis));
-    cout << "desired propagator:\n";
-    cout << clean(U_desired) << endl << endl;
-
-    const MatrixXcd U_full = U_ctl(nv,target_index,target_axis_azimuth,rotation_angle);
-
-    uint target_U_block_column = 0;
-    if(U_full.rows() > 2){
-      while(abs(U_full(0,target_U_block_column)) < 1e-10){
-        target_U_block_column += 2;
-      }
-    }
-
-    MatrixXcd U_target = U_full.block<2,2>(0,target_U_block_column);
-    U_target /= sqrt(real(trace(U_target.adjoint()*U_target)/double(U_target.rows())));
-
-    const complex<double> phase =
-      abs(U_target(0,0)) > abs(U_target(0,1)) ? U_target(0,0) : U_target(0,1);
-
-    cout << "reduced propagator:\n";
-    cout << U_target*conj(phase)/abs(phase) << endl << endl;
-
-    cout << "gate fidelity: " << gate_fidelity(U_target,U_desired) << endl;
+    const Vector3d target_axis = cos(target_axis_azimuth)*xhat+sin(target_axis_azimuth)*yhat;
+    const MatrixXcd exact_gate = exp(-j*rotation_angle*dot(s_vec,target_axis));
+    const MatrixXcd U = U_ctl(nv,target_index,target_axis_azimuth,rotation_angle);
+    const double fidelity = gate_fidelity(U,exact_gate);
+    cout << target_index << ": " << fidelity << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -548,11 +495,45 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
+    for(uint index = 0; index < nv.nuclei.size(); index++){
+      const Vector3d nv_axis = cos(nv_axis_polar) * zhat
+        + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
 
-    const Vector3d nv_axis = cos(nv_axis_polar) * zhat
-      + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
+      const vector<Vector3d> target_basis = natural_basis(nv,target_index);
+      const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
+      const Matrix2cd syp = dot(s_vec,target_basis.at(1));
+      const Matrix2cd szp = dot(s_vec,target_basis.at(2));
 
-    U_int(nv,target_index,k_DD,nv_axis,target_axis_azimuth,rotation_angle);
+      const Matrix2cd sn_target = cos(target_axis_azimuth)*sxp + sin(target_axis_azimuth)*syp;
+      const Vector3d target_nv_axis =
+        dot(nv_axis,xhat)*target_basis.at(0) +
+        dot(nv_axis,yhat)*target_basis.at(1) +
+        dot(nv_axis,zhat)*target_basis.at(2);
+      const Matrix2cd sn_nv = dot(s_vec,target_nv_axis);
+
+      const MatrixXcd U = U_int(nv,target_index,k_DD,nv_axis,
+                                target_axis_azimuth,rotation_angle);
+
+      const uint spins =
+        nv.clusters.at(get_cluster_containing_index(nv,target_index)).size()+1;
+      const uint index_in_cluster = get_index_in_cluster(nv,target_index);
+      const MatrixXcd exact_gate =
+        act(exp(-j*rotation_angle*tp(sn_nv,sn_target)), {0,index_in_cluster+1}, spins);
+
+      const double fidelity = gate_fidelity(U,exact_gate);
+      cout << index << ": " << fidelity << endl;
+    }
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // NV/nucleus iSWAP fidelity
+  // -----------------------------------------------------------------------------------------
+
+  if(compute_iswap_fidelities){
+    for(uint index = 0; index < nv.nuclei.size(); index++){
+      const double fidelity = iswap_fidelity(nv,index,k_DD);
+      cout << index << ": " << fidelity << endl;
+    }
   }
 
 }

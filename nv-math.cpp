@@ -197,6 +197,13 @@ uint get_index_in_cluster(const nv_system& nv, const uint index){
 // AXY scanning methods
 //--------------------------------------------------------------------------------------------
 
+// component of hyperfine field perpendicular to the larmor axis
+Vector3d A_perp(const nv_system&nv, const spin& s){
+  const Vector3d larmor_eff = effective_larmor(nv,s);
+  const Vector3d hyperfine = A(nv,s);
+  return hyperfine - dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+}
+
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulse_times(const uint k, const double f){
 
@@ -499,6 +506,18 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 // Single nuclear targeting
 //--------------------------------------------------------------------------------------------
 
+// return "natural" basis of a nucleus
+vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
+  // larmor frequency of and hyperfine field at target nucleus
+  const Vector3d larmor_eff = effective_larmor(nv,index);
+  const Vector3d hyperfine_perp = A_perp(nv,index);
+  // "natural" basis vectors for target nucleus
+  const Vector3d target_zhat = hat(larmor_eff);
+  const Vector3d target_xhat = hat(hyperfine_perp);
+  const Vector3d target_yhat = target_zhat.cross(target_xhat);
+  return {target_xhat, target_yhat, target_zhat};
+}
+
 // return control field for decoupling spin s from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd){
@@ -510,101 +529,23 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
-// compute fidelity of iSWAP operation between NV center and target nucleus
-fidelity_info iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
-  // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv, index);
-  const uint index_in_cluster = get_index_in_cluster(nv, index);
-  const uint spins = nv.clusters.at(cluster).size()+1;
-
-  // larmor frequency of and hyperfine field at target nucleus
-  const Vector3d larmor_eff = effective_larmor(nv,index);
-  const Vector3d hyperfine = A(nv,index);
-  const Vector3d hyperfine_w = dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
-  const Vector3d hyperfine_perp = hyperfine - hyperfine_w;
-
-  // if our interaction strength is too weak, we can't address this nucleus
-  if(hyperfine_perp.norm() < nv.cluster_coupling) return fidelity_info();
-
-  // minimum difference in larmor frequencies between target nucleus and other nuclei
-  double dw_min = DBL_MAX;
-  for(uint s = 0; s < nv.nuclei.size(); s++){
-    if(s == index) continue;
-    const double dw = abs(larmor_eff.norm() - effective_larmor(nv,s).norm());
-    if(dw < dw_min) dw_min = dw;
-  }
-
-  // if the target's larmor frequency is too close to another,
-  //   it is unaddressable via the default protocol
-  if(dw_min < nv.cluster_coupling/nv.scale_factor) return fidelity_info();
-
-  // AXY sequence parameters
-  const double f_DD = -nv.ms*dw_min/(hyperfine_perp.norm()*nv.scale_factor);
-  const double w_DD = larmor_eff.norm()/k_DD; // AXY protocol angular frequency
-  const double operation_time = 2*pi/abs(f_DD*hyperfine_perp.norm());
-
-  cout << "Running iSWAP protocol with the following parameters:"
-       << " target nucleus index: " << index << endl
-       << " w_DD: " << w_DD << endl
-       << " f_" << k_DD << ": " << f_DD << endl
-       << " operation_time: " << operation_time*1000 << " ms" << endl;
-
-  // spin addressing propagators
-
-  const MatrixXcd U_sx = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, operation_time);
-  const MatrixXcd U_sy = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                             operation_time, 0.25);
-
-  // "natural" basis vectors for target nucleus
-  const Vector3d target_zhat = hat(larmor_eff);
-  const Vector3d target_xhat = hat(hyperfine_perp);
-  const Vector3d target_yhat = target_zhat.cross(target_xhat);
-
-  // operators to rotate into the "natural" frame
-  const Matrix2cd Z_to_tY = rotate(acos(dot(zhat,target_yhat)), zhat.cross(target_yhat));
-  const Matrix2cd Z_to_tX = rotate(acos(dot(zhat,target_xhat)), zhat.cross(target_xhat));
-
-  // propagator for the iSWAP operation
-  const MatrixXcd U_iSWAP =
-    act(Z_to_tX,{0},spins) * U_sx * act(Z_to_tX.inverse(),{0},spins) *
-    act(Z_to_tY,{0},spins) * U_sy * act(Z_to_tY.inverse(),{0},spins);
-
-  // spin operators in the "natural" basis
-  const Matrix2cd sxp = dot(s_vec,target_xhat);
-  const Matrix2cd syp = dot(s_vec,target_yhat);
-
-  // exact iSWAP gate
-  const MatrixXcd iSWAP = exp(j*0.25*pi * act( tp(sxp,sxp) + tp(syp,syp),
-                                               {0,index_in_cluster+1}, spins));
-
-  // compute iSWAP gate fidelity
-  const double fidelity = gate_fidelity(U_iSWAP,iSWAP);
-
-  return fidelity_info(larmor_eff.norm(), hyperfine.norm(), hyperfine_perp.norm(),
-                       dw_min, f_DD, operation_time, fidelity);
-}
-
 // realization of propagator U = exp(-i * phi * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
                 const double phi, const double threshold){
+  // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // larmor frequency of and hyperfine field at target nucleus
-  const Vector3d larmor_eff = effective_larmor(nv,index);
-  const Vector3d hyperfine = A(nv,index);
-  const Vector3d hyperfine_perp = hyperfine - dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
-
-  const double w_larmor = larmor_eff.norm();
+  // larmor frequency of target nucleus
+  const double w_larmor = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/w_larmor;
 
-  // "natural" basis vectors for target nucleus
-  const Vector3d target_zhat = hat(larmor_eff);
-  const Vector3d target_xhat = hat(hyperfine_perp);
-  const Vector3d target_yhat = target_zhat.cross(target_xhat);
+  // natural basis of target nucleus
+  const vector<Vector3d> target_basis = natural_basis(nv,index);
 
+  // axis of rotation
   const Vector3d axis =
-    cos(target_axis_azimuth)*target_xhat + sin(target_axis_azimuth)*target_yhat;
+    cos(target_axis_azimuth)*target_basis.at(0) + sin(target_axis_azimuth)*target_basis.at(1);
 
   // control field frequency = effective larmor frequency of target nucleus
 
@@ -652,21 +593,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis, w_ctl, 0.); // control field object
 
-  cout << "Running targeting protocol with the following parameters:" << endl
-       << " target nucleus index: " << index << endl
-       << " w_DD: " << w_DD << endl
-       << " f_" << k_DD << ": 0" << endl
-       << " w_ctl: " << w_ctl << endl
-       << " B_ctl: " << B_ctl/gauss*1000 << " mG" << endl
-       << " control_time: " << control_time*1000 << " ms" << endl
-       << endl;
-
-  cout << "Additional information:" << endl
-       << " dw_min: " << dw_min << endl
-       << " A: " << A_j << endl
-       << " cluster size: " << nv.clusters.at(cluster).size() << endl
-       << endl;
-
   const MatrixXcd U_control = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
                                                   control_time, controls);
 
@@ -681,23 +607,14 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
                 const Vector3d& nv_axis, const double target_axis_azimuth, const double phi,
                 const double threshold){
-
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv, index);
   const uint index_in_cluster = get_index_in_cluster(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // larmor frequency of and hyperfine field at target nucleus
-  const Vector3d larmor_eff = effective_larmor(nv,index);
-  const Vector3d hyperfine = A(nv,index);
-  const Vector3d hyperfine_perp = hyperfine - dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
-
-  const double w_larmor = larmor_eff.norm();
-
-  // "natural" basis vectors for target nucleus
-  const Vector3d target_zhat = hat(larmor_eff);
-  const Vector3d target_xhat = hat(hyperfine_perp);
-  const Vector3d target_yhat = target_zhat.cross(target_xhat);
+  // larmor frequency of and perpendicular component of hyperfine field at target nucleus
+  const double w_larmor = effective_larmor(nv,index).norm();
+  const Vector3d hyperfine_perp = A_perp(nv,index);
 
   // minimum difference in larmor frequencies between target nucleus and other nuclei
   double dw_min = DBL_MAX;
@@ -731,44 +648,41 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     simulate_propagator(nv, cluster, w_DD, k_DD, 0,
                         flush_time, axy_delay - target_axis_azimuth/(2*pi));
 
+  const vector<Vector3d> target_basis = natural_basis(nv,index);
   const Vector3d target_nv_axis =
-    dot(nv_axis,xhat)*target_xhat +
-    dot(nv_axis,yhat)*target_yhat +
-    dot(nv_axis,zhat)*target_zhat;
+    dot(nv_axis,xhat)*target_basis.at(0) +
+    dot(nv_axis,yhat)*target_basis.at(1) +
+    dot(nv_axis,zhat)*target_basis.at(2);
 
   // operator to rotate into the "natural" frame
   const Matrix2cd rotate_to_target_frame =
-    rotate(acos(dot(zhat,target_nv_axis)),zhat.cross(target_nv_axis));
+    rotate(-acos(dot(zhat,target_nv_axis)),zhat.cross(target_nv_axis));
 
-  // return
-    // act(rotate_to_target_frame.inverse(),{0},spins) *
-    // U_flush * U_interaction *
-    // act(rotate_to_target_frame,{0},spins);
-
-  const MatrixXcd U =
+  return
     act(rotate_to_target_frame.inverse(),{0},spins) *
     U_flush * U_interaction *
     act(rotate_to_target_frame,{0},spins);
-
-  // spin operators in the "natural" basis
-  const Matrix2cd sxp = dot(s_vec,target_xhat);
-  const Matrix2cd syp = dot(s_vec,target_yhat);
-  const Matrix2cd szp = dot(s_vec,target_zhat);
-
-  const Matrix2cd sn_target = cos(target_axis_azimuth)*sxp + sin(target_axis_azimuth)*syp;
-  const Matrix2cd sn_nz =
-    dot(nv_axis,xhat)*sxp +
-    dot(nv_axis,yhat)*syp +
-    dot(nv_axis,zhat)*szp;
-
-  // desired propagator
-  const MatrixXcd U_desired =
-    exp(-j*phi * act(tp(sn_nz,sn_target), {0,index_in_cluster+1}, spins));
-
-  cout << remove_artifacts(remove_phase(U),1e-3) << endl << endl;
-  cout << remove_artifacts(remove_phase(U_desired),1e-3) << endl << endl;
-  cout << gate_fidelity(U,U_desired) << endl << endl;
-
-  return U;
 }
 
+// compute fidelity of iSWAP operation between NV center and target nucleus
+double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
+  const double iswap_phase = -pi/4;
+
+  // realization of iSWAP gate
+  const MatrixXcd U_sx = U_int(nv, index, k_DD, xhat, 0, iswap_phase);
+  const MatrixXcd U_sy = U_int(nv, index, k_DD, yhat, pi/2, iswap_phase);
+  const MatrixXcd U_iSWAP = U_sy * U_sx;
+
+  // spin operators in the "natural" basis
+  const vector<Vector3d> target_basis = natural_basis(nv,index);
+  const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
+  const Matrix2cd syp = dot(s_vec,target_basis.at(1));
+
+  // exact iSWAP gate
+  const uint spins = nv.clusters.at(get_cluster_containing_index(nv,index)).size()+1;
+  const uint index_in_cluster = get_index_in_cluster(nv,index);
+  const MatrixXcd iSWAP =
+    act(exp(-j*iswap_phase*(tp(sxp,sxp)+tp(syp,syp))), {0,index_in_cluster+1}, spins);
+
+  return gate_fidelity(U_iSWAP,iSWAP);
+}
