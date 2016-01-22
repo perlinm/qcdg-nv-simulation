@@ -553,6 +553,6 @@ int main(int arg_num, const char *arg_vec[]) {
       + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
 
     U_int(nv,target_index,k_DD,nv_axis,target_axis_azimuth,rotation_angle);
-
   }
+
 }
