@@ -204,3 +204,10 @@ mvec operator*(const MatrixXcd& G, const mvec& v){
   return mvec(out);
 }
 
+mvec operator*(const MatrixXcd& G, const Vector3d& v){
+  vector<MatrixXcd> out;
+  for(uint i = 0; i < v.size(); i++){
+    out.push_back(G*v(i));
+  }
+  return mvec(out);
+}

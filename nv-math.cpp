@@ -678,16 +678,15 @@ double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
   const MatrixXcd U_sy = U_int(nv, index, k_DD, yhat, pi/2, iswap_phase);
   const MatrixXcd U_iSWAP = U_sy * U_sx;
 
-  // spin operators in the "natural" basis
-  const vector<Vector3d> target_basis = natural_basis(nv,index);
-  const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
-  const Matrix2cd syp = dot(s_vec,target_basis.at(1));
+  // sx*xhat + sy*yhat in the "natural basis" of the target nucleus
+  const Vector3d target_zhat = hat(effective_larmor(nv,index));
+  const mvec sxyp = s_vec - dot(s_vec,target_zhat)*target_zhat;
 
   // exact iSWAP gate
   const uint spins = nv.clusters.at(get_cluster_containing_index(nv,index)).size()+1;
   const uint index_in_cluster = get_index_in_cluster(nv,index);
   const MatrixXcd iSWAP =
-    act(exp(-j*iswap_phase*(tp(sxp,sxp)+tp(syp,syp))), {0,index_in_cluster+1}, spins);
+    act(exp(-j*iswap_phase*dot(sxyp,sxyp)), {0,index_in_cluster+1}, spins);
 
   return gate_fidelity(U_iSWAP,iSWAP);
 }

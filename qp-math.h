@@ -207,3 +207,4 @@ inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
 
 inline mvec operator*(const double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
+mvec operator*(const MatrixXcd& G, const Vector3d& v);
