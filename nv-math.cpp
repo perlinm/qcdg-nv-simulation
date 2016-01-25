@@ -12,7 +12,12 @@ using namespace Eigen;
 // Spin vectors and structs
 //--------------------------------------------------------------------------------------------
 
+spin::spin(const Vector3d pos, const double g, const mvec S) :
+  pos(pos), g(g), S(S)
+{};
+
 nv_system::nv_system(const int ms, const double static_Bz, const double scale_factor) :
+  n(ao, 0., s_vec/2),
   e(spin(Vector3d::Zero(), ge,
          mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
   ms(ms), static_Bz(static_Bz), scale_factor(scale_factor)
@@ -688,7 +693,7 @@ double control_fidelity(const nv_system& nv, const uint index,
 
 // compute fidelity of nuclear spin coupling operation
 double coupling_fidelity(const nv_system& nv, const uint index, const uint k_DD,
-                         const double nv_axis_polar, const double nv_axis_azimuth,
+                         const double nv_axis_azimuth, const double nv_axis_polar,
                          const double target_axis_azimuth, const double rotation_angle){
   // realization of coupling operation
   const MatrixXcd U = U_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
@@ -702,7 +707,6 @@ double coupling_fidelity(const nv_system& nv, const uint index, const uint k_DD,
   const vector<Vector3d> target_basis = natural_basis(nv,index);
   const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
   const Matrix2cd syp = dot(s_vec,target_basis.at(1));
-  const Matrix2cd szp = dot(s_vec,target_basis.at(2));
   const Matrix2cd sn_target = cos(target_axis_azimuth)*sxp + sin(target_axis_azimuth)*syp;
 
   // exact coupling operation

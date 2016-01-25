@@ -259,25 +259,19 @@ int main(int arg_num, const char *arg_vec[]) {
         for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
           for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
             if(rnd() < c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              const spin nucleus = spin(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
-              // only place C-13 nuclei with a hyperfine field strength above the cutoff
-              if(A(nv,nucleus).norm() > hyperfine_cutoff){
-                nv.nuclei.push_back(nucleus);
+              // don't place C-13 nucleus on NV lattice site
+              if(!(l == 0 && m == 0 && n == 0)){
+                const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
+                // only place C-13 nuclei with a hyperfine field strength above the cutoff
+                if(A(nv,nucleus).norm() > hyperfine_cutoff){
+                  nv.nuclei.push_back(nucleus);
+                }
               }
             }
           }
         }
       }
     }
-
-    // remove any nuclei at the NV lattice sites
-    for(uint i = 0; i < nv.nuclei.size(); i++){
-      if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
-        nv.nuclei.erase(nv.nuclei.begin()+i);
-        i--;
-      }
-    }
-
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
 
     // write cell radius and nucleus positions to file
@@ -348,7 +342,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
-  const double cluster_coupling_guess = 100; // this value doesn't really matter
+  const double cluster_coupling_guess = 100; // this value doesn't actually matter
   const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
 
   // if we are going to perform an actual simulation instead of just a coherence scan,
@@ -483,8 +477,9 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    cout << target_index << ": "
-         << control_fidelity(nv, target_index, target_axis_azimuth, rotation_angle) << endl;
+    const double fidelity =  control_fidelity(nv, target_index,
+                                              target_axis_azimuth, rotation_angle);
+      cout << target_index << ": " << fidelity << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -494,7 +489,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(single_coupling){
     for(uint index = 0; index < nv.nuclei.size(); index++){
       const double fidelity = coupling_fidelity(nv, index, k_DD,
-                                                nv_axis_polar, nv_axis_azimuth,
+                                                nv_axis_azimuth, nv_axis_polar,
                                                 target_axis_azimuth, rotation_angle);
       cout << index << ": " << fidelity << endl;
     }

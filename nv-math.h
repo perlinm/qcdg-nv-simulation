@@ -57,16 +57,11 @@ const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
 // struct for spins
 struct spin{
-  Vector3d pos; // position
-  double g; // gyromagnetic ratio
-  mvec S; // spin vector
+  const Vector3d pos; // position
+  const double g; // gyromagnetic ratio
+  const mvec S; // spin vector
 
-  spin(const Vector3d& pos, const double g, const mvec& S){
-    assert(S.size() == 3);
-    this->pos = pos;
-    this->g = g;
-    this->S = S;
-  };
+  spin(const Vector3d pos, const double g, const mvec S);
 
   bool operator==(const spin& s) const {
     return ((pos == s.pos) && (g == s.g) && (S == s.S));
@@ -82,7 +77,7 @@ inline MatrixXcd rotate(const double phi, const Vector3d axis){
 
 // struct containing system and simulation info
 struct nv_system{
-  const spin n = spin(ao, 0., s_vec/2);
+  const spin n;
   const spin e;
   const int ms;
   const double static_Bz;
@@ -282,7 +277,7 @@ double control_fidelity(const nv_system& nv, const uint index,
 
 // compute fidelity of nuclear spin coupling operation
 double coupling_fidelity(const nv_system& nv, const uint index, const uint k_DD,
-                         const double nv_axis_polar, const double nv_axis_azimuth,
+                         const double nv_axis_azimuth, const double nv_axis_polar,
                          const double target_axis_azimuth, const double rotation_angle);
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
