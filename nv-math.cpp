@@ -35,8 +35,8 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
   const int par_1 = round(16*abs(dot(r1,ao)));
   const int par_2 = round(16*abs(dot(r2,ao)));
 
-  const int perp_1 = 12*(r1-dot(r1,zhat)*zhat).squaredNorm();
-  const int perp_2 = 12*(r1-dot(r2,zhat)*zhat).squaredNorm();
+  const int perp_1 = round(12*(r1-dot(r1,zhat)*zhat).squaredNorm());
+  const int perp_2 = round(12*(r1-dot(r2,zhat)*zhat).squaredNorm());
 
   return par_1 == par_2 && perp_1 == perp_2;
 }
