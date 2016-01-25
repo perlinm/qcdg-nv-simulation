@@ -22,7 +22,7 @@ with open(os.devnull, 'w') as null:
     found = 0
     for s in range(samples):
         commands = ["./simulate",
-                    "--pair_search",
+                    "--pair",
                     "--hyperfine_cutoff",hyperfine_cutoff,
                     "--seed",str(rnd())]
         if len(sys.argv) == 4:
