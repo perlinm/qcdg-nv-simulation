@@ -327,7 +327,7 @@ int main(int arg_num, const char *arg_vec[]) {
     uint pairs_found = 0;
     for(uint i = 0; i < nv.nuclei.size(); i++){
       for(uint j = i+1; j < nv.nuclei.size(); j++){
-        if(larmor_pair(nv.nuclei.at(i),nv.nuclei.at(j))){
+        if(is_larmor_pair(nv,i,j)){
           cout << "larmor pair: " << i << ", " << j << endl;
           pairs_found++;
         }

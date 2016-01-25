@@ -28,21 +28,17 @@ nv_system::nv_system(const int ms, const double static_Bz, const double scale_fa
 //--------------------------------------------------------------------------------------------
 
 // determine whether two spins are a larmor pair
-bool larmor_pair(const spin& s1, const spin& s2, const double tolerance){
+bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
+  const Vector3d r1 = nv.nuclei.at(idx1).pos;
+  const Vector3d r2 = nv.nuclei.at(idx2).pos;
 
-  const double r1z = dot(s1.pos,zhat);
-  const double r2z = dot(s2.pos,zhat);
+  const int par_1 = round(16*abs(dot(r1,ao)));
+  const int par_2 = round(16*abs(dot(r2,ao)));
 
-  const double r1xy = (s1.pos - r1z*zhat).norm();
-  const double r2xy = (s2.pos - r2z*zhat).norm();
+  const int perp_1 = 12*(r1-dot(r1,zhat)*zhat).squaredNorm();
+  const int perp_2 = 12*(r1-dot(r2,zhat)*zhat).squaredNorm();
 
-  return abs(abs(r1z/r2z)-1) < tolerance && abs(abs(r1xy/r2xy)-1) < tolerance;
-}
-
-// determine whether two spins are in the same larmor group
-bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2){
-  const double dw = (effective_larmor(nv,idx2).norm() - effective_larmor(nv,idx1).norm());
-  return abs(dw) < nv.cluster_coupling/nv.scale_factor;
+  return par_1 == par_2 && perp_1 == perp_2;
 }
 
 // coupling strength between two spins; assumes strong magnetic field in zhat
@@ -105,7 +101,7 @@ vector<vector<uint>> group_clusters(const nv_system& nv){
       for(uint c = 0; c < old_clusters.size(); c++){
         const vector<uint> old_cluster = old_clusters.at(c);
         for(uint j = 0; j < old_clusters.at(c).size(); j++){
-          if(larmor_group(nv, new_cluster.at(i), old_cluster.at(j))){
+          if(is_larmor_pair(nv, new_cluster.at(i), old_cluster.at(j))){
             new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
             old_clusters.erase(old_clusters.begin()+c);
             c--;
@@ -562,19 +558,21 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const uint cluster = get_cluster_containing_index(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
+  for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
+    if(nv.clusters.at(cluster).at(i) == index) continue;
+    if(is_larmor_pair(nv, index, nv.clusters.at(cluster).at(i))){
+      cout << "Cannot address nuclei with larmor pairs: "
+           << index << ", " << nv.clusters.at(cluster).at(i) << endl;
+      return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+    }
+  }
+
   // larmor frequency of target nucleus
   const double w_larmor = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/w_larmor;
 
   // axis of rotation
   const Vector3d axis = natural_axis(nv, index, target_axis_azimuth);
-
-  const double dw_min = larmor_resolution(nv,index);
-  if(dw_min < nv.cluster_coupling/nv.scale_factor){
-    cout << "Cannot address nuclei with larmor pairs"
-         << " (target nucleus: " << index << ")" << endl;
-    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  }
 
   // AXY protocol parameters
   const double A_j = A(nv,index).norm();
@@ -593,6 +591,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 
   // control field frequency = effective larmor frequency of target nucleus
   const double w_ctl = w_larmor; // control field frequency
+  const double dw_min = larmor_resolution(nv,index);
   double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
 
   const double control_period = 2*pi*4/g_B_ctl;
@@ -627,16 +626,19 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
   const uint index_in_cluster = get_index_in_cluster(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
+  for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
+    if(nv.clusters.at(cluster).at(i) == index) continue;
+    if(is_larmor_pair(nv, index, nv.clusters.at(cluster).at(i))){
+      cout << "Cannot address nuclei with larmor pairs: "
+           << index << ", " << nv.clusters.at(cluster).at(i) << endl;
+      return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+    }
+  }
+
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
   const double w_larmor = effective_larmor(nv,index).norm();
-  const Vector3d hyperfine_perp = A_perp(nv,index);
-
   const double dw_min = larmor_resolution(nv,index);
-  if(dw_min < nv.cluster_coupling/nv.scale_factor){
-    cout << "Cannot address nuclei with larmor pairs"
-         << " (target nucleus: " << index << ")" << endl;
-    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  }
+  const Vector3d hyperfine_perp = A_perp(nv,index);
 
   // AXY sequence parameters
   const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency

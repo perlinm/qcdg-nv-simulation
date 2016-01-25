@@ -67,7 +67,6 @@ struct spin{
     return ((pos == s.pos) && (g == s.g) && (S == s.S));
   }
   bool operator!=(const spin& s) const { return !(*this == s); }
-
 };
 
 // perform spin-1/2 rotation about arbitrary axis
@@ -95,10 +94,7 @@ struct nv_system{
 //--------------------------------------------------------------------------------------------
 
 // determine whether two spins are a larmor pair
-bool larmor_pair(const spin& s1, const spin& s2, const double tolerance = 1e-10);
-
-// determine whether two spins are in the same larmor group
-bool larmor_group(const nv_system& nv, const uint idx1, const uint idx2);
+bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
 
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
