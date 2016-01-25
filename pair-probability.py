@@ -58,25 +58,21 @@ def A(b,l,m,n):
     r = b*a0 + l*a1 + m*a2 + n*a3
     return norm( ge*gc/(4*np.pi*(norm(r)*a0)**3) * (zhat - 3*np.dot(hat(r),zhat)*hat(r)) )
 
-# maximum allowable value of l^2, m^2, or n^2
-M = (2*abs(ge*gc) / (np.pi * a0**3 * hyperfine_cutoff))**(2/3)
+# maximum allowable magnitude of l, m, or n
+M = int((2*abs(ge*gc) / (np.pi * a0**3 * hyperfine_cutoff))**(1/3)+1/2)
 
 # list of all equivalence classes of integers (b,l,m,n)
-#   i.e. sets {(b,l,m,n)} within which both l^2+m^2+n^2 and |1.5*b+l+m+n| are constant
 equivalence_classes = []
 
 # loop over each integer N < M
-for N in range(1, int(np.ceil(M))+1):
+for N in range(1, 3*M*M+1):
 
     # sets of integers {l,m,n} satisfying l^2+m^2+n^2 == N and l^2+m^2+n^2+(l+m+n)^2 < M
-    square_solution_sets = set([ (sign_l*l,sign_m*m,sign_n*n)
-                                 for l in range(0, int(np.ceil(np.sqrt(N)))+1)
-                                 for m in range(l, int(np.ceil(np.sqrt(N)))+1)
-                                 for n in range(m, int(np.ceil(np.sqrt(N)))+1)
-                                 if l*l+m*m+n*n == N
-                                 for sign_l in [1,-1]
-                                 for sign_m in [1,-1]
-                                 for sign_n in [1,-1] ])
+    square_solution_sets = set([ (l,m,n)
+                                 for l in range(-M,M+1)
+                                 for m in range(-M,M+1)
+                                 for n in range(-M,M+1)
+                                 if l*l+m*m+n*n == N ])
 
     # if the above set is empty, skip ahead to the next value of N
     if(len(square_solution_sets) == 0): continue
@@ -87,11 +83,11 @@ for N in range(1, int(np.ceil(M))+1):
 
     # determine all equivalence classes of integers (b,l,m,n) for this value of N
     for b in [0,1]:
-        blmn_sums = set([ abs(1.5*b+l+m+n) for (l,m,n) in square_solutions
+        blmn_sums = set([ abs(3/4*b+l+m+n) for (l,m,n) in square_solutions
                           if A(b,l,m,n) > hyperfine_cutoff ])
         for s in blmn_sums:
             equivalence_class = [ (b,l,m,n) for (l,m,n) in square_solutions
-                                  if abs(1.5*b+l+m+n) == s ]
+                                  if abs(3/4*b+l+m+n) == s ]
             if len(equivalence_class) > 1:
                 equivalence_classes.append(equivalence_class)
 
