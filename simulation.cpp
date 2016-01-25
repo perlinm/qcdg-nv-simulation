@@ -483,11 +483,8 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    const Vector3d target_axis = cos(target_axis_azimuth)*xhat+sin(target_axis_azimuth)*yhat;
-    const MatrixXcd exact_gate = exp(-j*rotation_angle*dot(s_vec,target_axis));
-    const MatrixXcd U = U_ctl(nv,target_index,target_axis_azimuth,rotation_angle);
-    const double fidelity = gate_fidelity(U,exact_gate);
-    cout << target_index << ": " << fidelity << endl;
+    cout << target_index << ": "
+         << control_fidelity(nv, target_index, target_axis_azimuth, rotation_angle) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -496,31 +493,9 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(single_coupling){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const Vector3d nv_axis = cos(nv_axis_polar) * zhat
-        + sin(nv_axis_polar) * ( cos(nv_axis_azimuth)*xhat+sin(nv_axis_azimuth)*yhat );
-
-      const vector<Vector3d> target_basis = natural_basis(nv,target_index);
-      const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
-      const Matrix2cd syp = dot(s_vec,target_basis.at(1));
-      const Matrix2cd szp = dot(s_vec,target_basis.at(2));
-
-      const Matrix2cd sn_target = cos(target_axis_azimuth)*sxp + sin(target_axis_azimuth)*syp;
-      const Vector3d target_nv_axis =
-        dot(nv_axis,xhat)*target_basis.at(0) +
-        dot(nv_axis,yhat)*target_basis.at(1) +
-        dot(nv_axis,zhat)*target_basis.at(2);
-      const Matrix2cd sn_nv = dot(s_vec,target_nv_axis);
-
-      const MatrixXcd U = U_int(nv,target_index,k_DD,nv_axis,
-                                target_axis_azimuth,rotation_angle);
-
-      const uint spins =
-        nv.clusters.at(get_cluster_containing_index(nv,target_index)).size()+1;
-      const uint index_in_cluster = get_index_in_cluster(nv,target_index);
-      const MatrixXcd exact_gate =
-        act(exp(-j*rotation_angle*tp(sn_nv,sn_target)), {0,index_in_cluster+1}, spins);
-
-      const double fidelity = gate_fidelity(U,exact_gate);
+      const double fidelity = coupling_fidelity(nv, index, k_DD,
+                                                nv_axis_polar, nv_axis_azimuth,
+                                                target_axis_azimuth, rotation_angle);
       cout << index << ": " << fidelity << endl;
     }
   }
