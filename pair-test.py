@@ -5,7 +5,7 @@ import subprocess as sp
 import numpy as np
 import matplotlib.pyplot as plt
 
-if len(sys.argv) not in [3,4]:
+if len(sys.argv) != 4:
     print("usage: {} cutoff_start cutoff_end samples".format(sys.argv[0]))
     exit(1)
 

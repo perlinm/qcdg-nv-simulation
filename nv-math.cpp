@@ -29,14 +29,14 @@ nv_system::nv_system(const int ms, const double static_Bz, const double scale_fa
 
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
-  const Vector3d r1 = nv.nuclei.at(idx1).pos;
-  const Vector3d r2 = nv.nuclei.at(idx2).pos;
+  const Vector3d r1 = nv.nuclei.at(idx1).pos - nv.e.pos;
+  const Vector3d r2 = nv.nuclei.at(idx2).pos - nv.e.pos;
 
   const int par_1 = round(16*abs(dot(r1,ao)));
   const int par_2 = round(16*abs(dot(r2,ao)));
 
   const int perp_1 = round(12*(r1-dot(r1,zhat)*zhat).squaredNorm());
-  const int perp_2 = round(12*(r1-dot(r2,zhat)*zhat).squaredNorm());
+  const int perp_2 = round(12*(r2-dot(r2,zhat)*zhat).squaredNorm());
 
   return par_1 == par_2 && perp_1 == perp_2;
 }
