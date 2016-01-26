@@ -717,26 +717,23 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 // compute fidelity of iSWAP operation between NV center and target nucleus
 double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
   const double iswap_angle = -pi/4;
-
-  // realization of iSWAP gate
   const double nv_axis_polar = pi/2;
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
+
+  // approximate iSWAP gate
   const MatrixXcd U_sx = U_int(nv, index, k_DD, nv_axis_polar,
                                xhat_azimuth, xhat_azimuth, iswap_angle);
   const MatrixXcd U_sy = U_int(nv, index, k_DD, nv_axis_polar,
                                yhat_azimuth, yhat_azimuth, iswap_angle);
   const MatrixXcd U_iSWAP = U_sy * U_sx;
 
-  // sx*xhat + sy*yhat in the "natural basis" of the target nucleus
-  const Vector3d target_zhat = hat(effective_larmor(nv,index));
-  const mvec s_xy = s_vec - mvec(dot(s_vec,target_zhat),target_zhat);
+  // exact iSWAP gape
+  const MatrixXcd G_sx = G_int(nv, index, k_DD, nv_axis_polar,
+                               xhat_azimuth, xhat_azimuth, iswap_angle);
+  const MatrixXcd G_sy = G_int(nv, index, k_DD, nv_axis_polar,
+                               yhat_azimuth, yhat_azimuth, iswap_angle);
+  const MatrixXcd iSWAP = G_sy * G_sx;
 
-  // exact iSWAP gate
-  const uint spins = nv.clusters.at(get_cluster_containing_index(nv,index)).size()+1;
-  const uint index_in_cluster = get_index_in_cluster(nv,index);
-  const MatrixXcd iSWAP = exp(-j * iswap_angle * dot(s_xy,s_xy));
-  const MatrixXcd iSWAP_cluster = act(iSWAP, {0,index_in_cluster+1}, spins);
-
-  return gate_fidelity(U_iSWAP, iSWAP_cluster);
+  return gate_fidelity(U_iSWAP, iSWAP);
 }
