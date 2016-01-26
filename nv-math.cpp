@@ -626,6 +626,12 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
   const uint index_in_cluster = get_index_in_cluster(nv, index);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
+  // verify that we can address this nucleus
+  if(round(4*dot(nv.nuclei.at(index).pos,ao)) == 0.){
+    cout << "Cannot address nuclei without hyperfine coupling perpendicular to the NV axis: "
+         << index << endl;
+    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  }
   for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
     if(nv.clusters.at(cluster).at(i) == index) continue;
     if(is_larmor_pair(nv, index, nv.clusters.at(cluster).at(i))){
