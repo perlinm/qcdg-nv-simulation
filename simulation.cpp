@@ -233,7 +233,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
 
   } else{ // if !using_input_lattice
-    cell_radius = pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3);
+    cell_radius = round(pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3));
     cout << "Setting cell radius to: " << cell_radius << endl;
 
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
@@ -252,15 +252,13 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(!using_input_lattice){ // place nuclei at lattice sites
-
     // set positions of nuclei at lattice sites
     for(int b = 0; b <= 1; b++){
       for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
         for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
           for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
             if(rnd() < c13_abundance){ // if we pass a check for C-13 isotopic abundance
-              // don't place C-13 nucleus on NV lattice site
-              if(!(l == 0 && m == 0 && n == 0)){
+              if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV lattice site
                 const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
                 if(A(nv,nucleus).norm() > hyperfine_cutoff){
@@ -479,7 +477,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(single_control){
     const double fidelity =  control_fidelity(nv, target_index,
                                               target_axis_azimuth, rotation_angle);
-      cout << target_index << ": " << fidelity << endl;
+    cout << target_index << ": " << fidelity << endl;
   }
 
   // -----------------------------------------------------------------------------------------
