@@ -475,9 +475,9 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    const double fidelity =  control_fidelity(nv, target_index,
-                                              target_axis_azimuth, rotation_angle);
-    cout << target_index << ": " << fidelity << endl;
+    const MatrixXcd U = U_ctl(nv, target_index, target_axis_azimuth, rotation_angle);
+    const MatrixXcd G = G_ctl(nv, target_index, target_axis_azimuth, rotation_angle);
+    cout << target_index << ": " << gate_fidelity(U,G) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -486,10 +486,11 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(single_coupling){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const double fidelity = coupling_fidelity(nv, index, k_DD,
-                                                nv_axis_azimuth, nv_axis_polar,
-                                                target_axis_azimuth, rotation_angle);
-      cout << index << ": " << fidelity << endl;
+      const MatrixXcd U = U_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
+                                target_axis_azimuth, rotation_angle);
+      const MatrixXcd G = G_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
+                                target_axis_azimuth, rotation_angle);
+      cout << index << ": " << gate_fidelity(U,G) << endl;
     }
   }
 
