@@ -44,7 +44,7 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
 // coupling strength between two spins; assumes strong magnetic field in zhat
 inline double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
-  return s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*dot(hat(r),zhat)*dot(hat(r),zhat));
+  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*dot(hat(r),zhat)*dot(hat(r),zhat)));
 }
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
