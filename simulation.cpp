@@ -85,6 +85,7 @@ int main(int arg_num, const char *arg_vec[]) {
     ;
 
   double c13_abundance;
+  double c13_percentage;
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
@@ -96,8 +97,8 @@ int main(int arg_num, const char *arg_vec[]) {
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
-    ("c13_abundance", po::value<double>(&c13_abundance)->default_value(0.0107,"0.0107"),
-     "relative isotopic abundance of C-13")
+    ("c13_abundance", po::value<double>(&c13_percentage)->default_value(1.07,"1.07"),
+     "relative isotopic abundance of C-13 (percentage)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(100),
@@ -197,7 +198,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(hyperfine_cutoff_in_kHz > 0);
-  assert(c13_abundance >= 0 && c13_abundance <= 1);
+  assert(c13_percentage >= 0 && c13_percentage <= 100);
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
@@ -212,6 +213,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(seed > 0); // seeds of 0 and 1 give the same result
 
   // set some variables based on iputs
+  c13_abundance = c13_percentage/100;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   scan_time = scan_time_in_ms*1e-3;
   rotation_angle = rotation_angle_over_2pi*2*pi;
