@@ -737,3 +737,24 @@ double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
 
   return gate_fidelity(U_iSWAP, iSWAP);
 }
+
+// return SWAP operation between NV center and the ST subspace of two nuclei
+MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD){
+  // assert that both nuclei are in the same
+  const uint cluster = get_cluster_containing_index(nv,idx1);
+  assert(in_vector(idx1,nv.clusters.at(cluster)));
+
+  const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},nv.clusters.at(cluster).size()+1);
+  const MatrixXcd Rx_1 = G_ctl(nv,idx1,0,pi/4);
+  const MatrixXcd Ry_1 = G_ctl(nv,idx1,pi/2,pi/4);
+  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
+  const MatrixXcd iSWAP_NV_1 = (G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
+                                G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
+  const MatrixXcd E_NV_2 = G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
+  const MatrixXcd cNOT_NV_1 = Rz_NV * Rx_1 * G_int(nv,idx1,k_DD,0,0,0,-pi/4);
+
+  return
+    Rz_NV * Rz_1 * iSWAP_NV_1.adjoint() *
+    E_NV_2 * cNOT_NV_1 * E_NV_2.adjoint() *
+    iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV.adjoint();
+}
