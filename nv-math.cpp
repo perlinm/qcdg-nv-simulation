@@ -742,7 +742,7 @@ double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD){
   // assert that both nuclei are in the same
   const uint cluster = get_cluster_containing_index(nv,idx1);
-  assert(in_vector(idx1,nv.clusters.at(cluster)));
+  assert(in_vector(idx2,nv.clusters.at(cluster)));
 
   const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},nv.clusters.at(cluster).size()+1);
   const MatrixXcd Rx_1 = G_ctl(nv,idx1,0,pi/4);
