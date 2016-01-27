@@ -605,7 +605,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
 
   const double control_period = 2*pi*4/g_B_ctl;
-  double control_time = 4*rotation_angle/g_B_ctl; // control operation time
+  double control_time = -4*rotation_angle/g_B_ctl; // control operation time
   while(control_time >= control_period) control_time -= control_period;
   while(control_time < 0) control_time += control_period;
   if(control_time > control_period/2){
