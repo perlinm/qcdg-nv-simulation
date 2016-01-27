@@ -356,7 +356,7 @@ int main(int arg_num, const char *arg_vec[]) {
     }
   }
 
-  uint cluster_size_target = max_cluster_size;
+  uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size()));
   do{
     assert(cluster_size_target > 0);
     // get cluster_coupling for which the largest cluster size is >= cluster_size_target
