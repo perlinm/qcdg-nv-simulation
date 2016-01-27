@@ -704,14 +704,14 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
   const Vector3d nv_axis = natural_axis(nv, index, nv_axis_azimuth, nv_axis_polar);
 
   // operator to rotate into the "natural" frame
-  const Matrix2cd rotate_to_target_frame =
-    rotate(-acos(dot(zhat,nv_axis)), zhat.cross(nv_axis));
+  const MatrixXcd rotate_to_target_frame =
+    act( rotate(-acos(dot(zhat,nv_axis)), zhat.cross(nv_axis)), {0}, spins);
 
   return
     U_flush *
-    act(rotate_to_target_frame.inverse(),{0},spins) *
+    rotate_to_target_frame.adjoint() *
     U_interaction *
-    act(rotate_to_target_frame,{0},spins);
+    rotate_to_target_frame;
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
