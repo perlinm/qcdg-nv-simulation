@@ -273,6 +273,7 @@ int main(int arg_num, const char *arg_vec[]) {
       }
     }
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
+    if(nv.nuclei.size() == 0) return -5;
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
