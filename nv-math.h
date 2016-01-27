@@ -277,7 +277,8 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
                 const double target_axis_azimuth, const double rotation_angle);
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
-double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD);
+double iSWAP_fidelity(const nv_system& nv, const uint index, const uint k_DD);
 
 // return SWAP operation between NV center and the ST subspace of two nuclei
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD);
+double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
+                             const uint k_DD);

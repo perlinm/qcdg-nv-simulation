@@ -19,7 +19,6 @@ namespace po = boost::program_options;
 #include "qp-math.h"
 #include "nv-math.h"
 #include "printing.h"
-#include "gates.h"
 
 // random double from 0 to 1
 inline double rnd(){ return rand()/(double)RAND_MAX; }
@@ -60,9 +59,10 @@ int main(int arg_num, const char *arg_vec[]) {
 
   bool pair_search;
   bool coherence_scan;
-  bool compute_iswap_fidelities;
   bool single_control;
   bool single_coupling;
+  bool iswap_fidelities;
+  bool swap_nvst_fidelity;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -71,15 +71,18 @@ int main(int arg_num, const char *arg_vec[]) {
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan of effective larmor frequencies")
-    ("iswap",
-     po::value<bool>(&compute_iswap_fidelities)->default_value(false)->implicit_value(true),
-     "compute expected iswap fidelities")
     ("control",
      po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
      "control individual nucleus")
     ("coupling",
      po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
      "couple individual nucleus to NV center")
+    ("iswap",
+     po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
+     "compute expected iSWAP fidelities")
+    ("swap_nvst",
+     po::value<bool>(&swap_nvst_fidelity)->default_value(false)->implicit_value(true),
+     "compute expected SWAP_NVST fidelity")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -128,7 +131,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "time for each coherence measurement (microseconds)")
     ;
 
-  uint target_index;
+  vector<uint> target_nuclei;
   double rotation_angle;
   double rotation_angle_over_2pi;
   double target_axis_azimuth;
@@ -137,8 +140,8 @@ int main(int arg_num, const char *arg_vec[]) {
   po::options_description addressing_options("Single nucleus addressing options",
                                              help_text_length);
   addressing_options.add_options()
-    ("target", po::value<uint>(&target_index)->default_value(0),
-     "index of nucleus to target (if applicable)")
+    ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
+     "indices of nuclei to target (if applicable)")
     ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0),
      "rotation angle in units of 2*pi")
     ("target_azimuth", po::value<double>(&target_axis_azimuth_over_2pi)->default_value(0),
@@ -184,15 +187,15 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_output_suffix = inputs.count("output_suffix");
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
-  bool set_target_index = !inputs["target"].defaulted();
 
   // run a sanity check on inputs
   if(!testing){
     assert(int(pair_search)
            + int(coherence_scan)
-           + int(compute_iswap_fidelities)
            + int(single_control)
            + int(single_coupling)
+           + int(iswap_fidelities)
+           + int(swap_nvst_fidelity)
            == 1);
   }
   assert(!(using_input_lattice && set_hyperfine_cutoff));
@@ -208,6 +211,12 @@ int main(int arg_num, const char *arg_vec[]) {
   if(coherence_scan){
     assert(scan_bins > 0);
     assert(scan_time_in_ms > 0);
+  }
+  if(single_control){
+    assert(target_nuclei.size() >= 1);
+  }
+  if(swap_nvst_fidelity){
+    assert(target_nuclei.size() >= 2);
   }
 
   assert(seed > 0); // seeds of 0 and 1 give the same result
@@ -478,9 +487,10 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    const MatrixXcd U = U_ctl(nv, target_index, target_axis_azimuth, rotation_angle);
-    const MatrixXcd G = G_ctl(nv, target_index, target_axis_azimuth, rotation_angle);
-    cout << target_index << ": " << gate_fidelity(U,G) << endl;
+    const uint index = target_nuclei.at(0);
+    const MatrixXcd U = U_ctl(nv, index, target_axis_azimuth, rotation_angle);
+    const MatrixXcd G = G_ctl(nv, index, target_axis_azimuth, rotation_angle);
+    cout << index << ": " << gate_fidelity(U,G) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -501,11 +511,22 @@ int main(int arg_num, const char *arg_vec[]) {
   // NV/nucleus iSWAP fidelity
   // -----------------------------------------------------------------------------------------
 
-  if(compute_iswap_fidelities){
+  if(iswap_fidelities){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const double fidelity = iswap_fidelity(nv,index,k_DD);
+      const double fidelity = iSWAP_fidelity(nv,index,k_DD);
       cout << index << ": " << fidelity << endl;
     }
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // NV/ST SWAP operation fidelity
+  // -----------------------------------------------------------------------------------------
+
+  if(swap_nvst_fidelity){
+    assert(nv.nuclei.size() >= 2);
+    const uint n1 = target_nuclei.at(0);
+    const uint n2 = target_nuclei.at(1);
+    cout << n1 << " " << n2 << ": " << SWAP_NVST_fidelity(nv,n1,n2,k_DD) << endl;
   }
 
 }

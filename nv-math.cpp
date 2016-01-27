@@ -715,7 +715,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
-double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
+double iSWAP_fidelity(const nv_system& nv, const uint index, const uint k_DD){
   const double iswap_angle = -pi/4;
   const double nv_axis_polar = pi/2;
   const double xhat_azimuth = 0;
@@ -739,22 +739,39 @@ double iswap_fidelity(const nv_system& nv, const uint index, const uint k_DD){
 }
 
 // return SWAP operation between NV center and the ST subspace of two nuclei
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD){
+double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
+                             const uint k_DD){
   // assert that both nuclei are in the same
   const uint cluster = get_cluster_containing_index(nv,idx1);
   assert(in_vector(idx2,nv.clusters.at(cluster)));
 
   const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},nv.clusters.at(cluster).size()+1);
-  const MatrixXcd Rx_1 = G_ctl(nv,idx1,0,pi/4);
-  const MatrixXcd Ry_1 = G_ctl(nv,idx1,pi/2,pi/4);
-  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
-  const MatrixXcd iSWAP_NV_1 = (G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
-                                G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
-  const MatrixXcd E_NV_2 = G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
-  const MatrixXcd cNOT_NV_1 = Rz_NV * Rx_1 * G_int(nv,idx1,k_DD,0,0,0,-pi/4);
 
-  return
+  const MatrixXcd Rx_1_exact = G_ctl(nv,idx1,0,pi/4);
+  const MatrixXcd Ry_1_exact = G_ctl(nv,idx1,pi/2,pi/4);
+  const MatrixXcd Rz_1_exact = Rx_1_exact * Ry_1_exact * Rx_1_exact.adjoint();
+  const MatrixXcd iSWAP_NV_1_exact = (G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
+                                G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
+  const MatrixXcd E_NV_2_exact = G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
+  const MatrixXcd cNOT_NV_1_exact = Rz_NV * Rx_1_exact * G_int(nv,idx1,k_DD,0,0,0,-pi/4);
+
+  const MatrixXcd SWAP_NVST =
+    Rz_NV * Rz_1_exact * iSWAP_NV_1_exact.adjoint() *
+    E_NV_2_exact * cNOT_NV_1_exact * E_NV_2_exact.adjoint() *
+    iSWAP_NV_1_exact * Rz_1_exact.adjoint() * Rz_NV.adjoint();
+
+  const MatrixXcd Rx_1 = U_ctl(nv,idx1,0,pi/4);
+  const MatrixXcd Ry_1 = U_ctl(nv,idx1,pi/2,pi/4);
+  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
+  const MatrixXcd iSWAP_NV_1 = (U_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
+                                U_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
+  const MatrixXcd E_NV_2 = U_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
+  const MatrixXcd cNOT_NV_1 = Rz_NV * Rx_1 * U_int(nv,idx1,k_DD,0,0,0,-pi/4);
+
+  const MatrixXcd U_SWAP_NVST =
     Rz_NV * Rz_1 * iSWAP_NV_1.adjoint() *
     E_NV_2 * cNOT_NV_1 * E_NV_2.adjoint() *
     iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV.adjoint();
+
+  return gate_fidelity(U_SWAP_NVST,SWAP_NVST);
 }
