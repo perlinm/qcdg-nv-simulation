@@ -529,4 +529,45 @@ int main(int arg_num, const char *arg_vec[]) {
     cout << n1 << " " << n2 << ": " << SWAP_NVST_fidelity(nv,n1,n2,k_DD) << endl;
   }
 
+  // -----------------------------------------------------------------------------------------
+  // NV/ST SWAP operation fidelity
+  // -----------------------------------------------------------------------------------------
+
+  if(testing){
+    assert(nv.nuclei.size() >= 2);
+    const uint n1 = target_nuclei.at(0);
+    const uint n2 = target_nuclei.at(1);
+    const uint cluster = get_cluster_containing_index(nv,n1);
+    assert(in_vector(n2,nv.clusters.at(cluster)));
+    const uint spins = nv.clusters.at(cluster).size()+1;
+
+    const Matrix2cd R_n1 = rotate(natural_basis(nv,n1),{xhat,yhat,zhat});
+    const Matrix2cd R_n2 = rotate(natural_basis(nv,n2),{xhat,yhat,zhat});
+    const MatrixXcd NV_to_n1 = act(R_n1,{0},spins);
+    const MatrixXcd NV_to_n2 = act(R_n2,{0},spins);
+
+    const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},spins);
+
+    const MatrixXcd Rx_1_exact = NV_to_n1.adjoint() * G_ctl(nv,n1,0,pi/4) * NV_to_n1;
+    const MatrixXcd Ry_1_exact = NV_to_n1.adjoint() * G_ctl(nv,n1,pi/2,pi/4) * NV_to_n1;
+    const MatrixXcd Rz_1_exact = Rx_1_exact * Ry_1_exact * Rx_1_exact.adjoint();
+    const MatrixXcd iSWAP_NV_1_exact =
+      NV_to_n1.adjoint() * G_int(nv,n1,k_DD,pi/2,0,0,-pi/4) *
+      G_int(nv,n1,k_DD,pi/2,pi/2,pi/2,-pi/4) * NV_to_n1;
+    const MatrixXcd E_NV_2_exact =
+      NV_to_n2.adjoint() * G_int(nv,n2,k_DD,pi/2,pi/2,0,-pi/4) * NV_to_n2;
+    const MatrixXcd cNOT_NV_1_exact =
+      Rz_NV * NV_to_n1.adjoint() * Rx_1_exact * G_int(nv,n1,k_DD,0,0,0,-pi/4) * NV_to_n1;
+
+    const MatrixXcd SWAP_NVST =
+      Rz_NV * Rz_1_exact * iSWAP_NV_1_exact.adjoint() *
+      E_NV_2_exact * cNOT_NV_1_exact * E_NV_2_exact.adjoint() *
+      iSWAP_NV_1_exact * Rz_1_exact.adjoint() * Rz_NV.adjoint();
+
+    const MatrixXcd R_n12 = act(R_n1,{n1+1},spins) * act(R_n2,{n2+1},spins);
+
+    cout << clean(R_n12.adjoint() * 2*SWAP_NVST * R_n12).imag() << endl << endl << endl;
+    cout << clean(R_n12.adjoint() * 2*SWAP_NVST * R_n12).real() << endl << endl << endl;
+  }
+
 }
