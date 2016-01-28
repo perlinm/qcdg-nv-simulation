@@ -10,7 +10,7 @@ using namespace Eigen;
 #include "nv-math.h"
 
 // clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-10){
+inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
   return remove_artifacts(remove_phase(remove_artifacts(M, error_threshold)), error_threshold);
 }
 

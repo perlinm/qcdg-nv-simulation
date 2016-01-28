@@ -55,6 +55,17 @@ inline MatrixXcd Rz(const double phi){ return Uz(phi/2); }
 // spin vector for a spin-1/2 particle
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
+// perform spin-1/2 rotation about arbitrary axis
+Matrix2cd rotate(const Vector3d axis, const double phi);
+
+// rotate into one axis from another
+inline Matrix2cd rotate(const Vector3d axis_end, const Vector3d axis_start){
+  return rotate(hat(axis_start.cross(axis_end)), acos(dot(hat(axis_start),hat(axis_end))));
+}
+
+// rotate into one basis from another
+Matrix2cd rotate(const vector<Vector3d> basis_end, const vector<Vector3d> basis_start);
+
 // struct for spins
 struct spin{
   const Vector3d pos; // position
@@ -68,16 +79,6 @@ struct spin{
   }
   bool operator!=(const spin& s) const { return !(*this == s); }
 };
-
-// perform spin-1/2 rotation about arbitrary axis
-inline Matrix2cd rotate(const Vector3d axis, const double phi){
-  return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,hat(axis));
-}
-
-// rotate into one axis from another
-inline Matrix2cd rotate(const Vector3d axis_end, const Vector3d axis_start){
-  return rotate(hat(axis_start.cross(axis_end)), acos(dot(hat(axis_start),hat(axis_end))));
-}
 
 // struct containing system and simulation info
 struct nv_system{

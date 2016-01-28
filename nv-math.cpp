@@ -12,6 +12,45 @@ using namespace Eigen;
 // Spin vectors and structs
 //--------------------------------------------------------------------------------------------
 
+// perform spin-1/2 rotation about arbitrary axis
+Matrix2cd rotate(const Vector3d axis, const double phi){
+  if(axis.squaredNorm() > 0) return cos(phi/2.)*I2 - j*sin(phi/2.)*dot(s_vec,hat(axis));
+  else return I2;
+}
+
+// rotate into one basis from another
+Matrix2cd rotate(const vector<Vector3d> basis_end, const vector<Vector3d> basis_start){
+  assert(basis_start.size() == 3);
+  assert(basis_end.size() == 3);
+  assert(dot(basis_start.at(0).cross(basis_start.at(1)),basis_start.at(2)) > 0);
+  assert(dot(basis_end.at(0).cross(basis_end.at(1)),basis_end.at(2)) > 0);
+
+  // rotation matrix taking starting basis vectors to ending basis vectors
+  const Matrix3d rotation = (basis_end.at(0)*basis_start.at(0).transpose() +
+                             basis_end.at(1)*basis_start.at(1).transpose() +
+                             basis_end.at(2)*basis_start.at(2).transpose());
+  // rotation angle
+  const double angle = acos((rotation.trace()-1.)/2.);
+
+  // determine rotation axis
+  const double axis_x = rotation(2,1)-rotation(1,2);
+  const double axis_y = rotation(0,2)-rotation(2,0);
+  const double axis_z = rotation(1,0)-rotation(0,1);
+  const Vector3d axis = hat((Vector3d() << axis_x, axis_y, axis_z).finished());
+  if(axis.squaredNorm() > 0){
+    return rotate(axis,angle);
+  } else{
+    const EigenSolver<Matrix3d> solver(rotation);
+    const Vector3cd e_vals = solver.eigenvalues();
+    const Matrix3cd e_vecs = solver.eigenvectors();
+    uint axis_index = 0;
+    for(uint i = 1; i < e_vals.size(); i++){
+      if(abs(e_vals(i)-1.) < abs(e_vals(axis_index)-1.)) axis_index = i;
+    }
+    return rotate(e_vecs.col(axis_index).real(),angle);
+  }
+}
+
 spin::spin(const Vector3d pos, const double g, const mvec S) :
   pos(pos), g(g), S(S)
 {};
@@ -703,14 +742,14 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 
   const Vector3d nv_axis = natural_axis(nv, index, nv_axis_azimuth, nv_axis_polar);
 
-  // rotate the NV spin into / out of the "natural" frame
-  const MatrixXcd rotate_to_zhat = act( rotate(zhat, nv_axis), {0}, spins);
+  // rotate the NV spin between the desired axis and zhat
+  const MatrixXcd nv_axis_to_zhat = act( rotate(zhat, nv_axis), {0}, spins);
 
   return
     U_flush *
-    rotate_to_zhat.adjoint() *
+    nv_axis_to_zhat.adjoint() *
     U_interaction *
-    rotate_to_zhat;
+    nv_axis_to_zhat;
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
