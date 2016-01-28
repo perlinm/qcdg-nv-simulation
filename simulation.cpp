@@ -187,6 +187,7 @@ int main(int arg_num, const char *arg_vec[]) {
   bool set_output_suffix = inputs.count("output_suffix");
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
+  bool set_target_nuclei = inputs.count("targets");
 
   // run a sanity check on inputs
   if(!testing){
@@ -211,12 +212,6 @@ int main(int arg_num, const char *arg_vec[]) {
   if(coherence_scan){
     assert(scan_bins > 0);
     assert(scan_time_in_ms > 0);
-  }
-  if(single_control){
-    assert(target_nuclei.size() >= 1);
-  }
-  if(swap_nvst_fidelity){
-    assert(target_nuclei.size() >= 2);
   }
 
   assert(seed > 0); // seeds of 0 and 1 give the same result
@@ -283,6 +278,11 @@ int main(int arg_num, const char *arg_vec[]) {
     }
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
     if(nv.nuclei.size() == 0) return -5;
+    if(!set_target_nuclei){
+      for(uint i = 0; i < nv.nuclei.size(); i++){
+        target_nuclei.push_back(i);
+      }
+    }
 
     // write cell radius and nucleus positions to file
     if(!no_output && !pair_search){
@@ -363,9 +363,7 @@ int main(int arg_num, const char *arg_vec[]) {
     nv.clusters = group_clusters(nv);
     const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if(max_cluster_size < min_cluster_size_cap){
-      return -3;
-    }
+    if(max_cluster_size < min_cluster_size_cap) return -3;
   }
 
   uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size()));
@@ -498,6 +496,7 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
+    assert(target_nuclei.size() >= 1);
     for(uint index = 0; index < nv.nuclei.size(); index++){
       const MatrixXcd U = U_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
                                 target_axis_azimuth, rotation_angle);
@@ -524,6 +523,7 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(swap_nvst_fidelity){
     assert(nv.nuclei.size() >= 2);
+    assert(target_nuclei.size() >= 2);
     const uint n1 = target_nuclei.at(0);
     const uint n2 = target_nuclei.at(1);
     cout << n1 << " " << n2 << ": " << SWAP_NVST_fidelity(nv,n1,n2,k_DD) << endl;
