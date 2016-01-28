@@ -10,8 +10,8 @@ using namespace Eigen;
 #include "nv-math.h"
 
 // clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& M){
-  return remove_artifacts(remove_phase(remove_artifacts(M)));
+inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-10){
+  return remove_artifacts(remove_phase(remove_artifacts(M, error_threshold)), error_threshold);
 }
 
 // returns element p of a basis for operators acting on a system with N qubits

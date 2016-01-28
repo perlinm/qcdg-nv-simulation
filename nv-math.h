@@ -70,8 +70,13 @@ struct spin{
 };
 
 // perform spin-1/2 rotation about arbitrary axis
-inline MatrixXcd rotate(const double phi, const Vector3d axis){
-  return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,axis);
+inline Matrix2cd rotate(const Vector3d axis, const double phi){
+  return cos(phi/2)*I2 - j*sin(phi/2)*dot(s_vec,hat(axis));
+}
+
+// rotate into one axis from another
+inline Matrix2cd rotate(const Vector3d axis_end, const Vector3d axis_start){
+  return rotate(hat(axis_start.cross(axis_end)), acos(dot(hat(axis_start),hat(axis_end))));
 }
 
 // struct containing system and simulation info
