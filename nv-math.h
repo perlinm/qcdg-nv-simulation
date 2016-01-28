@@ -247,9 +247,18 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 // return "natural" basis of a nucleus
 vector<Vector3d> natural_basis(const nv_system& nv, const uint index);
 
+// return axis with given azimuth and polar angles in a given basis
+inline Vector3d axis(const double azimuth, const double polar = pi/2,
+                     const vector<Vector3d> basis = {xhat, yhat, zhat}){
+  return cos(polar) * basis.at(2) + sin(polar) * ( cos(azimuth) * basis.at(0) +
+                                                   sin(azimuth) * basis.at(1) );
+}
+
 // return axis with given polar and azimuthal angles in the "natural" basis
-Vector3d natural_axis(const nv_system& nv, const uint index,
-                      const double azimuth, const double polar = pi/2);
+inline Vector3d natural_axis(const nv_system& nv, const uint index,
+                             const double azimuth, const double polar = pi/2){
+  return axis(azimuth, polar, natural_basis(nv,index));
+}
 
 // return control field for decoupling spin s from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,

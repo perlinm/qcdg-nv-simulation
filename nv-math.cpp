@@ -571,14 +571,6 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
   return {target_xhat, target_yhat, target_zhat};
 }
 
-// return axis with given polar and azimuthal angles in the "natural" basis
-Vector3d natural_axis(const nv_system& nv, const uint index,
-                      const double azimuth, const double polar){
-  const vector<Vector3d> basis = natural_basis(nv,index);
-  return cos(polar) * basis.at(2) + sin(polar) * ( cos(azimuth) * basis.at(0) +
-                                                   sin(azimuth) * basis.at(1) );
-}
-
 // return control field for decoupling spin s from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd){
@@ -621,7 +613,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double t_larmor = 2*pi/w_larmor;
 
   // axis of rotation
-  const Vector3d axis = natural_axis(nv, index, target_axis_azimuth);
+  const Vector3d axis_ctl = natural_axis(nv, index, target_axis_azimuth);
 
   // AXY protocol parameters
   const double A_j = A(nv,index).norm();
@@ -654,7 +646,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
 
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
-  const control_fields controls(B_ctl*axis, w_ctl, 0.); // control field object
+  const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
 
   const MatrixXcd U_control = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
                                                   control_time, controls);
@@ -671,7 +663,7 @@ MatrixXcd G_int(const nv_system& nv, const uint index, const uint k_DD,
                 const double nv_axis_polar, const double nv_axis_azimuth,
                 const double target_axis_azimuth, const double rotation_angle){
   // spin of NV center along given axis
-  const Vector3d nv_axis = natural_axis(nv, index, nv_axis_azimuth, nv_axis_polar);
+  const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
   const Matrix2cd sn_nv = dot(s_vec,nv_axis);
 
   // spin of target nucleus along given axis
@@ -740,16 +732,12 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     simulate_propagator(nv, cluster, w_DD, k_DD, 0,
                         flush_time, axy_delay - target_axis_azimuth/(2*pi));
 
-  const Vector3d nv_axis = natural_axis(nv, index, nv_axis_azimuth, nv_axis_polar);
+  const Vector3d nv_axis = axis(nv_axis_azimuth, nv_axis_polar);
 
   // rotate the NV spin between the desired axis and zhat
   const MatrixXcd nv_axis_to_zhat = act( rotate(zhat, nv_axis), {0}, spins);
 
-  return
-    U_flush *
-    nv_axis_to_zhat.adjoint() *
-    U_interaction *
-    nv_axis_to_zhat;
+  return U_flush * nv_axis_to_zhat.adjoint() * U_interaction * nv_axis_to_zhat;
 }
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
@@ -783,26 +771,17 @@ double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
   const uint cluster = get_cluster_containing_index(nv,idx1);
   assert(in_vector(idx2,nv.clusters.at(cluster)));
 
-  const uint spins = nv.clusters.at(cluster).size()+1;
-
-  const Matrix2cd R_n1 = rotate(natural_basis(nv,idx1),{xhat,yhat,zhat});
-  const Matrix2cd R_n2 = rotate(natural_basis(nv,idx2),{xhat,yhat,zhat});
-  const MatrixXcd NV_to_n1 = act(R_n1,{0},spins);
-  const MatrixXcd NV_to_n2 = act(R_n2,{0},spins);
-
-  const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},spins);
+  const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},nv.clusters.at(cluster).size()+1);
 
   // exact SWAP_NVST gate
-  const MatrixXcd Rx_1_exact = NV_to_n1.adjoint() * G_ctl(nv,idx1,0,pi/4) * NV_to_n1;
-  const MatrixXcd Ry_1_exact = NV_to_n1.adjoint() * G_ctl(nv,idx1,pi/2,pi/4) * NV_to_n1;
+  const MatrixXcd Rx_1_exact = G_ctl(nv,idx1,0,pi/4);
+  const MatrixXcd Ry_1_exact = G_ctl(nv,idx1,pi/2,pi/4);
   const MatrixXcd Rz_1_exact = Rx_1_exact * Ry_1_exact * Rx_1_exact.adjoint();
-  const MatrixXcd iSWAP_NV_1_exact =
-    NV_to_n1.adjoint() * G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
-    G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4) * NV_to_n1;
-  const MatrixXcd E_NV_2_exact =
-    NV_to_n2.adjoint() * G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4) * NV_to_n2;
-  const MatrixXcd cNOT_NV_1_exact =
-    Rz_NV * NV_to_n1.adjoint() * Rx_1_exact * G_int(nv,idx1,k_DD,0,0,0,-pi/4) * NV_to_n1;
+  const MatrixXcd iSWAP_NV_1_exact = (G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
+                                      G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
+  const MatrixXcd E_NV_2_exact = G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
+  const MatrixXcd cNOT_NV_1_exact = (Rz_NV.adjoint() * Rx_1_exact *
+                                     G_int(nv,idx1,k_DD,0,0,0,-pi/4));
 
   const MatrixXcd SWAP_NVST =
     Rz_NV * Rz_1_exact * iSWAP_NV_1_exact.adjoint() *
@@ -810,16 +789,13 @@ double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
     iSWAP_NV_1_exact * Rz_1_exact.adjoint() * Rz_NV.adjoint();
 
   // approximate SWAP_NVST gate
-  const MatrixXcd Rx_1 = NV_to_n1.adjoint() * U_ctl(nv,idx1,0,pi/4) * NV_to_n1;
-  const MatrixXcd Ry_1 = NV_to_n1.adjoint() * U_ctl(nv,idx1,pi/2,pi/4) * NV_to_n1;
+  const MatrixXcd Rx_1 = U_ctl(nv,idx1,0,pi/4);
+  const MatrixXcd Ry_1 = U_ctl(nv,idx1,pi/2,pi/4);
   const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
-  const MatrixXcd iSWAP_NV_1 =
-    NV_to_n1.adjoint() * U_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
-    U_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4) * NV_to_n1;
-  const MatrixXcd E_NV_2 =
-    NV_to_n2.adjoint() * U_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4) * NV_to_n2;
-  const MatrixXcd cNOT_NV_1 =
-    Rz_NV * NV_to_n1.adjoint() * Rx_1 * U_int(nv,idx1,k_DD,0,0,0,-pi/4) * NV_to_n1;
+  const MatrixXcd iSWAP_NV_1 = (U_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
+                                U_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
+  const MatrixXcd E_NV_2 = U_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
+  const MatrixXcd cNOT_NV_1 = Rz_NV.adjoint() * Rx_1 * U_int(nv,idx1,k_DD,0,0,0,-pi/4);
 
   const MatrixXcd U_SWAP_NVST =
     Rz_NV * Rz_1 * iSWAP_NV_1.adjoint() *
