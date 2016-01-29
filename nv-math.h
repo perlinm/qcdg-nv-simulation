@@ -121,7 +121,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
 
 uint get_cluster_containing_index(const nv_system& nv, const uint index);
 
-uint get_index_in_cluster(const nv_system& nv, const uint index);
+uint get_index_in_cluster(const uint index, const vector<uint> cluster);
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods

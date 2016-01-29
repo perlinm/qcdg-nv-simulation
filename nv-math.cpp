@@ -222,13 +222,11 @@ uint get_cluster_containing_index(const nv_system& nv, const uint index){
   }
 }
 
-uint get_index_in_cluster(const nv_system& nv, const uint index){
-  assert(index < nv.nuclei.size());
-  for(uint c = 0; c < nv.clusters.size(); c++){
-    for(uint s = 0; s < nv.clusters.at(c).size(); s++){
-      if(nv.clusters.at(c).at(s) == index){
-        return s;
-      }
+uint get_index_in_cluster(const uint index, const vector<uint> cluster){
+  assert(in_vector(index,cluster));
+  for(uint s = 0; s < cluster.size(); s++){
+    if(cluster.at(s) == index){
+      return s;
     }
   }
 }
@@ -587,7 +585,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
                 const double rotation_angle, const bool exact){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
-  const uint index_in_cluster = get_index_in_cluster(nv,index);
+  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // target axis of rotation
@@ -662,7 +660,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
                 const bool exact){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
-  const uint index_in_cluster = get_index_in_cluster(nv,index);
+  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // NV spin axis
