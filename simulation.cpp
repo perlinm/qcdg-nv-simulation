@@ -485,10 +485,13 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
+    assert(target_nuclei.size() >= 1);
     const uint index = target_nuclei.at(0);
-    const MatrixXcd U = U_ctl(nv, index, target_axis_azimuth, rotation_angle);
-    const MatrixXcd G = G_ctl(nv, index, target_axis_azimuth, rotation_angle);
-    cout << index << ": " << gate_fidelity(U,G) << endl;
+    vector<MatrixXcd> U(2);
+    for(bool exact : {false, true}){
+      U.at(exact) = U_ctl(nv, index, target_axis_azimuth, rotation_angle, exact);
+    }
+    cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -496,13 +499,13 @@ int main(int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
-    assert(target_nuclei.size() >= 1);
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const MatrixXcd U = U_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
-                                target_axis_azimuth, rotation_angle);
-      const MatrixXcd G = G_int(nv, index, k_DD, nv_axis_polar, nv_axis_azimuth,
-                                target_axis_azimuth, rotation_angle);
-      cout << index << ": " << gate_fidelity(U,G) << endl;
+      vector<MatrixXcd> U(2);
+      for(bool exact : {false, true}){
+        U.at(exact) = U_int(nv, index, k_DD, nv_axis_azimuth, nv_axis_polar,
+                            target_axis_azimuth, rotation_angle, exact);
+      }
+      cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
     }
   }
 

@@ -513,14 +513,14 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const MatrixXcd X = act(sx, {0}, spins);
 
   const uint print_steps = int(nv.scale_factor);
-  cout << "Progress (out of " << print_steps << ")...";
+  cout << "Progress (out of " << print_steps << ")..." << flush;
 
   uint pulse_count = 0;
   for(uint x_i = 1; x_i <= integration_steps; x_i++){
     const double x = x_i*dx; // normalized time
 
     if(x_i%(integration_steps/print_steps) == 0){
-      cout << " " << int(print_steps*double(x_i)/integration_steps) << flush;
+      cout << " " << int(print_steps*double(x_i)/integration_steps)+1 << flush;
     }
 
     // normzlized time into current AXY half-sequence
@@ -582,22 +582,22 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
-// exact gate G = exp(-i * rotation_angle * sigma_{axis}^{index})
-MatrixXcd G_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle){
-  const uint spins = nv.clusters.at(get_cluster_containing_index(nv,index)).size()+1;
-  const uint index_in_cluster = get_index_in_cluster(nv,index);
-  const Vector3d target_axis = natural_axis(nv, index, target_axis_azimuth);
-  const MatrixXcd G = exp(-j * rotation_angle * dot(s_vec,target_axis));
-  return act(G, {index_in_cluster+1}, spins);
-}
-
-// approximate propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
+// propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle){
+                const double rotation_angle, const bool exact){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv, index);
+  const uint cluster = get_cluster_containing_index(nv,index);
+  const uint index_in_cluster = get_index_in_cluster(nv,index);
   const uint spins = nv.clusters.at(cluster).size()+1;
+
+  // target axis of rotation
+  const Vector3d axis_ctl = natural_axis(nv, index, target_axis_azimuth);
+
+  if(exact){
+    // return exact propagator
+    const MatrixXcd G = exp(-j * rotation_angle * dot(s_vec,axis_ctl));
+    return act(G, {index_in_cluster+1}, spins);
+  }
 
   for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
     if(nv.clusters.at(cluster).at(i) == index) continue;
@@ -611,9 +611,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   // larmor frequency of target nucleus
   const double w_larmor = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/w_larmor;
-
-  // axis of rotation
-  const Vector3d axis_ctl = natural_axis(nv, index, target_axis_azimuth);
 
   // AXY protocol parameters
   const double A_j = A(nv,index).norm();
@@ -658,35 +655,26 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   return U_flush * U_control;
 }
 
-// exact gate G = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd G_int(const nv_system& nv, const uint index, const uint k_DD,
-                const double nv_axis_polar, const double nv_axis_azimuth,
-                const double target_axis_azimuth, const double rotation_angle){
-  // spin of NV center along given axis
-  const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
-  const Matrix2cd sn_nv = dot(s_vec,nv_axis);
-
-  // spin of target nucleus along given axis
-  const vector<Vector3d> target_basis = natural_basis(nv,index);
-  const Matrix2cd sxp = dot(s_vec,target_basis.at(0));
-  const Matrix2cd syp = dot(s_vec,target_basis.at(1));
-  const Matrix2cd sn_target = cos(target_axis_azimuth)*sxp + sin(target_axis_azimuth)*syp;
-
-  // exact coupling operation
-  const uint spins = nv.clusters.at(get_cluster_containing_index(nv,index)).size()+1;
-  const uint index_in_cluster = get_index_in_cluster(nv,index);
-  const MatrixXcd G = exp(-j * rotation_angle * tp(sn_nv,sn_target));
-  return act(G, {0,index_in_cluster+1}, spins);
-}
-
-// approximate propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
+// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
 MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
-                const double nv_axis_polar, const double nv_axis_azimuth,
-                const double target_axis_azimuth, const double rotation_angle){
+                const double nv_axis_azimuth, const double nv_axis_polar,
+                const double target_axis_azimuth, const double rotation_angle,
+                const bool exact){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv, index);
-  const uint index_in_cluster = get_index_in_cluster(nv, index);
+  const uint cluster = get_cluster_containing_index(nv,index);
+  const uint index_in_cluster = get_index_in_cluster(nv,index);
   const uint spins = nv.clusters.at(cluster).size()+1;
+
+  // NV spin axis
+  const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
+
+  if(exact){
+    // return exact propagator
+    const Vector3d target_axis = natural_axis(nv,index,target_axis_azimuth);
+    const MatrixXcd G = exp(-j * rotation_angle *
+                            tp(dot(s_vec,nv_axis), dot(s_vec,target_axis)));
+    return act(G, {0,index_in_cluster+1}, spins);
+  }
 
   // verify that we can address this nucleus
   if(round(4*dot(nv.nuclei.at(index).pos,ao)) == 0.){
@@ -732,8 +720,6 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     simulate_propagator(nv, cluster, w_DD, k_DD, 0,
                         flush_time, axy_delay - target_axis_azimuth/(2*pi));
 
-  const Vector3d nv_axis = axis(nv_axis_azimuth, nv_axis_polar);
-
   // rotate the NV spin between the desired axis and zhat
   const MatrixXcd nv_axis_to_zhat = act( rotate(zhat, nv_axis), {0}, spins);
 
@@ -742,26 +728,23 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
 double iSWAP_fidelity(const nv_system& nv, const uint index, const uint k_DD){
-  const double iswap_angle = -pi/4;
-  const double nv_axis_polar = pi/2;
+  // define angles
+  const double angle = pi/4;
+  const double xy_polar = pi/2;
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
 
-  // approximate iSWAP gate
-  const MatrixXcd U_sx = U_int(nv, index, k_DD, nv_axis_polar,
-                               xhat_azimuth, xhat_azimuth, iswap_angle);
-  const MatrixXcd U_sy = U_int(nv, index, k_DD, nv_axis_polar,
-                               yhat_azimuth, yhat_azimuth, iswap_angle);
-  const MatrixXcd U_iSWAP = U_sy * U_sx;
+  // compute approximate and exact iSWAP gates
+  vector<MatrixXcd> iSWAP(2);
+  for(bool exact : {false,true}){
+    const MatrixXcd U_sx =
+      U_int(nv, index, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
+    const MatrixXcd U_sy =
+      U_int(nv, index, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
 
-  // exact iSWAP gape
-  const MatrixXcd G_sx = G_int(nv, index, k_DD, nv_axis_polar,
-                               xhat_azimuth, xhat_azimuth, iswap_angle);
-  const MatrixXcd G_sy = G_int(nv, index, k_DD, nv_axis_polar,
-                               yhat_azimuth, yhat_azimuth, iswap_angle);
-  const MatrixXcd iSWAP = G_sy * G_sx;
-
-  return gate_fidelity(U_iSWAP, iSWAP);
+    iSWAP.at(exact) = U_sx * U_sy;
+  }
+  return gate_fidelity(iSWAP.at(0), iSWAP.at(1));
 }
 
 // return SWAP operation between NV center and the ST subspace of two nuclei
@@ -771,36 +754,41 @@ double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
   const uint cluster = get_cluster_containing_index(nv,idx1);
   assert(in_vector(idx2,nv.clusters.at(cluster)));
 
-  const MatrixXcd Rz_NV = act(U_NV(zhat,pi/4),{0},nv.clusters.at(cluster).size()+1);
+  // define angles
+  const double angle = pi/4;
+  const double z_polar = 0;
+  const double xy_polar = pi/2;
+  const double xhat_azimuth = 0;
+  const double yhat_azimuth = pi/2;
 
-  // exact SWAP_NVST gate
-  const MatrixXcd Rx_1_exact = G_ctl(nv,idx1,0,pi/4);
-  const MatrixXcd Ry_1_exact = G_ctl(nv,idx1,pi/2,pi/4);
-  const MatrixXcd Rz_1_exact = Rx_1_exact * Ry_1_exact * Rx_1_exact.adjoint();
-  const MatrixXcd iSWAP_NV_1_exact = (G_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
-                                      G_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
-  const MatrixXcd E_NV_2_exact = G_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
-  const MatrixXcd cNOT_NV_1_exact = (Rz_NV.adjoint() * Rx_1_exact *
-                                     G_int(nv,idx1,k_DD,0,0,0,-pi/4));
+  // compute approximate and exact SWAP_NVST gates
+  const MatrixXcd Rz_NV = act(U_NV(zhat,angle),{0},nv.clusters.at(cluster).size()+1);
+  vector<MatrixXcd> SWAP_NVST(2);
+  for(bool exact : {false,true}){
+    const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
+    const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
+    const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
+    const MatrixXcd iSWAP_NV_1 =
+      U_int(nv, idx1, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
+      U_int(nv, idx1, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
+    const MatrixXcd E_NV_2 =
+      U_int(nv, idx2, k_DD, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
+    const MatrixXcd cNOT_NV_1 =
+      Rz_NV.adjoint() * Rx_1 *
+      U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
 
-  const MatrixXcd SWAP_NVST =
-    Rz_NV * Rz_1_exact * iSWAP_NV_1_exact.adjoint() *
-    E_NV_2_exact * cNOT_NV_1_exact * E_NV_2_exact.adjoint() *
-    iSWAP_NV_1_exact * Rz_1_exact.adjoint() * Rz_NV.adjoint();
+    SWAP_NVST.at(exact) =
+      Rz_NV * Rz_1 * iSWAP_NV_1.adjoint() *
+      E_NV_2 * cNOT_NV_1 * E_NV_2.adjoint() *
+      iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV.adjoint();
+  }
 
-  // approximate SWAP_NVST gate
-  const MatrixXcd Rx_1 = U_ctl(nv,idx1,0,pi/4);
-  const MatrixXcd Ry_1 = U_ctl(nv,idx1,pi/2,pi/4);
-  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
-  const MatrixXcd iSWAP_NV_1 = (U_int(nv,idx1,k_DD,pi/2,0,0,-pi/4) *
-                                U_int(nv,idx1,k_DD,pi/2,pi/2,pi/2,-pi/4));
-  const MatrixXcd E_NV_2 = U_int(nv,idx2,k_DD,pi/2,pi/2,0,-pi/4);
-  const MatrixXcd cNOT_NV_1 = Rz_NV.adjoint() * Rx_1 * U_int(nv,idx1,k_DD,0,0,0,-pi/4);
+  const uint spins = nv.clusters.at(cluster).size()+1;
+  const MatrixXcd R =
+    act(rotate(natural_basis(nv,idx1),{xhat,yhat,zhat}), {idx1+1}, spins) *
+    act(rotate(natural_basis(nv,idx2),{xhat,yhat,zhat}), {idx2+1}, spins);
 
-  const MatrixXcd U_SWAP_NVST =
-    Rz_NV * Rz_1 * iSWAP_NV_1.adjoint() *
-    E_NV_2 * cNOT_NV_1 * E_NV_2.adjoint() *
-    iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV.adjoint();
+  cout << remove_artifacts(remove_phase(2* R.adjoint() * SWAP_NVST.at(1) * R),1e-3) << endl << endl;
 
-  return gate_fidelity(U_SWAP_NVST,SWAP_NVST);
+  return gate_fidelity(SWAP_NVST.at(0),SWAP_NVST.at(1));
 }

@@ -273,23 +273,15 @@ inline Matrix2cd U_NV(const Vector3d axis, const double phi){
   return exp(-j*phi*dot(s_vec,hat(axis)));
 }
 
-// exact gate G = exp(-i * rotation_angle * sigma_{axis}^{index})
-MatrixXcd G_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle);
-
-// approximate propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
+// propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle);
+                const double rotation_angle, const bool exact = false);
 
-// exact gate G = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd G_int(const nv_system& nv, const uint index, const uint k_DD,
-                const double nv_axis_polar, const double nv_axis_azimuth,
-                const double target_axis_azimuth, const double rotation_angle);
-
-// approximate propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
+// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
 MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
                 const double nv_axis_polar, const double nv_axis_azimuth,
-                const double target_axis_azimuth, const double rotation_angle);
+                const double target_axis_azimuth, const double rotation_angle,
+                const bool exact = false);
 
 // compute fidelity of iSWAP operation between NV center and target nucleus
 double iSWAP_fidelity(const nv_system& nv, const uint index, const uint k_DD);
