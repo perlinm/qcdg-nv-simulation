@@ -724,35 +724,24 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
   return U_flush * nv_axis_to_zhat.adjoint() * U_interaction * nv_axis_to_zhat;
 }
 
-// compute fidelity of iSWAP operation between NV center and target nucleus
-double iSWAP_fidelity(const nv_system& nv, const uint index, const uint k_DD){
-  // define angles
-  const double angle = pi/4;
+// iSWAP operation
+MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD, const bool exact){
+  const double iswap_angle = -pi/4;
   const double xy_polar = pi/2;
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
+  return
+    U_int(nv, index, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, iswap_angle, exact) *
+    U_int(nv, index, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, iswap_angle, exact);
+};
 
-  // compute approximate and exact iSWAP gates
-  vector<MatrixXcd> iSWAP(2);
-  for(bool exact : {false,true}){
-    const MatrixXcd U_sx =
-      U_int(nv, index, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
-    const MatrixXcd U_sy =
-      U_int(nv, index, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
-
-    iSWAP.at(exact) = U_sx * U_sy;
-  }
-  return gate_fidelity(iSWAP.at(0), iSWAP.at(1));
-}
-
-// return SWAP operation between NV center and the ST subspace of two nuclei
-double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
-                          const uint k_DD){
+MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD,
+                    const bool exact){
+  // identify clusters
   const vector<uint> cluster_1 = nv.clusters.at(get_cluster_containing_index(nv,idx1));
   const vector<uint> cluster_2 = nv.clusters.at(get_cluster_containing_index(nv,idx2));
 
   vector<uint> net_cluster = cluster_1;
-
   vector<uint> nv_c1(cluster_1.size()+1);
   vector<uint> nv_c2(cluster_2.size()+1);
   for(uint i = 0; i <= cluster_1.size(); i++) nv_c1.at(i) = i;
@@ -773,27 +762,25 @@ double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
 
-  // compute approximate and exact SWAP_NVST gates
+  // compute components of SWAP_NVST
   const MatrixXcd Rz_NV = U_NV(zhat,angle);
-  vector<MatrixXcd> SWAP_NVST(2);
-  for(bool exact : {true,false}){
-    const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
-    const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
-    const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
-    const MatrixXcd iSWAP_NV_1 =
-      U_int(nv, idx1, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
-      U_int(nv, idx1, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
-    const MatrixXcd cNOT_NV_1 =
-      act(Rz_NV, {0}, nv_c1.size()) * Rx_1 *
-      U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
-    const MatrixXcd E_NV_2 =
-      U_int(nv, idx2, k_DD, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
+  const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
+  const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
+  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
+  const MatrixXcd iSWAP_NV_1 =
+    U_int(nv, idx1, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
+    U_int(nv, idx1, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
+  const MatrixXcd cNOT_NV_1 =
+    act(Rz_NV, {0}, nv_c1.size()) * Rx_1 *
+    U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
+  const MatrixXcd E_NV_2 =
+    U_int(nv, idx2, k_DD, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
 
-    const MatrixXcd M =
-      act(E_NV_2.adjoint(), nv_c2, spins) *
-      act(iSWAP_NV_1 * Rz_1.adjoint(), nv_c1, spins) *
-      act(Rz_NV, {0}, spins).adjoint();
-    SWAP_NVST.at(exact) = M.adjoint() * act(cNOT_NV_1, nv_c1, spins) * M;
-  }
-  return gate_fidelity(SWAP_NVST.at(0),SWAP_NVST.at(1));
+  // combine componenets into full operation
+  const MatrixXcd M =
+    act(E_NV_2.adjoint(), nv_c2, spins) *
+    act(iSWAP_NV_1 * Rz_1.adjoint(), nv_c1, spins) *
+    act(Rz_NV, {0}, spins).adjoint();
+
+  return M.adjoint() * act(cNOT_NV_1, nv_c1, spins) * M;
 }

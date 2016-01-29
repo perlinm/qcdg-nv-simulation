@@ -488,7 +488,7 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(target_nuclei.size() >= 1);
     const uint index = target_nuclei.at(0);
     vector<MatrixXcd> U(2);
-    for(bool exact : {false, true}){
+    for(bool exact : {true,false}){
       U.at(exact) = U_ctl(nv, index, target_axis_azimuth, rotation_angle, exact);
     }
     cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
@@ -501,7 +501,7 @@ int main(int arg_num, const char *arg_vec[]) {
   if(single_coupling){
     for(uint index = 0; index < nv.nuclei.size(); index++){
       vector<MatrixXcd> U(2);
-      for(bool exact : {false, true}){
+      for(bool exact : {true,false}){
         U.at(exact) = U_int(nv, index, k_DD, nv_axis_azimuth, nv_axis_polar,
                             target_axis_azimuth, rotation_angle, exact);
       }
@@ -515,8 +515,9 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(iswap_fidelities){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const double fidelity = iSWAP_fidelity(nv,index,k_DD);
-      cout << index << ": " << fidelity << endl;
+      cout << index << ": "
+           << gate_fidelity(iSWAP(nv,index,k_DD,true),
+                            iSWAP(nv,index,k_DD,false)) << endl;
     }
   }
 
@@ -529,7 +530,9 @@ int main(int arg_num, const char *arg_vec[]) {
     assert(target_nuclei.size() >= 2);
     const uint idx1 = target_nuclei.at(0);
     const uint idx2 = target_nuclei.at(1);
-    cout << idx1 << " " << idx2 << ": " << SWAP_NVST_fidelity(nv,idx1,idx2,k_DD) << endl;
+    cout << idx1 << " " << idx2 << ": "
+         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,k_DD,true),
+                          SWAP_NVST(nv,idx1,idx2,k_DD,false)) << endl;
   }
 
 }
