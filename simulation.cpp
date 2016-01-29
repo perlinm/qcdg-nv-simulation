@@ -527,9 +527,9 @@ int main(int arg_num, const char *arg_vec[]) {
   if(swap_nvst_fidelity){
     assert(nv.nuclei.size() >= 2);
     assert(target_nuclei.size() >= 2);
-    const uint n1 = target_nuclei.at(0);
-    const uint n2 = target_nuclei.at(1);
-    cout << n1 << " " << n2 << ": " << SWAP_NVST_fidelity(nv,n1,n2,k_DD) << endl;
+    const uint idx1 = target_nuclei.at(0);
+    const uint idx2 = target_nuclei.at(1);
+    cout << idx1 << " " << idx2 << ": " << SWAP_NVST_fidelity(nv,idx1,idx2,k_DD) << endl;
   }
 
 }
