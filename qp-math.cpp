@@ -55,6 +55,17 @@ complex<double> get_phase(const MatrixXcd& A){
 MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_new){
   assert(A.rows() == A.cols()); // A should be square
 
+  if(qs_act.size() == qbits_new){
+    bool do_nothing = true;
+    for(uint i = 0; i < qbits_new; i++){
+      if(i != qs_act.at(i)){
+        do_nothing = false;
+        break;
+      }
+    }
+    if(do_nothing) return A;
+  }
+
   // number of qbits A acted on
   const uint qbits_old = qs_act.size();
   assert(qbits_old == log2(A.rows()));
