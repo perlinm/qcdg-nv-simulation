@@ -782,13 +782,5 @@ double SWAP_NVST_fidelity(const nv_system& nv, const uint idx1, const uint idx2,
       E_NV_2 * cNOT_NV_1 * E_NV_2.adjoint() *
       iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV.adjoint();
   }
-
-  const uint spins = nv.clusters.at(cluster).size()+1;
-  const MatrixXcd R =
-    act(rotate(natural_basis(nv,idx1),{xhat,yhat,zhat}), {idx1+1}, spins) *
-    act(rotate(natural_basis(nv,idx2),{xhat,yhat,zhat}), {idx2+1}, spins);
-
-  cout << remove_artifacts(remove_phase(2* R.adjoint() * SWAP_NVST.at(1) * R),1e-3) << endl << endl;
-
   return gate_fidelity(SWAP_NVST.at(0),SWAP_NVST.at(1));
 }
