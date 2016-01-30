@@ -517,10 +517,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   for(uint x_i = 1; x_i <= integration_steps; x_i++){
     const double x = x_i*dx; // normalized time
 
-    if(x_i%(integration_steps/print_steps) == 0){
-      cout << " " << int(print_steps*double(x_i)/integration_steps)+1 << flush;
-    }
-
     // normzlized time into current AXY half-sequence
     const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
     // if we are within dx/2 of an AXY pulse time, flip the projections
@@ -542,6 +538,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // update propagator
     U = (exp(-j*dx*t_DD*H)*U).eval();
+
+    // print status update
+    if(x_i%(integration_steps/print_steps) == 0){
+      cout << " " << int(print_steps*double(x_i)/integration_steps)+1 << flush;
+    }
   }
   if(pulse_count%2 != 0) U = (X*U).eval();
 
