@@ -301,6 +301,8 @@ vector<double> axy_pulse_times(const uint k, const double f){
 }
 
 vector<double> delayed_pulse_times(const vector<double> pulse_times, const double delay){
+  if(delay == 0) return pulse_times;
+
   // number of pulses
   const uint N = pulse_times.size()-2;
 
@@ -438,11 +440,11 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
-                              const double simulation_time, const double axy_pulse_delay){
+                              const double simulation_time, const double delay){
   // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD),
-                                                         axy_pulse_delay);
+  const vector<double> pulse_times =
+    delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay/t_DD);
 
   // NV+cluster Hamiltonian
   // const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
@@ -484,13 +486,13 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
-                              const double axy_pulse_delay){
+                              const double delay){
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD),
-                                                         axy_pulse_delay);
+  const vector<double> pulse_times =
+    delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay/t_DD);
 
   // maximim frequency scale of simulation
   double max_freq_scale = w_DD;
@@ -685,7 +687,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   }();
 
   const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
-  const double axy_delay = control_time/t_DD - int(control_time/t_DD);
+  const double axy_delay = control_time - floor(control_time/t_DD)*t_DD;
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
                                                     flush_time, axy_delay);
   return U_flush * U_control;
