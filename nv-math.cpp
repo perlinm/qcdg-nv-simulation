@@ -514,8 +514,13 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   cout << "Progress (out of " << print_steps << ")..." << flush;
 
   uint pulse_count = 0;
-  for(uint x_i = 1; x_i <= integration_steps; x_i++){
-    const double x = x_i*dx; // normalized time
+  for(uint x_i = 0; x_i < integration_steps; x_i++){
+    // print status update
+    if(x_i%(integration_steps/print_steps) == 0){
+      cout << " " << round(double(print_steps)*x_i/integration_steps) << flush;
+    }
+
+    const double x = (x_i+0.5)*dx; // normalized time with the trapezoidal rule
 
     // normzlized time into current AXY half-sequence
     const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
@@ -538,11 +543,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // update propagator
     U = (exp(-j*dx*t_DD*H)*U).eval();
-
-    // print status update
-    if(x_i%(integration_steps/print_steps) == 0){
-      cout << " " << int(print_steps*double(x_i)/integration_steps)+1 << flush;
-    }
   }
   if(pulse_count%2 != 0) U = (X*U).eval();
 
