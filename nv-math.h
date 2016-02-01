@@ -292,6 +292,6 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                     const uint k_DD, const bool exact = false);
 
 // polarize NV into a given pure state
-inline MatrixXcd polarize_NV(const MatrixXcd rho, const MatrixXcd psi_NV){
+inline MatrixXcd polarize_NV(const MatrixXcd rho, const VectorXcd psi_NV){
   return tp(psi_NV*psi_NV.adjoint()/(psi_NV.adjoint()*psi_NV), ptrace(rho,{0}));
 }
