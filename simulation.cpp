@@ -97,6 +97,7 @@ int main(int arg_num, const char *arg_vec[]) {
   uint k_DD;
   double static_Bz_in_gauss;
   double scale_factor;
+  uint integration_factor;
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
@@ -112,8 +113,10 @@ int main(int arg_num, const char *arg_vec[]) {
      "resonance harmonic used in spin addressing (1 or 3)")
     ("static_Bz", po::value<double>(&static_Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (gauss)")
-    ("scale_factor", po::value<double>(&scale_factor)->default_value(100,"100"),
+    ("scale_factor", po::value<double>(&scale_factor)->default_value(100),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
+    ("integration_factor", po::value<uint>(&integration_factor)->default_value(100),
+     "factor used to determine size of infinitesimals")
     ;
 
   uint scan_bins;
@@ -142,7 +145,7 @@ int main(int arg_num, const char *arg_vec[]) {
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target (if applicable)")
-    ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0),
+    ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0.25,"0.25"),
      "rotation angle in units of 2*pi")
     ("target_azimuth", po::value<double>(&target_axis_azimuth_over_2pi)->default_value(0),
      "azimuthal angle of target rotation axis in units of 2*pi"
@@ -208,6 +211,7 @@ int main(int arg_num, const char *arg_vec[]) {
   assert(ms == 1 || ms == -1);
   assert((k_DD == 1) || (k_DD == 3));
   assert(scale_factor > 1);
+  assert(integration_factor > 1);
 
   if(coherence_scan){
     assert(scan_bins > 0);
@@ -251,7 +255,7 @@ int main(int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor, integration_factor, testing);
 
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei

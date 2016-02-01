@@ -55,11 +55,13 @@ spin::spin(const Vector3d pos, const double g, const mvec S) :
   pos(pos), g(g), S(S)
 {};
 
-nv_system::nv_system(const int ms, const double static_Bz, const double scale_factor) :
+nv_system::nv_system(const int ms, const double static_Bz, const double scale_factor,
+                     const uint integration_factor, const bool testing) :
   n(ao, 0., s_vec/2),
   e(spin(Vector3d::Zero(), ge,
          mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
-  ms(ms), static_Bz(static_Bz), scale_factor(scale_factor)
+  ms(ms), static_Bz(static_Bz), scale_factor(scale_factor),
+  integration_factor(integration_factor), testing(testing)
 {};
 
 //--------------------------------------------------------------------------------------------
@@ -497,8 +499,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // integration step size and number
-  const double dt = 1/(max_freq_scale*nv.scale_factor);
-  const double dx = 1/(t_DD*max_freq_scale*nv.scale_factor);
+  const double dt = 1/(max_freq_scale*nv.integration_factor);
+  const double dx = 1/(t_DD*max_freq_scale*nv.integration_factor);
   const uint integration_steps = int(simulation_time/dt+0.5);
 
   // static NV+cluster Hamiltonian
@@ -510,7 +512,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // NV center spin flip pulse
   const MatrixXcd X = act(sx, {0}, spins);
 
-  const uint print_steps = int(nv.scale_factor);
+  const uint print_steps = nv.integration_factor;
   cout << "Progress (out of " << print_steps << ")..." << flush;
 
   uint pulse_count = 0;

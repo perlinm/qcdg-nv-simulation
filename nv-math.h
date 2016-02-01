@@ -87,12 +87,15 @@ struct nv_system{
   const int ms;
   const double static_Bz;
   const double scale_factor;
+  const uint integration_factor;
+  const bool testing;
 
   vector<spin> nuclei;
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
-  nv_system(const int ms, const double static_Bz, const double scale_factor);
+  nv_system(const int ms, const double static_Bz, const double scale_factor,
+            const uint integration_factor, const bool testing);
 };
 
 //--------------------------------------------------------------------------------------------
