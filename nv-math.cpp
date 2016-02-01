@@ -665,10 +665,10 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
         const MatrixXcd U_DD = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
                                                    t_DD_adjusted, controls);
 
-        const double rem_time = control_time - cycles*t_DD_adjusted;
-        const MatrixXcd U_rem = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
-                                                    rem_time, controls);
-        return U_rem * pow(U_DD,cycles);
+        const double trailing_time = control_time - cycles*t_DD_adjusted;
+        const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
+                                                         f_DD, trailing_time, controls);
+        return U_trailing * pow(U_DD,cycles);
       } else{ // if(w_DD > w_larmor)
         const uint freq_ratio = round(w_DD/w_larmor);
         const double w_DD_adjusted = w_larmor*freq_ratio;
@@ -676,10 +676,10 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 
         const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
                                                        t_larmor, controls);
-        const double rem_time = control_time - cycles*t_larmor;
-        const MatrixXcd U_rem = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
-                                                    rem_time, controls);
-        return U_rem * pow(U_larmor,cycles);
+        const double trailing_time = control_time - cycles*t_larmor;
+        const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
+                                                    f_DD, trailing_time, controls);
+        return U_trailing * pow(U_larmor,cycles);
       }
     } else{ // if(!adjust_w_DD)
       return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
