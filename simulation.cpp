@@ -116,7 +116,7 @@ int main(int arg_num, const char *arg_vec[]) {
     ("scale_factor", po::value<double>(&scale_factor)->default_value(100),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
     ("integration_factor", po::value<uint>(&integration_factor)->default_value(100),
-     "factor used to determine size of infinitesimals")
+     "factor used to determine size of integration step size")
     ;
 
   uint scan_bins;
