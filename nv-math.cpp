@@ -612,16 +612,22 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double t_larmor = 2*pi/w_larmor;
 
   // AXY protocol parameters
-  const double A_j = A(nv,index).norm();
-  double w_DD;
-  if(w_larmor >= nv.scale_factor*A_j){
-    uint k_M = int(w_larmor/(nv.scale_factor*A_j)-1);
-    if(k_M % 2 == 0) k_M--;
-    w_DD = (w_larmor-nv.scale_factor*A_j)/k_M;
-  }
-  if(w_larmor < nv.scale_factor*A_j || w_DD < nv.scale_factor*A_j){
-    w_DD = (w_larmor+nv.scale_factor*A_j)/3.;
-  }
+  const double sA = nv.scale_factor * A(nv,index).norm();
+  const double w_DD = [&]() -> double {
+    const double w_DD_small = (w_larmor+sA)/3.;
+    if(w_larmor < sA){
+      return w_DD_small;
+    } else{
+      const uint k_m = 2*int(0.5 * (w_larmor/sA-1) );
+      const double w_DD_large = (w_larmor-sA)/k_m;
+      if(w_DD_large > sA){
+        return w_DD_large;
+      } else{
+        return w_DD_small;
+      }
+    }
+  }();
+
   const double t_DD = 2*pi/w_DD;
   const uint k_DD = abs(w_DD - w_larmor) < abs(3*w_DD - w_larmor) ? 1 : 3;
   const double f_DD = 0;
