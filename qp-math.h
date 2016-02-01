@@ -73,6 +73,11 @@ complex<double> get_phase(const MatrixXcd& A);
 // remove global phase from matrix
 inline MatrixXcd remove_phase(const MatrixXcd& A){ return A*conj(get_phase(A)); }
 
+// clean up matrix for human readability
+inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
+  return remove_artifacts(remove_phase(remove_artifacts(M, error_threshold)), error_threshold);
+}
+
 //--------------------------------------------------------------------------------------------
 // Operator manipulation
 //--------------------------------------------------------------------------------------------

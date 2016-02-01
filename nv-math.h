@@ -88,14 +88,13 @@ struct nv_system{
   const double static_Bz;
   const double scale_factor;
   const uint integration_factor;
-  const bool testing;
 
   vector<spin> nuclei;
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
   nv_system(const int ms, const double static_Bz, const double scale_factor,
-            const uint integration_factor, const bool testing);
+            const uint integration_factor);
 };
 
 //--------------------------------------------------------------------------------------------
@@ -278,7 +277,8 @@ inline Matrix2cd U_NV(const Vector3d axis, const double phi){
 
 // propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle, const bool exact = false);
+                const double rotation_angle, const bool exact = false,
+                const bool adjust_AXY = true);
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
 MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,

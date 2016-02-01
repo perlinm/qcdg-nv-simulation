@@ -115,7 +115,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "strength of static magnetic field along the NV axis (gauss)")
     ("scale_factor", po::value<double>(&scale_factor)->default_value(100),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
-    ("integration_factor", po::value<uint>(&integration_factor)->default_value(100),
+    ("integration_factor", po::value<uint>(&integration_factor)->default_value(1000),
      "factor used to determine size of integration step size")
     ;
 
@@ -255,7 +255,7 @@ int main(int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor, integration_factor, testing);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor, integration_factor);
 
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei

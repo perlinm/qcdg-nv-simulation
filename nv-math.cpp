@@ -56,12 +56,12 @@ spin::spin(const Vector3d pos, const double g, const mvec S) :
 {};
 
 nv_system::nv_system(const int ms, const double static_Bz, const double scale_factor,
-                     const uint integration_factor, const bool testing) :
+                     const uint integration_factor) :
   n(ao, 0., s_vec/2),
   e(spin(Vector3d::Zero(), ge,
          mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
   ms(ms), static_Bz(static_Bz), scale_factor(scale_factor),
-  integration_factor(integration_factor), testing(testing)
+  integration_factor(integration_factor)
 {};
 
 //--------------------------------------------------------------------------------------------
@@ -512,14 +512,14 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // NV center spin flip pulse
   const MatrixXcd X = act(sx, {0}, spins);
 
-  const uint print_steps = nv.integration_factor;
-  cout << "Progress (out of " << print_steps << ")..." << flush;
+  const uint print_steps = ceil(integration_steps/nv.scale_factor);
+  cout << "Progress (out of " << int(nv.scale_factor) << ")..." << flush;
 
   uint pulse_count = 0;
   for(uint x_i = 0; x_i < integration_steps; x_i++){
-    // print status update
-    if(x_i%(integration_steps/print_steps) == 0){
-      cout << " " << round(double(print_steps)*x_i/integration_steps) << flush;
+    if(x_i%print_steps == 0){
+      // print status update
+      cout << " " << round(double(x_i)/print_steps) << flush;
     }
 
     const double x = (x_i+0.5)*dx; // normalized time with the trapezoidal rule
@@ -585,7 +585,7 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 
 // propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle, const bool exact){
+                const double rotation_angle, const bool exact, const bool adjust_AXY){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
   const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
@@ -647,18 +647,47 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
     g_B_ctl *= -1;
     control_time = control_period-control_time;
   }
-  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
 
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
 
-  const MatrixXcd U_control = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                                  control_time, controls);
+  const MatrixXcd U_control = [&]() -> MatrixXcd {
+    if(adjust_AXY){
+      assert(w_DD != w_larmor);
+      if(w_DD < w_larmor){
+        const uint freq_ratio = 2*round(0.5*w_larmor/w_DD);
+        const double w_DD_adjusted = w_larmor/freq_ratio;
+        const double t_DD_adjusted = 2*pi/w_DD_adjusted;
+        const uint cycles = int(control_time/t_DD_adjusted);
 
+        const MatrixXcd U_DD = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                   t_DD_adjusted, controls);
+
+        const double rem_time = control_time - cycles*t_DD_adjusted;
+        const MatrixXcd U_rem = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                    rem_time, controls);
+        return U_rem * pow(U_DD,cycles);
+      } else{ // if(w_DD > w_larmor)
+        const uint freq_ratio = round(w_DD/w_larmor);
+        const double w_DD_adjusted = w_larmor*freq_ratio;
+        const uint cycles = int(control_time/t_larmor);
+
+        const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                       t_larmor, controls);
+        const double rem_time = control_time - cycles*t_larmor;
+        const MatrixXcd U_rem = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                    rem_time, controls);
+        return U_rem * pow(U_larmor,cycles);
+      }
+    } else{ // if(!adjust_w_DD)
+      return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
+      }
+  }();
+
+  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
   const double axy_delay = control_time/t_DD - int(control_time/t_DD);
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                                flush_time, axy_delay);
-
+                                                    flush_time, axy_delay);
   return U_flush * U_control;
 }
 

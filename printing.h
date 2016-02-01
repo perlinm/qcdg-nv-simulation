@@ -9,11 +9,6 @@ using namespace Eigen;
 #include "qp-math.h"
 #include "nv-math.h"
 
-// clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
-  return remove_artifacts(remove_phase(remove_artifacts(M, error_threshold)), error_threshold);
-}
-
 // returns element p of a basis for operators acting on a system with N qubits
 string U_basis_element_text(const uint p, const uint N){
   const char spins[4] = {'I','X','Y','Z'};
