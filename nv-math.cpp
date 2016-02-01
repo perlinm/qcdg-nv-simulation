@@ -555,7 +555,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 }
 
 //--------------------------------------------------------------------------------------------
-// Single nuclear targeting
+// Nuclear targeting methods
 //--------------------------------------------------------------------------------------------
 
 // return "natural" basis of a nucleus
@@ -738,23 +738,9 @@ MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD, const bo
 
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD,
                     const bool exact){
-  // identify clusters
-  const vector<uint> cluster_1 = nv.clusters.at(get_cluster_containing_index(nv,idx1));
-  const vector<uint> cluster_2 = nv.clusters.at(get_cluster_containing_index(nv,idx2));
-
-  vector<uint> net_cluster = cluster_1;
-  vector<uint> nv_c1(cluster_1.size()+1);
-  vector<uint> nv_c2(cluster_2.size()+1);
-  for(uint i = 0; i <= cluster_1.size(); i++) nv_c1.at(i) = i;
-  for(uint i = 0; i <= cluster_2.size(); i++) nv_c2.at(i) = i;
-
-  if(cluster_1 != cluster_2){
-    for(uint i = 0; i < cluster_2.size(); i++){
-      net_cluster.push_back(cluster_2.at(i));
-      nv_c2.at(i+1) += cluster_1.size();
-    }
-  }
-  const uint spins = net_cluster.size()+1;
+  // assert that both target nuclei are in the same cluster
+  const vector<uint> cluster = nv.clusters.at(get_cluster_containing_index(nv,idx1));
+  assert(in_vector(idx2,cluster));
 
   // define angles
   const double angle = pi/4;
@@ -764,7 +750,7 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
   const double yhat_azimuth = pi/2;
 
   // compute components of SWAP_NVST
-  const MatrixXcd Rz_NV = U_NV(zhat,angle);
+  const MatrixXcd Rz_NV = act(U_NV(zhat,angle),{0},cluster.size()+1);
   const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
   const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
   const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
@@ -772,16 +758,11 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
     U_int(nv, idx1, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
     U_int(nv, idx1, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
   const MatrixXcd cNOT_NV_1 =
-    act(Rz_NV, {0}, nv_c1.size()) * Rx_1 *
-    U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
+    Rz_NV * Rx_1 * U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
   const MatrixXcd E_NV_2 =
     U_int(nv, idx2, k_DD, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
 
-  // combine componenets into full operation
-  const MatrixXcd M =
-    act(E_NV_2.adjoint(), nv_c2, spins) *
-    act(iSWAP_NV_1 * Rz_1.adjoint(), nv_c1, spins) *
-    act(Rz_NV, {0}, spins).adjoint();
-
-  return M.adjoint() * act(cNOT_NV_1, nv_c1, spins) * M;
+  // combine componenets into full SWAP_NVST operation
+  const MatrixXcd M = E_NV_2.adjoint() * iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV;
+  return M.adjoint() * cNOT_NV_1 * M;
 }

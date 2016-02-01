@@ -241,7 +241,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double axy_pulse_delay = 0);
 
 //--------------------------------------------------------------------------------------------
-// Single nuclear targeting
+// Nuclear targeting methods
 //--------------------------------------------------------------------------------------------
 
 // return "natural" basis of a nucleus
