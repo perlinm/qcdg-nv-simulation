@@ -510,7 +510,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }();
 
   // integration step size and number
-  const double dt = 2*pi/(frequency_scale*nv.integration_factor);
+  const double dt = 1/(frequency_scale*nv.integration_factor);
   const double dx = dt/t_DD;
   const uint integration_steps = int(simulation_time/dt+0.5);
 
