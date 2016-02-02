@@ -159,8 +159,8 @@ double larmor_resolution(const nv_system& nv, const uint index);
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulse_times(const uint k, const double f);
 
-// delay pulses by a given phase
-vector<double> delayed_pulse_times(const vector<double> pulse_times, const double delay);
+// advance pulses by a given phase
+vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
@@ -242,12 +242,12 @@ struct control_fields{
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
-                              const double simulation_time, const double delay = 0);
+                              const double simulation_time, const double advance = 0);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
-                              const double delay = 0);
+                              const double advance = 0);
 
 //--------------------------------------------------------------------------------------------
 // Nuclear targeting methods

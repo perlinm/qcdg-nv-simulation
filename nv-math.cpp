@@ -300,23 +300,24 @@ vector<double> axy_pulse_times(const uint k, const double f){
   return pulse_times;
 }
 
-vector<double> delayed_pulse_times(const vector<double> pulse_times, const double delay){
-  if(delay == 0) return pulse_times;
+vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance){
+  advance -= floor(advance);
+  if(advance == 0) return pulse_times;
 
   // number of pulses
   const uint N = pulse_times.size()-2;
 
-  // delayed pulse_times
-  vector<double> delayed_pulse_times;
-  delayed_pulse_times.push_back(0);
+  // advanced pulse_times
+  vector<double> advanced_pulse_times;
+  advanced_pulse_times.push_back(0);
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulse_times.at(p%N+1) - delay >= 0){
-      delayed_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - delay);
+    if(p/N + pulse_times.at(p%N+1) - advance >= 0){
+      advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - advance);
     }
-    if(delayed_pulse_times.size() == N+1) break;
+    if(advanced_pulse_times.size() == N+1) break;
   }
-  delayed_pulse_times.push_back(1);
-  return delayed_pulse_times;
+  advanced_pulse_times.push_back(1);
+  return advanced_pulse_times;
 }
 
 // Hamiltoninan coupling two spins
@@ -440,10 +441,11 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const uin
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
-                              const double simulation_time, const double delay){
+                              const double simulation_time, const double advance){
   // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay);
+  const vector<double> pulse_times =
+    advanced_pulse_times(axy_pulse_times(k_DD, f_DD), advance/t_DD);
 
   // NV+cluster Hamiltonian
   const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat);
@@ -484,7 +486,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
-                              const double delay){
+                              const double advance){
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // AXY sequence period and pulse_times
@@ -531,8 +533,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       cout << " " << round(double(x_i)/print_steps) << flush;
     }
 
-    const double t = (x_i+0.5)*dt+delay*t_DD; // time with the trapezoidal rule
-    const double x = (x_i+0.5)*dx+delay; // normalized time
+    const double t = (x_i+0.5)*dt+advance; // time with the trapezoidal rule
+    const double x = (x_i+0.5)*dx+advance/t_DD; // normalized time
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
@@ -681,42 +683,47 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
 
-  const MatrixXcd U_control = [&]() -> MatrixXcd {
-    if(adjust_AXY){
-      assert(w_DD != w_larmor);
-      if(w_DD < w_larmor){
-        const uint freq_ratio = 2*round(0.5*w_larmor/w_DD);
-        const double w_DD_adjusted = w_larmor/freq_ratio;
-        const double t_DD_adjusted = 2*pi/w_DD_adjusted;
-        const uint cycles = int(control_time/t_DD_adjusted);
-
-        const MatrixXcd U_DD = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
-                                                   t_DD_adjusted, controls);
-        const double trailing_time = control_time - cycles*t_DD_adjusted;
-        const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                         f_DD, trailing_time, controls);
-        return U_trailing * pow(U_DD,cycles);
-      } else{ // if(w_DD > w_larmor)
-        const uint freq_ratio = round(w_DD/w_larmor);
-        const double w_DD_adjusted = w_larmor*freq_ratio;
-        const uint cycles = int(control_time/t_larmor);
-
-        const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
-                                                       t_larmor, controls);
-        const double trailing_time = control_time - cycles*t_larmor;
-        const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                         f_DD, trailing_time, controls);
-        return U_trailing * pow(U_larmor,cycles);
-      }
-    } else{ // if(!adjust_w_DD)
-      return simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
-      }
-  }();
-
   const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
-  const double axy_delay = control_time/t_DD - int(control_time/t_DD);
+  double flush_axy_advance = 0;
+  MatrixXcd U_control = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  if(!adjust_AXY){
+    flush_axy_advance = control_time - floor(control_time/t_DD)*t_DD;
+    U_control = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
+  } else{ // if(adjust_AXY)
+    assert(w_DD != w_larmor);
+    if(w_DD < w_larmor){
+      const uint freq_ratio = 2*round(0.5*w_larmor/w_DD);
+      const double w_DD_adjusted = w_larmor/freq_ratio;
+      const double t_DD_adjusted = 2*pi/w_DD_adjusted;
+      const uint cycles = int(control_time/t_DD_adjusted);
+
+      const MatrixXcd U_DD = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                 t_DD_adjusted, controls);
+      const double trailing_time = control_time - cycles*t_DD_adjusted;
+      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
+                                                       f_DD, trailing_time, controls);
+
+      flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
+      U_control = U_trailing * pow(U_DD,cycles);
+    } else{ // if(w_DD > w_larmor)
+      const uint freq_ratio = round(w_DD/w_larmor);
+      const double w_DD_adjusted = w_larmor*freq_ratio;
+      const double t_DD_adjusted = 2*pi/w_DD_adjusted;
+      const uint cycles = int(control_time/t_larmor);
+
+      const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+                                                     t_larmor, controls);
+      const double trailing_time = control_time - cycles*t_larmor;
+      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
+                                                       f_DD, trailing_time, controls);
+
+      flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
+      U_control = U_trailing * pow(U_larmor,cycles);
+    }
+  }
+
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                                    flush_time, axy_delay);
+                                                flush_time, flush_axy_advance);
   return U_flush * U_control;
 }
 
