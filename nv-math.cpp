@@ -765,6 +765,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
   const double w_larmor = effective_larmor(nv,index).norm();
+  const double t_larmor = 2*pi/w_larmor;
   const double dw_min = larmor_resolution(nv,index);
   const Vector3d hyperfine_perp = A_perp(nv,index);
 
@@ -781,19 +782,17 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     f_DD *= -1;
     interaction_time = interaction_period-interaction_time;
   }
-  const double flush_time = ceil(interaction_time/t_DD)*t_DD - interaction_time;
 
-  const MatrixXcd U_interaction =
-    simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                        interaction_time, -target_axis_azimuth/(2*pi));
-
-  const double axy_delay = interaction_time/t_DD - int(interaction_time/t_DD);
-  const MatrixXcd U_flush =
-    simulate_propagator(nv, cluster, w_DD, k_DD, 0,
-                        flush_time, axy_delay - target_axis_azimuth/(2*pi));
+  const MatrixXcd U_interaction = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
+                                                      interaction_time,
+                                                      -target_axis_azimuth/w_DD);
+  const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
+  const double flush_axy_advance = interaction_time - (interaction_time/t_DD)*t_DD;
+  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, 0, flush_time,
+                                                flush_axy_advance - target_axis_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_axis_to_zhat = act( rotate(zhat, nv_axis), {0}, spins);
+  const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
 
   return U_flush * nv_axis_to_zhat.adjoint() * U_interaction * nv_axis_to_zhat;
 }
