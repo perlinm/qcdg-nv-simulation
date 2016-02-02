@@ -446,7 +446,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay);
 
   // NV+cluster Hamiltonian
-  // const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
   const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat);
 
   // NV center spin flip pulse
