@@ -443,8 +443,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double simulation_time, const double delay){
   // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulse_times =
-    delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay/t_DD);
+  const vector<double> pulse_times = delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay);
 
   // NV+cluster Hamiltonian
   // const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
@@ -491,18 +490,28 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // AXY sequence period and pulse_times
   const double t_DD = 2*pi/w_DD;
-  const vector<double> pulse_times =
-    delayed_pulse_times(axy_pulse_times(k_DD, f_DD), delay/t_DD);
+  const vector<double> pulse_times = axy_pulse_times(k_DD, f_DD);
 
-  // maximim frequency scale of simulation
-  double max_freq_scale = w_DD;
-  for(uint c = 0; c < controls.num(); c++){
-    max_freq_scale = max(max_freq_scale,controls.freqs.at(c));
-  }
+  // largest frequency scale of simulation
+  const double frequency_scale = [&]() -> double {
+    double largest_control_freq = w_DD;
+    Vector3d B_cap = abs(nv.static_Bz)*zhat;
+    for(uint c = 0; c < controls.num(); c++){
+      largest_control_freq = max(largest_control_freq,controls.freqs.at(c));
+      B_cap += (abs(dot(controls.Bs.at(c),xhat))*xhat +
+                abs(dot(controls.Bs.at(c),yhat))*yhat +
+                abs(dot(controls.Bs.at(c),zhat))*zhat);
+    }
+    double largest_g = 0;
+    for(uint n = 0; n < nv.clusters.at(cluster).size(); n++){
+      largest_g = max(largest_g,abs(nv.nuclei.at(nv.clusters.at(cluster).at(n)).g));
+    }
+    return max(largest_control_freq,largest_g*B_cap.norm());
+  }();
 
   // integration step size and number
-  const double dt = 1/(max_freq_scale*nv.integration_factor);
-  const double dx = 1/(t_DD*max_freq_scale*nv.integration_factor);
+  const double dt = 2*pi/(frequency_scale*nv.integration_factor);
+  const double dx = dt/t_DD;
   const uint integration_steps = int(simulation_time/dt+0.5);
 
   // static NV+cluster Hamiltonian
@@ -520,33 +529,53 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   uint pulse_count = 0;
   for(uint x_i = 0; x_i < integration_steps; x_i++){
     if(x_i%print_steps == 0){
-      // print status update
       cout << " " << round(double(x_i)/print_steps) << flush;
     }
 
-    const double x = (x_i+0.5)*dx; // normalized time with the trapezoidal rule
+    const double t = (x_i+0.5)*dt+delay*t_DD; // time with the trapezoidal rule
+    const double x = (x_i+0.5)*dx+delay; // normalized time
 
-    // normzlized time into current AXY half-sequence
-    const double x_hAXY = x - floor(x/0.5)*0.5; // time in current AXY half-sequence
-    // if we are within dx/2 of an AXY pulse time, flip the projections
-    if(min({abs(x_hAXY-pulse_times.at(1)), abs(x_hAXY-pulse_times.at(2)),
-            abs(x_hAXY-pulse_times.at(3)), abs(x_hAXY-pulse_times.at(4)),
-            abs(x_hAXY-pulse_times.at(5))}) < dx/2){
-      U = (X*U).eval();
-      pulse_count++;
+    // determine whether to apply an NV pi-pulse
+    uint pulse = 0;
+    for(uint p = 1; p < pulse_times.size()-1; p++){
+      if(pulse_times.at(p) > x && pulse_times.at(p) < x + dx){
+        pulse = p;
+        break;
+      }
     }
-
-    // net magnetic field
-    Vector3d B = nv.static_Bz*zhat;
-    for(uint c = 0; c < controls.num(); c++){
-      B += controls.Bs.at(c) * cos(controls.freqs.at(c)*x*t_DD + controls.phases.at(c));
-    }
-
-    // current Hamiltonian
-    const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
 
     // update propagator
-    U = (exp(-j*dx*t_DD*H)*U).eval();
+    if(!pulse){
+      if(t+dt < simulation_time){
+        const Vector3d B = nv.static_Bz*zhat + controls.B(t);
+        const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
+        U = (exp(-j*dt*H)*U).eval();
+
+      } else{ // if t+dt > simulation_time
+        const double dtf = simulation_time-t;
+        const double tf = t + dtf/2;
+        const Vector3d B = nv.static_Bz*zhat + controls.B(tf);
+        const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
+        U = (exp(-j*dtf*H)*U).eval();
+
+      }
+    } else{ // if(pulse)
+      const double dt1 = (pulse_times.at(pulse) - x)*t_DD;
+      const double dt2 = (x + dx - pulse_times.at(pulse))*t_DD;
+
+      const double t1 = t + dt1/2;
+      const double t2 = t + dt - dt2/2;
+
+      const Vector3d B1 = nv.static_Bz*zhat + controls.B(t1);
+      const Vector3d B2 = nv.static_Bz*zhat + controls.B(t2);
+      const MatrixXcd H1 = H_static + H_nZ(nv,cluster,B1);
+      const MatrixXcd H2 = H_static + H_nZ(nv,cluster,B2);
+
+      U = (exp(-j*dt1*H1)*U).eval();
+      U = (X*U).eval();
+      U = (exp(-j*dt2*H2)*U).eval();
+      pulse_count++;
+    }
   }
   if(pulse_count%2 != 0) U = (X*U).eval();
 
@@ -664,7 +693,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 
         const MatrixXcd U_DD = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
                                                    t_DD_adjusted, controls);
-
         const double trailing_time = control_time - cycles*t_DD_adjusted;
         const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
                                                          f_DD, trailing_time, controls);
@@ -678,7 +706,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
                                                        t_larmor, controls);
         const double trailing_time = control_time - cycles*t_larmor;
         const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                    f_DD, trailing_time, controls);
+                                                         f_DD, trailing_time, controls);
         return U_trailing * pow(U_larmor,cycles);
       }
     } else{ // if(!adjust_w_DD)
@@ -687,7 +715,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   }();
 
   const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
-  const double axy_delay = control_time - floor(control_time/t_DD)*t_DD;
+  const double axy_delay = control_time/t_DD - int(control_time/t_DD);
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
                                                     flush_time, axy_delay);
   return U_flush * U_control;

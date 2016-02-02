@@ -230,17 +230,24 @@ struct control_fields{
   };
 
   uint num() const { return Bs.size(); }
+
+  Vector3d B(const double t) const {
+    Vector3d net_B = Vector3d::Zero();
+    for(uint c = 0; c < num(); c++){
+      net_B += Bs.at(c) * cos(freqs.at(c)*t + phases.at(c));
+    }
+    return net_B;
+  }
 };
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
-                              const double simulation_time,
-                              const double axy_pulse_delay = 0);
+                              const double simulation_time, const double delay = 0);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const uint k_DD, const double f_DD,
                               const double simulation_time, const control_fields& controls,
-                              const double axy_pulse_delay = 0);
+                              const double delay = 0);
 
 //--------------------------------------------------------------------------------------------
 // Nuclear targeting methods

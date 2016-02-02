@@ -113,7 +113,7 @@ int main(int arg_num, const char *arg_vec[]) {
      "resonance harmonic used in spin addressing (1 or 3)")
     ("static_Bz", po::value<double>(&static_Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (gauss)")
-    ("scale_factor", po::value<double>(&scale_factor)->default_value(100),
+    ("scale_factor", po::value<double>(&scale_factor)->default_value(10),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
     ("integration_factor", po::value<uint>(&integration_factor)->default_value(1000),
      "factor used to determine size of integration step size")
