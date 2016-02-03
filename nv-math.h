@@ -160,7 +160,7 @@ double larmor_resolution(const nv_system& nv, const uint index);
 vector<double> axy_pulse_times(const uint k, const double f);
 
 // advance pulses by a given phase
-vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance);
+vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
