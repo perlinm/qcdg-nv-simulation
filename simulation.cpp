@@ -539,4 +539,66 @@ int main(int arg_num, const char *arg_vec[]) {
                           SWAP_NVST(nv,idx1,idx2,k_DD,false)) << endl;
   }
 
+
+  if(testing){
+    const uint idx1 = target_nuclei.at(0);
+    const uint idx2 = target_nuclei.at(1);
+    const uint spins = 3;
+
+    const VectorXcd psi_NV = up;
+    const MatrixXcd rho_NV = psi_NV*psi_NV.adjoint();
+    const MatrixXcd rho_1 = I2;
+    const MatrixXcd rho_2 = I2;
+    const MatrixXcd rho_0 = [&]() -> MatrixXcd {
+      const MatrixXcd rho_unnormed = tp({rho_NV,rho_1,rho_2});
+      return rho_unnormed / trace(rho_unnormed);
+    }();
+
+    const MatrixXcd R =
+      act(rotate(natural_basis(nv,idx1),{xhat,yhat,zhat}),{idx1+1},spins) *
+      act(rotate(natural_basis(nv,idx2),{xhat,yhat,zhat}),{idx2+1},spins);
+
+    const MatrixXcd SWAP = SWAP_NVST(nv,idx1,idx2,k_DD,true);
+    const MatrixXcd iSWAP_1 = iSWAP(nv,idx1,k_DD,true);
+    const MatrixXcd iSWAP_2 = iSWAP(nv,idx2,k_DD,true);
+
+    const MatrixXcd NV_up = act(polarize(up),{0},spins);
+    const MatrixXcd NV_dn = act(polarize(dn),{0},spins);
+    const MatrixXcd NV_init = act(polarize(psi_NV),{0},spins);
+
+    const MatrixXcd U = SWAP * NV_init * iSWAP_2 * NV_dn * iSWAP_1 * NV_up;
+
+    const MatrixXcd rho = [&]() -> MatrixXcd {
+      const MatrixXcd rho_unnormed = R.adjoint() * U*rho_0*U.adjoint() * R;
+      return rho_unnormed / trace(rho_unnormed);
+    }();
+
+    const MatrixXcd uncouple = (Matrix4cd() <<
+                                1, 0,         0,         0,
+                                0, 1/sqrt(2), 1/sqrt(2), 0,
+                                0,-1/sqrt(2), 1/sqrt(2), 0,
+                                0, 0,         0,         1).finished();
+    const MatrixXcd couple = uncouple.adjoint();
+
+    const MatrixXcd rho_NV_0 = ptrace(rho_0,{1,2});
+    const MatrixXcd rho_ST = (couple*ptrace(rho,{0})*couple.adjoint()).block<2,2>(1,1);
+
+
+    cout << "rho_NV_0:" << endl
+         << clean(rho_NV_0) << endl << endl << endl
+         << "rho_NV:" << endl
+         << clean(ptrace(rho,{1,2})) << endl << endl << endl
+         << "rho_12:" << endl
+         << clean(ptrace(rho,{0})) << endl << endl << endl
+         << "rho_1:" << endl
+         << clean(ptrace(rho,{0,2})) << endl << endl << endl
+         << "rho_2:" << endl
+         << clean(ptrace(rho,{0,1})) << endl << endl << endl
+         << "rho_ST:" << endl
+         << clean(rho_ST) << endl << endl << endl;
+
+    cout << "SWAP fidelity: " << state_fidelity(rho_NV_0,rho_ST) << endl;
+
+  }
+
 }
