@@ -18,6 +18,7 @@ namespace po = boost::program_options;
 #include "constants.h"
 #include "qp-math.h"
 #include "nv-math.h"
+#include "nv-control.h"
 #include "printing.h"
 
 // random double from 0 to 1

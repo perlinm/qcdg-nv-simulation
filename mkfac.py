@@ -16,11 +16,16 @@ fac_text = '''| g++ {0}-O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o qp-
 < nv-math.cpp
 > nv-math.o
 
+| g++ {0}-O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o nv-control.o nv-control.cpp
+< nv-control.h
+< nv-control.cpp
+> nv-control.o
+
 | g++ {0}-O3 -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -I /usr/include/eigen3/ -g -flto -c -o simulation.o simulation.cpp
 < simulation.cpp
 > simulation.o
 
-| g++ {0}-std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -flto -o simulate qp-math.o nv-math.o simulation.o
+| g++ {0}-std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -flto -o simulate qp-math.o nv-math.o nv-control.o simulation.o
 < qp-math.o
 < nv-math.o
 < simulation.o
