@@ -10,7 +10,7 @@ if len(sys.argv) not in [2,3]:
 # process inputs
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
 try:
-    c13_abundance = float(sys.argv[2])
+    c13_abundance = 100*float(sys.argv[2])
 except:
     c13_abundance = 0.0107 # natural abundance of C-13
 
