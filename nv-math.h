@@ -301,7 +301,7 @@ MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD,
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                     const uint k_DD, const bool exact = false);
 
-// polarize NV into a given pure state
-inline MatrixXcd polarize_NV(const MatrixXcd rho, const VectorXcd psi_NV){
-  return tp(psi_NV*psi_NV.adjoint()/(psi_NV.adjoint()*psi_NV), ptrace(rho,{0}));
+// polarize an arbitrary state into the pure state psi; warning: not a unitary operation
+inline MatrixXcd polarize(const VectorXcd psi){
+  return psi*VectorXcd::Ones(psi.size()).adjoint();
 }
