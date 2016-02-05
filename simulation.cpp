@@ -278,7 +278,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
     }
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
-    if(nv.nuclei.size() == 0) return -5;
+    if(nv.nuclei.size() == 0) return 0;
     if(!set_target_nuclei){
       for(uint i = 0; i < nv.nuclei.size(); i++){
         target_nuclei.push_back(i);
