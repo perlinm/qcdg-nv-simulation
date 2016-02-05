@@ -6,18 +6,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if len(sys.argv) != 4:
-    print("usage: {} cutoff_start cutoff_end samples".format(sys.argv[0]))
+    print("usage: {} cutoff_start cutoff_end log10_samples".format(sys.argv[0]))
     exit(1)
 
 start = int(sys.argv[1])
 end = int(sys.argv[2])
-samples = int(sys.argv[3])
+log10_samples = int(sys.argv[3])
 
 if not start < end:
     print("cutoff start must be less than end")
     exit(2)
 
-fname = "./data/pair-test-{}-{}-{}.txt".format(start,end,samples)
+fname = "./data/pair-test-{}-{}-{}.txt".format(start,end,log10_samples)
 
 if not os.path.exists(fname):
 
@@ -28,10 +28,11 @@ if not os.path.exists(fname):
     for i in range(len(cutoffs)):
         print("starting cutoff: {} kHz".format(cutoffs[i]))
         predicted[i] = sp.check_output(["./pair-probability.py",str(cutoffs[i])])
-        actual[i] = sp.check_output(["./pair-search.py",str(cutoffs[i]),str(samples)])
+        actual[i] = sp.check_output(["./pair-search.py",str(cutoffs[i]),
+                                     str(10**log10_samples)])
 
     with open(fname,'w') as f:
-        f.write("# samples: {}\n".format(samples))
+        f.write("# log10_samples: {}\n".format(log10_samples))
         f.write("# hyperfine_cutoff predicted actual\n")
         for i in range(len(cutoffs)):
             f.write("{} {} {}\n".format(cutoffs[i],predicted[i],actual[i]))
@@ -39,7 +40,7 @@ if not os.path.exists(fname):
 else:
     cutoffs, predicted, actual = np.loadtxt(fname, unpack=True)
 
-plt.title("Larmor pair probability test with {} samples".format(samples))
+plt.title("Larmor pair probability test with $10^{{{}}}$ samples".format(log10_samples))
 plt.plot(cutoffs,predicted,"k-",label="predicted")
 plt.plot(cutoffs,actual,"k.",label="found")
 plt.xlabel("Hyperfine cutoff [kHz]")
