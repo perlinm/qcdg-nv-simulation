@@ -1,0 +1,13 @@
+implement individual addressing for larmor pairs
+implement SWAP_NVST for larmor pairs
+implement state decay model
+use non-ideal NV pulses?
+add a mode to output operation protocol
+
+is it worthwhile to implement a zz coupling protocol?
+
+if two SWAP_NVST targets are not larmor pairs,
+  is it better to use natural bases, or a standard basis?
+
+investigate bad fidelities (see target 9):
+fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --iswap
