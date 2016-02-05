@@ -161,10 +161,7 @@ inline Vector3d effective_larmor(const nv_system& nv, const uint index){
 double larmor_resolution(const nv_system& nv, const uint index);
 
 // return maximum allowable value of pi*f_k for the AXY sequence
-inline double axy_f_max(const axy_harmonic k){
-  if(k == first) return (8*cos(pi/9)-4)/pi;
-  else return 4/pi;
-}
+inline double axy_f_max(const axy_harmonic k){ return (k == first ? 8*cos(pi/9)-4 : 4)/pi; };
 
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulse_times(const double f, const axy_harmonic k);

@@ -192,7 +192,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
   // AXY sequence parameters
   const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = dw_min/(hyperfine_perp.norm()*nv.scale_factor);
+  double f_DD = min(dw_min/(hyperfine_perp.norm()*nv.scale_factor), axy_f_max(k_DD));
 
   const double interaction_period = 2*pi/abs(f_DD*hyperfine_perp.norm()/8);
   double interaction_time = rotation_angle/(nv.ms*f_DD*hyperfine_perp.norm()/8);
