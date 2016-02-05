@@ -3,6 +3,7 @@ implement SWAP_NVST for larmor pairs
 implement state decay model
 use non-ideal NV pulses?
 add a mode to output operation protocol
+compute corrections that need to be made to approximate gates, and perform them
 
 is it worthwhile to implement a zz coupling protocol?
 
