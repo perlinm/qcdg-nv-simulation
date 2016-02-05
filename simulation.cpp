@@ -89,7 +89,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   double hyperfine_cutoff_in_kHz;
   int cell_radius; // determined by hyperfine_cutoff
   int ms;
-  uint k_DD;
+  uint k_DD_int;
+  axy_harmonic k_DD;
   double static_Bz_in_gauss;
   double scale_factor;
   uint integration_factor;
@@ -104,7 +105,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "set cutoff scale for hyperfine field (kHz)")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
-    ("k_DD", po::value<uint>(&k_DD)->default_value(1),
+    ("k_DD", po::value<uint>(&k_DD_int)->default_value(1),
      "resonance harmonic used in spin addressing (1 or 3)")
     ("static_Bz", po::value<double>(&static_Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (gauss)")
@@ -204,7 +205,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
-  assert((k_DD == 1) || (k_DD == 3));
+  assert((k_DD_int == 1) || (k_DD_int == 3));
   assert(scale_factor > 1);
   assert(integration_factor > 1);
 
@@ -213,11 +214,10 @@ int main(const int arg_num, const char *arg_vec[]) {
     assert(scan_time_in_ms > 0);
   }
 
-  assert(seed > 0); // seeds of 0 and 1 give the same result
-
   // set some variables based on iputs
   c13_abundance = c13_percentage/100;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
+  k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
   rotation_angle = rotation_angle_over_2pi*2*pi;
   target_axis_azimuth = target_axis_azimuth_over_2pi*2*pi;
@@ -417,7 +417,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[cell_radius]", to_string(cell_radius));
   boost::replace_all(output_suffix, "[seed]", to_string(seed));
   boost::replace_all(output_suffix, "[cluster_size]", to_string(max_cluster_size));
-  boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD));
+  boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD_int));
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
 
   // -----------------------------------------------------------------------------------------
@@ -460,7 +460,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), k_DD, f_DD, scan_time);
+      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, k_DD, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }

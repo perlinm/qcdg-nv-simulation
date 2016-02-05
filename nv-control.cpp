@@ -77,7 +77,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   }();
 
   const double t_DD = 2*pi/w_DD;
-  const uint k_DD = abs(w_DD - w_larmor) < abs(3*w_DD - w_larmor) ? 1 : 3;
+  const axy_harmonic k_DD = abs(w_DD - w_larmor) < abs(3*w_DD - w_larmor) ? first : third;
   const double f_DD = 0;
 
   // control field frequency = effective larmor frequency of target nucleus
@@ -102,7 +102,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   MatrixXcd U_control = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   if(!adjust_AXY){
     flush_axy_advance = control_time - floor(control_time/t_DD)*t_DD;
-    U_control = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD, control_time, controls);
+    U_control = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, control_time, controls);
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
     if(w_DD < w_larmor){
@@ -114,11 +114,10 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const double leading_time = control_time - cycles*t_DD_adjusted;
       const double trailing_time = t_DD_adjusted - leading_time;
 
-      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                      f_DD, leading_time, controls, 0.);
-      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                       f_DD, trailing_time, controls,
-                                                       leading_time);
+      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                                      leading_time, controls);
+      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                                       trailing_time, controls, leading_time);
 
       flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
       U_control = U_leading * pow(U_trailing*U_leading,cycles);
@@ -131,26 +130,25 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const double leading_time = control_time - cycles*t_DD_adjusted;
       const double trailing_time = t_DD_adjusted - leading_time;
 
-      const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD, f_DD,
+      const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                      t_larmor, controls);
-      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                      f_DD, leading_time, controls, 0.);
-      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, k_DD,
-                                                       f_DD, trailing_time, controls,
-                                                       leading_time);
+      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                                      leading_time, controls);
+      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                                       trailing_time, controls, leading_time);
 
       flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
       U_control = U_leading * pow(U_trailing*U_leading,cycles);
     }
   }
 
-  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                                flush_time, flush_axy_advance);
+  const MatrixXcd U_flush =
+    simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, flush_axy_advance);
   return U_flush * U_control;
 }
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
+MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
                 const double nv_axis_azimuth, const double nv_axis_polar,
                 const double target_axis_azimuth, const double rotation_angle,
                 const bool exact){
@@ -205,12 +203,13 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
     interaction_time = interaction_period-interaction_time;
   }
 
-  const MatrixXcd U_interaction = simulate_propagator(nv, cluster, w_DD, k_DD, f_DD,
-                                                      interaction_time,
-                                                      -target_axis_azimuth/w_DD);
+  const MatrixXcd U_interaction =
+    simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+                        interaction_time, -target_axis_azimuth/w_DD);
+
   const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
   const double flush_axy_advance = interaction_time - (interaction_time/t_DD)*t_DD;
-  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, k_DD, 0, flush_time,
+  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, k_DD, flush_time,
                                                 flush_axy_advance - target_axis_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
@@ -224,7 +223,8 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 //--------------------------------------------------------------------------------------------
 
 // iSWAP operation
-MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD, const bool exact){
+MatrixXcd iSWAP(const nv_system& nv, const uint index, const axy_harmonic k_DD,
+                const bool exact){
   const double iswap_angle = -pi/4;
   const double xy_polar = pi/2;
   const double xhat_azimuth = 0;
@@ -234,8 +234,8 @@ MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD, const bo
     U_int(nv, index, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, iswap_angle, exact);
 };
 
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const uint k_DD,
-                    const bool exact){
+MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
+                    const axy_harmonic k_DD, const bool exact){
   // assert that both target nuclei are in the same cluster
   const vector<uint> cluster = nv.clusters.at(get_cluster_containing_index(nv,idx1));
   assert(in_vector(idx2,cluster));

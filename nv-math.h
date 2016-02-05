@@ -80,6 +80,10 @@ struct spin{
   bool operator!=(const spin& s) const { return !(*this == s); }
 };
 
+
+// harmonic for AXY sequence
+enum axy_harmonic { first = 1, third = 3 };
+
 // struct containing system and simulation info
 struct nv_system{
   const spin n;
@@ -93,8 +97,8 @@ struct nv_system{
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
-  nv_system(const int ms, const double static_Bz, const double scale_factor,
-            const uint integration_factor);
+  nv_system(const int ms, const double static_Bz,
+            const double scale_factor, const uint integration_factor);
 };
 
 //--------------------------------------------------------------------------------------------
@@ -156,10 +160,16 @@ inline Vector3d effective_larmor(const nv_system& nv, const uint index){
 //   i.e. min{ |w_s - w_{index}| for all s != index }
 double larmor_resolution(const nv_system& nv, const uint index);
 
-// pulse times for harmonic h and fourier component f
-vector<double> axy_pulse_times(const uint k, const double f);
+// return maximum allowable value of pi*f_k for the AXY sequence
+inline double axy_f_max(const axy_harmonic k){
+  if(k == first) return (8*cos(pi/9)-4)/pi;
+  else return 4/pi;
+}
 
-// advance pulses by a given phase
+// pulse times for harmonic h and fourier component f
+vector<double> axy_pulse_times(const double f, const axy_harmonic k);
+
+// advance pulses by a given (normalized) time
 vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance);
 
 // Hamiltoninan coupling two spins
@@ -186,8 +196,8 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B)
 inline MatrixXcd H_Z(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const nv_system& nv, const double w_scan, const uint k_DD,
-                             const double f_DD, const double scan_time);
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const axy_harmonic k_DD, const double scan_time);
 
 //--------------------------------------------------------------------------------------------
 // Control fields and simulation
@@ -245,10 +255,10 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance = 0);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
                               const double advance = 0);

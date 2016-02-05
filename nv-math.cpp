@@ -55,13 +55,13 @@ spin::spin(const Vector3d pos, const double g, const mvec S) :
   pos(pos), g(g), S(S)
 {};
 
-nv_system::nv_system(const int ms, const double static_Bz, const double scale_factor,
-                     const uint integration_factor) :
+nv_system::nv_system(const int ms, const double static_Bz,
+                     const double scale_factor, const uint integration_factor) :
   n(ao, 0., s_vec/2),
   e(spin(Vector3d::Zero(), ge,
          mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat))),
-  ms(ms), static_Bz(static_Bz), scale_factor(scale_factor),
-  integration_factor(integration_factor)
+  ms(ms), static_Bz(static_Bz),
+  scale_factor(scale_factor), integration_factor(integration_factor)
 {};
 
 //--------------------------------------------------------------------------------------------
@@ -258,15 +258,13 @@ double larmor_resolution(const nv_system& nv, const uint index){
 }
 
 // pulse times for harmonic h and fourier component f
-vector<double> axy_pulse_times(const uint k, const double f){
-
-  assert((k == 1) || (k == 3));
+vector<double> axy_pulse_times(const double f, const axy_harmonic k){
+  assert(abs(f) < axy_f_max(k));
+  const double fp = f*pi;
 
   // compute first two pulse times
-  const double fp = f*pi;
   double x1,x2;
   if(k == 1){
-    assert(abs(fp) < 8*cos(pi/9)-4);
     const double w1 = 4 - fp;
     const double w2 = w1 * (960 - 144*fp - 12*fp*fp + fp*fp*fp);
 
@@ -275,7 +273,6 @@ vector<double> axy_pulse_times(const uint k, const double f){
     x2 = 1/(2*pi) * atan2(-(3*fp-12)*w1 + sqrt(3*w2),
                           sqrt(6)*sqrt(w2 - 96*fp*w1 - w1*w1*sqrt(3*w2)));
   } else{ // if k == 3
-    assert(abs(fp) < 4);
     const double q1 = 4/(sqrt(5+fp)-1);
     const double q2 = 4/(sqrt(5+fp)+1);
 
@@ -387,11 +384,11 @@ inline MatrixXcd H_Z(const nv_system& nv, const uint cluster, const Vector3d& B)
 }
 
 // perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const nv_system& nv, const double w_scan, const uint k_DD,
-                             const double f_DD, const double scan_time){
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const axy_harmonic k_DD, const double scan_time){
   const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  const vector<double> pulse_times = axy_pulse_times(k_DD,f_DD); // AXY protocol pulse times
+  const vector<double> pulse_times = axy_pulse_times(f_DD,k_DD); // AXY pulse times
 
   double coherence = 1;
   for(uint cluster = 0; cluster < nv.clusters.size(); cluster++){
@@ -451,12 +448,12 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 }
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance){
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
   const double normed_advance = advance/t_DD - floor(advance/t_DD);
-  const vector<double> pulses = axy_pulse_times(k_DD, f_DD);
+  const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   // NV+cluster Hamiltonian
@@ -507,7 +504,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 }
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const uint k_DD, const double f_DD,
+                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
                               const double advance){
   const uint spins = nv.clusters.at(cluster).size()+1;
@@ -516,7 +513,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
   const double normed_advance = advance/t_DD - floor(advance/t_DD);
-  const vector<double> pulses = axy_pulse_times(k_DD, f_DD);
+  const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
 
   // largest frequency scale of simulation
   const double frequency_scale = [&]() -> double {

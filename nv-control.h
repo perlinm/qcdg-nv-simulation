@@ -45,7 +45,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
                 const bool adjust_AXY = true);
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
+MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
                 const double nv_axis_polar, const double nv_axis_azimuth,
                 const double target_axis_azimuth, const double rotation_angle,
                 const bool exact = false);
@@ -55,9 +55,9 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const uint k_DD,
 //--------------------------------------------------------------------------------------------
 
 // iSWAP operation
-MatrixXcd iSWAP(const nv_system& nv, const uint index, const uint k_DD,
+MatrixXcd iSWAP(const nv_system& nv, const uint index, const axy_harmonic k_DD,
                 const bool exact = false);
 
 // SWAP_NVST operation
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
-                    const uint k_DD, const bool exact = false);
+                    const axy_harmonic k_DD, const bool exact = false);
