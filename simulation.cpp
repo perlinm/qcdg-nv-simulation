@@ -1,6 +1,3 @@
-#include <sys/stat.h>
-#include <float.h>
-
 #include <iostream> // for standard output
 #include <fstream> // for file input
 #include <iomanip> // some nice printing functions
@@ -21,10 +18,7 @@ namespace po = boost::program_options;
 #include "nv-control.h"
 #include "printing.h"
 
-// random double from 0 to 1
-inline double rnd(){ return rand()/(double)RAND_MAX; }
-
-int main(int arg_num, const char *arg_vec[]) {
+int main(const int arg_num, const char *arg_vec[]) {
 
   // -----------------------------------------------------------------------------------------
   // Parse and process input options
@@ -32,13 +26,13 @@ int main(int arg_num, const char *arg_vec[]) {
 
   const uint help_text_length = 95;
 
-  int seed;
+  unsigned long long int seed;
 
   po::options_description general("General options", help_text_length);
   general.add_options()
     ("help,h", "produce help message")
-    ("seed", po::value<int>(&seed)->default_value(1),
-     "seed for random number generator (>=1)")
+    ("seed", po::value<unsigned long long int>(&seed)->default_value(0),
+     "seed for random number generator")
     ;
 
   string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
@@ -252,7 +246,9 @@ int main(int arg_num, const char *arg_vec[]) {
     lattice_path = output_dir/fs::path(lattice_file);
   }
 
-  srand(seed); // initialize random number generator
+  uniform_real_distribution<double> rnd(0.0,1.0); // uniform distribution on the range [0,1)
+  mt19937_64 generator(seed); // use and seed the 64-bit Mersenne Twister 19937 generator
+
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
@@ -264,11 +260,11 @@ int main(int arg_num, const char *arg_vec[]) {
 
   if(!using_input_lattice){ // place nuclei at lattice sites
     // set positions of nuclei at lattice sites
-    for(int b = 0; b <= 1; b++){
+    for(uint b: {0,1}){
       for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
         for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
           for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
-            if(rnd() < c13_abundance){ // if we pass a check for C-13 isotopic abundance
+            if(rnd(generator) < c13_abundance){ // pass a check for C-13 isotopic abundance
               if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV lattice site
                 const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
