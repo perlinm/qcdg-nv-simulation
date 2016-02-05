@@ -13,18 +13,17 @@ except:
     samples = 100
 
 random.seed(str(samples)+hyperfine_cutoff)
-def rnd():
-    return int(random.random()*1e6)
+unsigned_long_long_max = 2**64-1
 
 with open(os.devnull, 'w') as null:
-    subprocess.call(['fac'],stdout=null)
+    subprocess.call(["fac"],stdout=null)
 
     found = 0
     for s in range(samples):
         commands = ["./simulate",
                     "--pair",
                     "--hyperfine_cutoff",hyperfine_cutoff,
-                    "--seed",str(rnd())]
+                    "--seed",str(random.randint(0,unsigned_long_long_max))]
         if len(sys.argv) == 4:
             commands += ["--c13_abundance", sys.argv[3]]
         pairs = subprocess.call(commands,stdout=null)
