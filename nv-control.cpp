@@ -97,11 +97,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
 
-  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
-  double flush_axy_advance = 0;
   MatrixXcd U_control = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   if(!adjust_AXY){
-    flush_axy_advance = control_time - floor(control_time/t_DD)*t_DD;
     U_control = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, control_time, controls);
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
@@ -119,7 +116,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                        trailing_time, controls, leading_time);
 
-      flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
       U_control = U_leading * pow(U_trailing*U_leading,cycles);
     } else{ // if(w_DD > w_larmor)
       const uint freq_ratio = round(w_DD/w_larmor);
@@ -137,13 +133,14 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                        trailing_time, controls, leading_time);
 
-      flush_axy_advance = control_time - floor(control_time/t_DD_adjusted)*t_DD_adjusted;
       U_control = U_leading * pow(U_trailing*U_leading,cycles);
     }
   }
 
+  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
   const MatrixXcd U_flush =
-    simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, flush_axy_advance);
+    simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
+
   return U_flush * U_control;
 }
 
@@ -208,9 +205,8 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
                         interaction_time, -target_axis_azimuth/w_DD);
 
   const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
-  const double flush_axy_advance = interaction_time - (interaction_time/t_DD)*t_DD;
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, k_DD, flush_time,
-                                                flush_axy_advance - target_axis_azimuth/w_DD);
+                                                interaction_time - target_axis_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
   const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
