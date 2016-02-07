@@ -317,6 +317,17 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   return advanced_pulse_times;
 }
 
+// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
+int F_AXY(const double x, const vector<double> pulses){
+  const double normed_x = x - floor(x);
+  for(uint p = 1; p < pulses.size(); p ++){
+    if(pulses.at(p) > normed_x){
+      return p%2 == 1 ? 1 : -1;
+    }
+  }
+  assert(false); // getting here should not be possible
+}
+
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos-s1.pos;
