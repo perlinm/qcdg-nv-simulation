@@ -486,13 +486,13 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    assert(target_nuclei.size() >= 1);
-    const uint index = target_nuclei.at(0);
-    vector<MatrixXcd> U(2);
-    for(bool exact : {true,false}){
-      U.at(exact) = U_ctl(nv, index, target_axis_azimuth, rotation_angle, exact);
+    for(uint index = 0; index < nv.nuclei.size(); index++){
+      vector<MatrixXcd> U(2);
+      for(bool exact : {true,false}){
+        U.at(exact) = U_ctl(nv, index, target_axis_azimuth, rotation_angle, exact);
+      }
+      cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
     }
-    cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
