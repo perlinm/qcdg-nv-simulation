@@ -68,7 +68,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
     } else{
       const uint k_m = 2*int(0.5 * (w_larmor/sA-1) );
       const double w_DD_small = (w_larmor-sA)/k_m;
-      if(w_DD_large > sA){
+      if(w_DD_small > sA && isfinite(w_DD_small)){
         return w_DD_small;
       } else{
         return w_DD_large;
@@ -123,11 +123,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const double t_DD_adjusted = 2*pi/w_DD_adjusted;
       const uint cycles = int(control_time/t_larmor);
 
-      const double leading_time = control_time - cycles*t_DD_adjusted;
-      const double trailing_time = t_DD_adjusted - leading_time;
+      const double leading_time = control_time - cycles*t_larmor;
+      const double trailing_time = t_larmor - leading_time;
 
-      const MatrixXcd U_larmor = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                     t_larmor, controls);
       const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                       leading_time, controls);
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,

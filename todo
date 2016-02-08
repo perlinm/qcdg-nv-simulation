@@ -1,8 +1,13 @@
+wrap objects in gates.h into a struct
+
+test U_ctl on a case with w_DD > w_larmor
+
 implement individual addressing for larmor pairs
 implement SWAP_NVST for larmor pairs
 implement state decay model
 use non-ideal NV pulses?
 add a mode to output operation protocol
+ - use secondary script to remove operations which cancel out (e.g. two consecutive XX pulses)
 compute corrections that need to be made to approximate gates, and perform them
 
 is it worthwhile to implement a zz coupling protocol?
@@ -10,5 +15,8 @@ is it worthwhile to implement a zz coupling protocol?
 if two SWAP_NVST targets are not larmor pairs,
   is it better to use natural bases, or a standard basis?
 
-investigate bad fidelities (see target 9):
+investigate bad fidelities:
+   target 9:
 fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --iswap
+   targets 3, 6, 9:
+fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --static_Bz 2000 --control
