@@ -319,13 +319,12 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
 int F_AXY(const double x, const vector<double> pulses){
-  const double normed_x = x - floor(x);
-  for(uint p = 1; p < pulses.size(); p ++){
-    if(pulses.at(p) > normed_x){
-      return p%2 == 1 ? 1 : -1;
-    }
+  uint pulse_count = 0;
+  for(uint i = 1; i < pulses.size()-1; i++){
+    if(pulses.at(i) < x - floor(x)) pulse_count++;
+    else break;
   }
-  assert(false); // getting here should not be possible
+  return (pulse_count%2 == 0 ? 1 : -1);
 }
 
 // Hamiltoninan coupling two spins
@@ -563,7 +562,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   if(pulse_count%2 != 0) U = (X*U).eval();
 
   const uint print_steps = ceil(integration_steps/nv.scale_factor);
-  cout << "Progress (out of " << int(nv.scale_factor) << ")..." << flush;
+  cout << endl << "Progress (out of " << int(nv.scale_factor) << ")..." << flush;
 
   for(uint t_i = 0; t_i < integration_steps; t_i++){
     const double t = (t_i+0.5)*dt+advance; // time with the trapezoidal rule
