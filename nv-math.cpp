@@ -1,6 +1,3 @@
-#include <iostream> // for standard output
-using namespace std;
-
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
@@ -561,16 +558,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
   if(pulse_count%2 != 0) U = (X*U).eval();
 
-  const uint print_steps = ceil(integration_steps/nv.scale_factor);
-  cout << endl << "Progress (out of " << int(nv.scale_factor) << ")..." << flush;
-
   for(uint t_i = 0; t_i < integration_steps; t_i++){
     const double t = (t_i+0.5)*dt+advance; // time with the trapezoidal rule
-
-    // print status update
-    if(t_i%print_steps == 0){
-      cout << " " << round(double(t_i)/print_steps) << flush;
-    }
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
@@ -614,7 +603,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       pulse_count++;
     }
   }
-  cout << endl << endl;
 
   // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
   if(pulse_count%2 != 0) U = (X*U).eval();
