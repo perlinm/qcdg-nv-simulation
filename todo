@@ -1,7 +1,5 @@
 wrap objects in gates.h into a struct
 
-test U_ctl on a case with w_DD > w_larmor
-
 implement individual addressing for larmor pairs
 implement SWAP_NVST for larmor pairs
 implement state decay model
@@ -17,6 +15,6 @@ if two SWAP_NVST targets are not larmor pairs,
 
 investigate bad fidelities:
    target 9:
-fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --iswap
+fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --static_Bz 2000 --iswap
    targets 3, 6, 9:
 fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --static_Bz 2000 --control
