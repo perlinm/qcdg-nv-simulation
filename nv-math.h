@@ -21,34 +21,6 @@ const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
 const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 
 //--------------------------------------------------------------------------------------------
-// Spin state vectors
-//--------------------------------------------------------------------------------------------
-
-// two qbit basis states
-const VectorXcd uu = tp(up,up);
-const VectorXcd ud = tp(up,dn);
-const VectorXcd du = tp(dn,up);
-const VectorXcd dd = tp(dn,dn);
-
-// two qbit singlet-triplet states
-const VectorXcd S = (ud-du)/sqrt(2);
-const VectorXcd T = (ud+du)/sqrt(2);
-
-//--------------------------------------------------------------------------------------------
-// Single spin operations
-//--------------------------------------------------------------------------------------------
-
-// spin propagators; Ua corresponds to a Hamiltonian # H = h s_a
-inline MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
-inline MatrixXcd Uy(const double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
-inline MatrixXcd Uz(const double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
-
-// rotation operators
-inline MatrixXcd Rx(const double phi){ return Ux(phi/2); }
-inline MatrixXcd Ry(const double phi){ return Uy(phi/2); }
-inline MatrixXcd Rz(const double phi){ return Uz(phi/2); }
-
-//--------------------------------------------------------------------------------------------
 // Spin vectors and structs
 //--------------------------------------------------------------------------------------------
 

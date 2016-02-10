@@ -7,7 +7,6 @@ using namespace std;
 using namespace Eigen;
 
 #include "qp-math.h"
-#include "nv-math.h"
 
 // returns element p of a basis for operators acting on a system with N qubits
 string U_basis_element_text(const uint p, const uint N){

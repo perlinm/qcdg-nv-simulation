@@ -16,7 +16,9 @@ namespace po = boost::program_options;
 #include "qp-math.h"
 #include "nv-math.h"
 #include "nv-control.h"
+
 #include "printing.h"
+#include "gates.h"
 
 int main(const int arg_num, const char *arg_vec[]) {
 

@@ -30,25 +30,6 @@ inline Vector3d rotate(const Vector3d& vec, const double phi, const Vector3d axi
 }
 
 //--------------------------------------------------------------------------------------------
-// Constant objects
-//--------------------------------------------------------------------------------------------
-
-// identity matrices
-const MatrixXcd I1 = MatrixXcd::Identity(1,1);
-const MatrixXcd I2 = MatrixXcd::Identity(2,2);
-const MatrixXcd I4 = MatrixXcd::Identity(4,4);
-
-// spin up/down state vectors
-const VectorXcd up = (Vector2cd() << 1,0).finished();
-const VectorXcd dn = (Vector2cd() << 0,1).finished();
-
-// pauli spin matrices
-const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
-const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
-const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
-const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
-
-//--------------------------------------------------------------------------------------------
 // Matrix functions
 //--------------------------------------------------------------------------------------------
 
@@ -212,3 +193,28 @@ inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
 
 inline mvec operator*(const double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
+
+//--------------------------------------------------------------------------------------------
+// Common constant objects
+//--------------------------------------------------------------------------------------------
+
+// identity matrices
+const MatrixXcd I1 = MatrixXcd::Identity(1,1);
+const MatrixXcd I2 = MatrixXcd::Identity(2,2);
+const MatrixXcd I4 = MatrixXcd::Identity(4,4);
+
+// spin up/down state vectors
+const VectorXcd up = (Vector2cd() << 1,0).finished();
+const VectorXcd dn = (Vector2cd() << 0,1).finished();
+
+// two qbit basis states
+const VectorXcd uu = tp(up,up);
+const VectorXcd ud = tp(up,dn);
+const VectorXcd du = tp(dn,up);
+const VectorXcd dd = tp(dn,dn);
+
+// pauli spin matrices
+const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
+const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
+const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
+const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
