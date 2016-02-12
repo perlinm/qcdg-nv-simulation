@@ -247,7 +247,7 @@ double larmor_resolution(const nv_system& nv, const uint index){
   const double target_larmor = effective_larmor(nv,index).norm();
   double dw_min = DBL_MAX;
   for(uint s = 0; s < nv.nuclei.size(); s++){
-    if(s == index) continue;
+    if(is_larmor_pair(nv,s,index)) continue; // find dw_min for distinct frequencies only
     const double dw = abs(target_larmor - effective_larmor(nv,s).norm());
     if(dw < dw_min) dw_min = dw;
   }
