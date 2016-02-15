@@ -101,7 +101,7 @@ inline MatrixXcd flatten(MatrixXcd M){
 MatrixXcd U_basis_matrix(const uint N);
 
 // decompose Hamiltonian into its basis elements
-MatrixXcd U_decompose(const MatrixXcd& U, const bool fast = true);
+MatrixXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G);

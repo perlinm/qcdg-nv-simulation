@@ -232,9 +232,11 @@ mvec operator*(const MatrixXcd& G, const mvec& v){
 // print operator in human-readable form
 void U_print(const MatrixXcd& U, const double threshold){
   const int N = log2(U.rows());
-  const MatrixXcd hs = clean(U_decompose(U),threshold);
+  MatrixXcd hs = U_decompose(U);
   for(int p = 0; p < pow(4,N); p++){
-    if(abs(hs(p)) != 0){
+    if(abs(hs(p)) > threshold){
+      if(abs(real(hs(p))) < threshold) hs(p) -= real(hs(p));
+      if(abs(imag(hs(p))) < threshold) hs(p) -= imag(hs(p))*j;
       cout << U_basis_element_text(p,N) << ": " << hs(p) << endl;
     }
   }
