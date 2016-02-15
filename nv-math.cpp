@@ -565,7 +565,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   if(pulse_count%2 != 0) U = (X*U).eval();
 
   for(uint t_i = 0; t_i < integration_steps; t_i++){
-    const double t = (t_i+0.5)*dt+advance; // time with the trapezoidal rule
+    const double t = t_i*dt+advance; // time
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
@@ -579,33 +579,27 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     // update propagator
     if(!pulse){
       if(t+dt < end_time){
-        const Vector3d B = nv.static_Bz*zhat + controls.B(t);
+        const Vector3d B = nv.static_Bz*zhat + controls.B(t+dt/2);
         const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
-        U = (exp(-j*dt*H)*U).eval();
+        U = (exp(-j*dt*H) * U).eval();
 
       } else{ // if t+dt > end_time
         const double dtf = end_time-t;
-        const double tf = t + dtf/2;
-        const Vector3d B = nv.static_Bz*zhat + controls.B(tf);
+        const Vector3d B = nv.static_Bz*zhat + controls.B(t+dtf/2);
         const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
-        U = (exp(-j*dtf*H)*U).eval();
-
+        U = (exp(-j*dtf*H) * U).eval();
       }
     } else{ // if(pulse);
-      const double dt1 = pulses.at(pulse)*t_DD - t;
-      const double dt2 = t + dt - pulses.at(pulse)*t_DD;
+      const double t_AXY = t - int(t/t_DD)*t_DD;
+      const double dt1 = pulses.at(pulse)*t_DD - t_AXY;
+      const double dt2 = t_AXY + dt - pulses.at(pulse)*t_DD;
 
-      const double t1 = t + dt1/2;
-      const double t2 = t + dt - dt2/2;
-
-      const Vector3d B1 = nv.static_Bz*zhat + controls.B(t1);
-      const Vector3d B2 = nv.static_Bz*zhat + controls.B(t2);
+      const Vector3d B1 = nv.static_Bz*zhat + controls.B(t+dt1/2);
+      const Vector3d B2 = nv.static_Bz*zhat + controls.B(t+dt1+dt2/2);
       const MatrixXcd H1 = H_static + H_nZ(nv,cluster,B1);
       const MatrixXcd H2 = H_static + H_nZ(nv,cluster,B2);
 
-      U = (exp(-j*dt1*H1)*U).eval();
-      U = (X*U).eval();
-      U = (exp(-j*dt2*H2)*U).eval();
+      U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
       pulse_count++;
     }
   }

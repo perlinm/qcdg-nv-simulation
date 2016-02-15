@@ -164,7 +164,7 @@ inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
 }
 
 // NV rotation about zhat at a given time
-inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 0){
+inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 1){
   return act(exp(-j*time*H_NV_GS(nv,nv.static_Bz*zhat)),{0},spins);
 }
 
