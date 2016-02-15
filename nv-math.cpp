@@ -245,7 +245,7 @@ Vector3d A_perp(const nv_system&nv, const spin& s){
 //   i.e. min{ |w_s - w_{index}| for all s != index }
 double larmor_resolution(const nv_system& nv, const uint index){
   const double target_larmor = effective_larmor(nv,index).norm();
-  double dw_min = DBL_MAX;
+  double dw_min = target_larmor; // maximum allowable larmor resolution
   for(uint s = 0; s < nv.nuclei.size(); s++){
     if(is_larmor_pair(nv,s,index)) continue; // find dw_min for distinct frequencies only
     const double dw = abs(target_larmor - effective_larmor(nv,s).norm());
