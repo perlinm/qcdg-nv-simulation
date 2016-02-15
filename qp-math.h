@@ -56,7 +56,7 @@ inline MatrixXcd remove_phase(const MatrixXcd& A){ return A*conj(get_phase(A)); 
 
 // clean up matrix for human readability
 inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
-  return remove_artifacts(remove_phase(remove_artifacts(M, error_threshold)), error_threshold);
+  return remove_artifacts(remove_phase(remove_artifacts(M,error_threshold)),error_threshold);
 }
 
 //--------------------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
 // get the n-th bit of an integer num
 inline bool int_bit(const uint num, const uint n){
   if(pow(2,n) > num) return 0;
-  else return (num >> n)&  1;
+  else return (num >> n) & 1;
 }
 
 // get state of qbit q (of N) from enumerated state s
@@ -87,6 +87,9 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 
 // returns element p of a basis for operators acting on a system with N qubits
 MatrixXcd U_basis_element(const uint p, const uint N);
+
+// returns element p of a basis for operators acting on a system with N qubits
+string U_basis_element_text(const uint p, const uint N);
 
 // flatten matrix into a 1-D vector
 inline MatrixXcd flatten(MatrixXcd M){
@@ -218,3 +221,16 @@ const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
 const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
 const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
 const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
+
+//--------------------------------------------------------------------------------------------
+// Printing methods
+//--------------------------------------------------------------------------------------------
+
+// print operator in human-readable form
+void U_print(const MatrixXcd& U, const double threshold = 1e-3);
+
+// print state vector in human readable form
+void state_print(const MatrixXcd& psi);
+
+// print matrix in human readable form
+void matrix_print(const MatrixXcd& M);

@@ -160,11 +160,21 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
 // returns basis element p for an operator acting on a system with N spins
 MatrixXcd U_basis_element(const uint p, const uint N){
   const MatrixXcd spins[4] = {st, sx, sy, sz};
-  MatrixXcd b_p = spins[int_bit(p,0)+2*int_bit(p,1)];
-  for(int n = 1; n < N; n++){
+  MatrixXcd b_p = I1;
+  for(int n = 0; n < N; n++){
     b_p = tp(b_p,spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)]);
   }
   return b_p;
+}
+
+// returns element p of a basis for operators acting on a system with N qubits
+string U_basis_element_text(const uint p, const uint N){
+  const char spins[4] = {'I','X','Y','Z'};
+  stringstream stream;
+  for(uint n = 0; n < N; n++){
+    stream << spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)];
+  }
+  return stream.str();
 }
 
 // returns matrix whose columns are basis Hamiltonians for a system of N spins
@@ -213,4 +223,54 @@ mvec operator*(const MatrixXcd& G, const mvec& v){
     out.push_back(G*v.at(i));
   }
   return mvec(out);
+}
+
+//--------------------------------------------------------------------------------------------
+// Printing methods
+//--------------------------------------------------------------------------------------------
+
+// print operator in human-readable form
+void U_print(const MatrixXcd& U, const double threshold){
+  const int N = log2(U.rows());
+  const MatrixXcd hs = clean(U_decompose(U),threshold);
+  for(int p = 0; p < pow(4,N); p++){
+    if(abs(hs(p)) != 0){
+      cout << U_basis_element_text(p,N) << ": " << hs(p) << endl;
+    }
+  }
+}
+
+// print state vector in human readable form
+void state_print(const MatrixXcd& psi){
+  const uint N = psi.size();
+  const uint qbits = log2(N);
+  for(uint n = 0; n < N; n++){
+    if(abs(psi(n)) != 0){
+      cout << "|";
+      for(uint q = 0; q < qbits; q++){
+        cout << (qbit_state(q,qbits,n)?"d":"u");
+      }
+      cout << "> " << psi(n) << endl;
+    }
+  }
+}
+
+// print matrix in human readable form
+void matrix_print(const MatrixXcd& M){
+  const int qbits = log2(M.rows());
+  for(uint m = 0; m < M.rows(); m++){
+    for(uint n = 0; n < M.cols(); n++){
+      if(abs(M(m,n)) != 0){
+        cout << "|";
+        for(uint q = 0; q < qbits; q++){
+          cout << (qbit_state(m,qbits,q)?"d":"u");
+        }
+        cout << "><";
+        for(uint q = 0; q < qbits; q++){
+          cout << (qbit_state(n,qbits,q)?"d":"u");
+        }
+        cout << "| " << M(m,n) << endl;
+      }
+    }
+  }
 }

@@ -17,7 +17,6 @@ namespace po = boost::program_options;
 #include "nv-math.h"
 #include "nv-control.h"
 
-#include "printing.h"
 #include "gates.h"
 
 int main(const int arg_num, const char *arg_vec[]) {
@@ -279,7 +278,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         }
       }
     }
-    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
+    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n";
     if(nv.nuclei.size() == 0) return 0;
     if(!set_target_nuclei){
       for(uint i = 0; i < nv.nuclei.size(); i++){
@@ -332,6 +331,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
+  cout << endl;
+
   // -----------------------------------------------------------------------------------------
   // Perform search for larmor pairs
   // -----------------------------------------------------------------------------------------
@@ -360,7 +361,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // if we are going to perform an actual simulation instead of just a coherence scan,
   //   we want to group together clusters sharing nuclei with similar larmor frequencies.
-  const bool group_larmor_pairs = !coherence_scan;
+  const bool group_larmor_pairs = !coherence_scan && !testing;
   if(group_larmor_pairs){
     nv.clusters = cluster_nuclei(nv.nuclei, DBL_MAX);
     nv.clusters = group_clusters(nv);
