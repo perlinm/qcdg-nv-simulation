@@ -159,7 +159,14 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index);
 
 // NV zero-field splitting plus Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B);
+inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
+  return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) - nv.e.g*dot(B,nv.e.S);
+}
+
+// NV rotation about zhat at a given time
+inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 0){
+  return act(exp(-j*time*H_NV_GS(nv,nv.static_Bz*zhat)),{0},spins);
+}
 
 // nuclear Zeeman Hamiltonian
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);

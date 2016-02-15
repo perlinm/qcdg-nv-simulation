@@ -366,11 +366,6 @@ MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index){
   return H;
 }
 
-// NV zero-field splitting plus Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
-  return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) - nv.e.g*dot(B,nv.e.S);
-}
-
 // nuclear Zeeman Hamiltonian
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
@@ -457,6 +452,8 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance){
+  const uint spins = nv.clusters.at(cluster).size()+1;
+
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
   const double normed_advance = advance/t_DD - floor(advance/t_DD);
@@ -464,10 +461,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int_large_static_Bz(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat);
+  const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
 
   // NV center spin flip (pi-)pulse
-  const MatrixXcd X = act(sx,{0},nv.clusters.at(cluster).size()+1);
+  const MatrixXcd X = act(sx, {0}, spins);
 
   // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols());
@@ -483,7 +480,9 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     MatrixXcd U_AXY = MatrixXcd::Identity(H.rows(),H.cols());
     for(uint i = 1; i < advanced_pulses.size(); i++){
       U_AXY = (X *
+               U_NV_GS(nv, advanced_pulses.at(i)*t_DD, spins).adjoint() *
                exp(-j*H*(advanced_pulses.at(i)-advanced_pulses.at(i-1))*t_DD) *
+               U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
                U_AXY).eval();
     }
     U_AXY = (X * U_AXY).eval(); // "undo" the last pulse at t = t_DD
@@ -494,10 +493,17 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
   for(uint i = 1; i < advanced_pulses.size(); i++){
     if(advanced_pulses.at(i)*t_DD < remaining_time){
-      U = (X * exp(-j*H*t_DD*(advanced_pulses.at(i)-advanced_pulses.at(i-1))) * U).eval();
+      U = (X *
+           U_NV_GS(nv, advanced_pulses.at(i)*t_DD, spins).adjoint() *
+           exp(-j*H*t_DD*(advanced_pulses.at(i)-advanced_pulses.at(i-1))) *
+           U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
+           U).eval();
       pulse_count++;
     } else{
-      U = (exp(-j*H*(remaining_time-advanced_pulses.at(i-1)*t_DD)) * U).eval();
+      U = (U_NV_GS(nv, remaining_time, spins).adjoint() *
+           exp(-j*H*(remaining_time-advanced_pulses.at(i-1)*t_DD)) *
+           U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
+           U).eval();
       break;
     }
   }
