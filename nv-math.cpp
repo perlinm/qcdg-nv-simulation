@@ -495,6 +495,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   return U;
 }
 
+// WARNING: can be inaccurate when control fields cause the NV center to precess
+//          at rates comparable to the rate of "ground state" precession about zhat
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
