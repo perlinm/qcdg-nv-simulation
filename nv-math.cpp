@@ -532,13 +532,13 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const double dt = simulation_time/integration_steps;
 
   // static NV+cluster Hamiltonian
-  const MatrixXcd H_static = H_int(nv,cluster);
+  const MatrixXcd H_0 = H_static(nv,cluster);
 
   // NV center spin flip (pi-)pulse
   const MatrixXcd X = act(sx, {0}, spins);
 
   // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
-  MatrixXcd U = MatrixXcd::Identity(H_static.rows(),H_static.cols());
+  MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols());
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
     if(pulses.at(i) < normed_advance) pulse_count++;
@@ -561,7 +561,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     // update propagator
     if(!pulse){
       const Vector3d B = controls.B(t+dt/2);
-      const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
+      const MatrixXcd H = H_0 + H_ctl(nv,cluster,B)
+        - act(H_NV_GS(nv) + H_NV_Z(nv,B), {0}, spins);
 
       U = (exp(-j*dt*H) * U).eval();
 
@@ -572,8 +573,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
       const Vector3d B1 = controls.B(t+dt1/2);
       const Vector3d B2 = controls.B(t+dt1+dt2/2);
-      const MatrixXcd H1 = H_static + H_nZ(nv,cluster,B1);
-      const MatrixXcd H2 = H_static + H_nZ(nv,cluster,B2);
+      const MatrixXcd H1 = H_0 + H_ctl(nv,cluster,B1)
+        - act(H_NV_GS(nv) + H_NV_Z(nv,B1), {0}, spins);
+      const MatrixXcd H2 = H_0 + H_ctl(nv,cluster,B2)
+        - act(H_NV_GS(nv) + H_NV_Z(nv,B2), {0}, spins);
 
       U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
       pulse_count++;
