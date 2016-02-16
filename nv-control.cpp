@@ -241,7 +241,7 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
   const double yhat_azimuth = pi/2;
 
   // compute components of SWAP_NVST
-  const MatrixXcd Rz_NV = act(U_NV(zhat,angle),{0},cluster.size()+1);
+  const MatrixXcd Rz_NV = U_NV(zhat, angle, cluster.size()+1);
   const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
   const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
   const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
