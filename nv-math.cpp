@@ -545,9 +545,9 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     return max(largest_control_freq,largest_g*B_cap.norm());
   }();
 
-  // integration step size and number
-  const double dt = 1/(frequency_scale*nv.integration_factor);
-  const uint integration_steps = ceil(simulation_time/dt);
+  // integration step number and size
+  const uint integration_steps = simulation_time*frequency_scale*nv.integration_factor;
+  const double dt = simulation_time/integration_steps;
 
   // static NV+cluster Hamiltonian
   const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster);
@@ -578,21 +578,15 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // update propagator
     if(!pulse){
-      if(t+dt < end_time){
-        const Vector3d B = nv.static_Bz*zhat + controls.B(t+dt/2);
-        const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
-        U = (exp(-j*dt*H) * U).eval();
+      const Vector3d B = nv.static_Bz*zhat + controls.B(t+dt/2);
+      const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
 
-      } else{ // if t+dt > end_time
-        const double dtf = end_time-t;
-        const Vector3d B = nv.static_Bz*zhat + controls.B(t+dtf/2);
-        const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
-        U = (exp(-j*dtf*H) * U).eval();
-      }
+      U = (exp(-j*dt*H) * U).eval();
+
     } else{ // if(pulse);
-      const double t_AXY = t - int(t/t_DD)*t_DD;
-      const double dt1 = pulses.at(pulse)*t_DD - t_AXY;
-      const double dt2 = dt - dt1;
+      const double t_AXY = t - int(t/t_DD)*t_DD; // time into this AXY sequence
+      const double dt1 = pulses.at(pulse)*t_DD - t_AXY; // time before the pulse
+      const double dt2 = dt - dt1; // time after the pulse
 
       const Vector3d B1 = nv.static_Bz*zhat + controls.B(t+dt1/2);
       const Vector3d B2 = nv.static_Bz*zhat + controls.B(t+dt1+dt2/2);
