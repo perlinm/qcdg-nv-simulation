@@ -151,11 +151,10 @@ MatrixXcd H_ss(const spin& s1, const spin& s2);
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index,
-               const Vector3d B_ctl = Vector3d::Zero());
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // NV Zeeman Hamiltonian
-inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d B){
+inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& B){
   return -nv.e.g*dot(B,nv.e.S);
 };
 
@@ -171,13 +170,12 @@ inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spin
 
 // total static Hamiltonian for the entire system
 inline MatrixXcd H_static(const nv_system& nv, const uint cluster){
-  return (H_int(nv,cluster) + H_nZ(nv,cluster) +
+  return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 };
 
 // total control Hamiltonian for the entire system
-inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster,
-                       const Vector3d B_ctl){
+inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl){
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
 };
 

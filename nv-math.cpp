@@ -349,10 +349,9 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
 }
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d B_ctl){
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
-  const Vector3d B = B_ctl + nv.static_Bz*zhat;
   // zero-field splitting and interaction of NV center with magnetic field
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
