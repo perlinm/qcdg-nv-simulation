@@ -348,24 +348,6 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   return H;
 }
 
-// spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index){
-  const vector<uint> cluster = nv.clusters.at(cluster_index);
-  const int spins = cluster.size()+1;
-  MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
-  for(uint s = 0; s < cluster.size(); s++){
-    // interaction between NV center and spin s
-    H += act( tp(dot(nv.e.S,zhat), dot(A(nv,cluster.at(s)),nv.nuclei.at(cluster.at(s)).S)),
-              {0,s+1}, spins);
-    for(uint r = 0; r < s; r++){
-      // interaction betwen spin r and spin s
-      H += act(H_ss_large_static_Bz(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
-               {r+1,s+1}, spins);
-    }
-  }
-  return H;
-}
-
 // nuclear Zeeman Hamiltonian
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B){
   const vector<uint> cluster = nv.clusters.at(cluster_index);

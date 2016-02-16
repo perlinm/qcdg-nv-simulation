@@ -155,9 +155,6 @@ inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
 // spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
-// spin-spin coupling Hamiltonian for NV center with cluster; assumes large static Bz
-MatrixXcd H_int_large_static_Bz(const nv_system& nv, const uint cluster_index);
-
 // NV zero-field splitting plus Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) - nv.e.g*dot(B,nv.e.S);
