@@ -180,7 +180,7 @@ inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spin
 };
 
 inline double w_NV_GS(const nv_system& nv){
-  return 0.5*(NV_ZFS - nv.ms*nv.e.g*nv.static_Bz);
+  return NV_ZFS - nv.ms*nv.e.g*nv.static_Bz;
 };
 
 // perform NV coherence measurement with a static magnetic field
