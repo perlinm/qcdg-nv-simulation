@@ -147,11 +147,6 @@ int F_AXY(const double x, const vector<double> pulses);
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
 
-// Hamiltoninan coupling two spins; assumes large static Bz
-inline MatrixXcd H_ss_large_static_Bz(const spin& s1, const spin& s2){
-  return coupling_strength(s1,s2) * (3*tp(dot(s1.S,zhat), dot(s2.S,zhat)) - dot(s1.S,s2.S));
-}
-
 // spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
