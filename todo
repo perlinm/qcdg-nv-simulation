@@ -1,3 +1,5 @@
+change into frame of NV properly in simulate_propagator
+
 translate several pure states and density operators between abstract state and GA notations
 
 implement individual addressing for larmor pairs
