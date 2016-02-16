@@ -592,7 +592,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     } else{ // if(pulse);
       const double t_AXY = t - int(t/t_DD)*t_DD;
       const double dt1 = pulses.at(pulse)*t_DD - t_AXY;
-      const double dt2 = t_AXY + dt - pulses.at(pulse)*t_DD;
+      const double dt2 = dt - dt1;
 
       const Vector3d B1 = nv.static_Bz*zhat + controls.B(t+dt1/2);
       const Vector3d B2 = nv.static_Bz*zhat + controls.B(t+dt1+dt2/2);
