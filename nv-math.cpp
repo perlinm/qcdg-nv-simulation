@@ -456,10 +456,12 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   if(simulation_time >= t_DD){
     MatrixXcd U_AXY = MatrixXcd::Identity(H.rows(),H.cols());
     for(uint i = 1; i < advanced_pulses.size(); i++){
+      const double t = advanced_pulses.at(i-1)*t_DD;
+      const double dt = advanced_pulses.at(i)*t_DD - t;
       U_AXY = (X *
-               U_NV_GS(nv, advanced_pulses.at(i)*t_DD, spins).adjoint() *
-               exp(-j*H*(advanced_pulses.at(i)-advanced_pulses.at(i-1))*t_DD) *
-               U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
+               U_NV_GS(nv, t+dt, spins).adjoint() *
+               exp(-j*dt*H) *
+               U_NV_GS(nv, t, spins) *
                U_AXY).eval();
     }
     U_AXY = (X * U_AXY).eval(); // "undo" the last pulse at t = t_DD
@@ -469,17 +471,20 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // propagator for AXY sequence remainder
   const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
   for(uint i = 1; i < advanced_pulses.size(); i++){
-    if(advanced_pulses.at(i)*t_DD < remaining_time){
+    const double t = advanced_pulses.at(i-1)*t_DD;
+    const double dt = advanced_pulses.at(i)*t_DD - t;
+    if(t + dt < remaining_time){
       U = (X *
-           U_NV_GS(nv, advanced_pulses.at(i)*t_DD, spins).adjoint() *
-           exp(-j*H*t_DD*(advanced_pulses.at(i)-advanced_pulses.at(i-1))) *
-           U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
+           U_NV_GS(nv, t+dt, spins).adjoint() *
+           exp(-j*dt*H) *
+           U_NV_GS(nv, t, spins) *
            U).eval();
       pulse_count++;
     } else{
-      U = (U_NV_GS(nv, remaining_time, spins).adjoint() *
-           exp(-j*H*(remaining_time-advanced_pulses.at(i-1)*t_DD)) *
-           U_NV_GS(nv, advanced_pulses.at(i-1)*t_DD, spins) *
+      const double dtf = remaining_time - t;
+      U = (U_NV_GS(nv, t+dtf, spins).adjoint() *
+           exp(-j*dtf*H) *
+           U_NV_GS(nv, t, spins) *
            U).eval();
       break;
     }
