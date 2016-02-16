@@ -163,11 +163,6 @@ inline MatrixXcd H_NV_GS(const nv_system& nv){
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
 };
 
-// NV rotation about zhat due to static Hamiltonian
-inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 1){
-  return act( exp(-j*time*H_NV_GS(nv)), {0}, spins);
-};
-
 // total static Hamiltonian for the entire system
 inline MatrixXcd H_static(const nv_system& nv, const uint cluster){
   return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
@@ -177,6 +172,15 @@ inline MatrixXcd H_static(const nv_system& nv, const uint cluster){
 // total control Hamiltonian for the entire system
 inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl){
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
+};
+
+// NV rotation about zhat due to static Hamiltonian
+inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 1){
+  return act( exp(-j*time*H_NV_GS(nv)), {0}, spins);
+};
+
+inline double w_NV_GS(const nv_system& nv){
+  return 0.5*(NV_ZFS - nv.ms*nv.e.g*nv.static_Bz);
 };
 
 // perform NV coherence measurement with a static magnetic field

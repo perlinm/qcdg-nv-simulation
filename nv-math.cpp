@@ -458,11 +458,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     for(uint i = 1; i < advanced_pulses.size(); i++){
       const double t = advanced_pulses.at(i-1)*t_DD;
       const double dt = advanced_pulses.at(i)*t_DD - t;
-      U_AXY = (X *
-               U_NV_GS(nv, t+dt, spins).adjoint() *
-               exp(-j*dt*H) *
-               U_NV_GS(nv, t, spins) *
-               U_AXY).eval();
+      U_AXY = (X * exp(-j*dt*H) * U_AXY).eval();
     }
     U_AXY = (X * U_AXY).eval(); // "undo" the last pulse at t = t_DD
     U = (pow(U_AXY, int(simulation_time/t_DD)) * U).eval();
@@ -474,23 +470,24 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     const double t = advanced_pulses.at(i-1)*t_DD;
     const double dt = advanced_pulses.at(i)*t_DD - t;
     if(t + dt < remaining_time){
-      U = (X *
-           U_NV_GS(nv, t+dt, spins).adjoint() *
-           exp(-j*dt*H) *
-           U_NV_GS(nv, t, spins) *
-           U).eval();
+      U = (X * exp(-j*dt*H) * U).eval();
       pulse_count++;
     } else{
       const double dtf = remaining_time - t;
-      U = (U_NV_GS(nv, t+dtf, spins).adjoint() *
-           exp(-j*dtf*H) *
-           U_NV_GS(nv, t, spins) *
-           U).eval();
+      U = (exp(-j*dtf*H) *U).eval();
       break;
     }
   }
   // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
   if(pulse_count%2 != 0) U = (X*U).eval();
+
+  // move into the frame of the NV center
+  const double t_NV_GS = 2*pi/w_NV_GS(nv);
+  const double flush_time = ceil(simulation_time/t_NV_GS)*t_NV_GS - simulation_time;
+  U = (U_NV_GS(nv,flush_time,spins) * U).eval();
+  // FIXME: move into NV frame without cheating!
+  const double nv_phi = real(U_decompose(j*log(U))(3));
+  U = (act(exp(j*nv_phi*sz),{0},spins) * U).eval();
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
