@@ -550,7 +550,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const double dt = simulation_time/integration_steps;
 
   // static NV+cluster Hamiltonian
-  const MatrixXcd H_static = H_int_large_static_Bz(nv,cluster);
+  const MatrixXcd H_static = H_int(nv,cluster);
 
   // NV center spin flip (pi-)pulse
   const MatrixXcd X = act(sx, {0}, spins);
