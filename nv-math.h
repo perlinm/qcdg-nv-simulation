@@ -164,7 +164,9 @@ inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spin
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // Zeeman Hamiltonian for NV center with cluster
-inline MatrixXcd H_Z(const nv_system& nv, const uint cluster_index, const Vector3d& B);
+inline MatrixXcd H_Z(const nv_system& nv, const uint cluster, const Vector3d& B){
+  return H_nZ(nv,cluster,B) + act(H_NV_GS(nv,B), {0}, nv.clusters.at(cluster).size()+1);
+}
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
