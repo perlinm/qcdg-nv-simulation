@@ -150,23 +150,36 @@ MatrixXcd H_ss(const spin& s1, const spin& s2);
 // spin-spin coupling Hamiltonian for NV center with cluster
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
-// NV zero-field splitting plus Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const nv_system& nv, const Vector3d& B){
-  return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) - nv.e.g*dot(B,nv.e.S);
-}
+// nuclear Zeeman Hamiltonian
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index,
+               const Vector3d B_ctl = Vector3d::Zero());
+
+// NV Zeeman Hamiltonian
+inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d B){
+  return -nv.e.g*dot(B,nv.e.S);
+};
+
+// NV zero-field splitting + static Zeeman Hamiltonian
+inline MatrixXcd H_NV_GS(const nv_system& nv){
+  return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
+};
 
 // NV rotation about zhat at a given time
 inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 1){
-  return act(exp(-j*time*H_NV_GS(nv,nv.static_Bz*zhat)),{0},spins);
-}
+  return act( exp(-j*time*H_NV_GS(nv)), {0}, spins);
+};
 
-// nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
+// total static Hamiltonian for the entire system
+inline MatrixXcd H_static(const nv_system& nv, const uint cluster){
+  return (H_int(nv,cluster) + H_nZ(nv,cluster) +
+          act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
+};
 
-// Zeeman Hamiltonian for NV center with cluster
-inline MatrixXcd H_Z(const nv_system& nv, const uint cluster, const Vector3d& B){
-  return H_nZ(nv,cluster,B) + act(H_NV_GS(nv,B), {0}, nv.clusters.at(cluster).size()+1);
-}
+// total control Hamiltonian for the entire system
+inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster,
+                       const Vector3d B_ctl){
+  return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
+};
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,

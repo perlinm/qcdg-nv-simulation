@@ -349,9 +349,10 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
 }
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B){
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d B_ctl){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
+  const Vector3d B = B_ctl + nv.static_Bz*zhat;
   // zero-field splitting and interaction of NV center with magnetic field
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
@@ -378,7 +379,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
     const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
 
     // construct full Hamiltonian
-    const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
+    const MatrixXcd H = H_static(nv,cluster);
 
       // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
@@ -438,7 +439,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   // NV+cluster Hamiltonian
-  const MatrixXcd H = H_int(nv,cluster) + H_Z(nv,cluster,nv.static_Bz*zhat);
+  const MatrixXcd H = H_static(nv,cluster);
 
   // NV center spin flip (pi-)pulse
   const MatrixXcd X = act(sx, {0}, spins);
@@ -555,7 +556,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // update propagator
     if(!pulse){
-      const Vector3d B = nv.static_Bz*zhat + controls.B(t+dt/2);
+      const Vector3d B = controls.B(t+dt/2);
       const MatrixXcd H = H_static + H_nZ(nv,cluster,B);
 
       U = (exp(-j*dt*H) * U).eval();
@@ -565,8 +566,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       const double dt1 = pulses.at(pulse)*t_DD - t_AXY; // time before the pulse
       const double dt2 = dt - dt1; // time after the pulse
 
-      const Vector3d B1 = nv.static_Bz*zhat + controls.B(t+dt1/2);
-      const Vector3d B2 = nv.static_Bz*zhat + controls.B(t+dt1+dt2/2);
+      const Vector3d B1 = controls.B(t+dt1/2);
+      const Vector3d B2 = controls.B(t+dt1+dt2/2);
       const MatrixXcd H1 = H_static + H_nZ(nv,cluster,B1);
       const MatrixXcd H2 = H_static + H_nZ(nv,cluster,B2);
 
