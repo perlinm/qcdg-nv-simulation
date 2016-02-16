@@ -331,7 +331,7 @@ MatrixXcd H_ss(const spin& s1, const spin& s2){
     * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), dot(s2.S,hat(r))));
 }
 
-// spin-spin coupling Hamiltonian for NV center with cluster
+// spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;

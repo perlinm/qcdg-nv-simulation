@@ -147,7 +147,7 @@ int F_AXY(const double x, const vector<double> pulses);
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
 
-// spin-spin coupling Hamiltonian for NV center with cluster
+// spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // nuclear Zeeman Hamiltonian
@@ -164,7 +164,7 @@ inline MatrixXcd H_NV_GS(const nv_system& nv){
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
 };
 
-// NV rotation about zhat at a given time
+// NV rotation about zhat due to static Hamiltonian
 inline MatrixXcd U_NV_GS(const nv_system& nv, const double time, const uint spins = 1){
   return act( exp(-j*time*H_NV_GS(nv)), {0}, spins);
 };
