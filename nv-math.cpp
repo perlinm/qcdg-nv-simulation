@@ -1,3 +1,6 @@
+#include <iostream> // for standard output
+using namespace std;
+
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
@@ -482,7 +485,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
-  nv_phi -= floor(nv_phi/2*pi)*2*pi;
+  nv_phi -= floor(nv_phi/(2*pi))*2*pi;
   U = (R_NV(nv,zhat,-nv_phi,spins) * U).eval();
 
   // normalize the propagator
@@ -491,8 +494,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   return U;
 }
 
-// WARNING: can be inaccurate when control fields cause the NV center to precess
-//          at rates comparable to the rate of "ground state" precession about zhat
+// WARNING: can be inaccurate when control fields cause the NV center to rotate at rates
+//          comparable to the rate of rotation due to zero-field splitting + static fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
