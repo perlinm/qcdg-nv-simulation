@@ -314,14 +314,15 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   return advanced_pulse_times;
 }
 
-// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
-int F_AXY(const double x, const vector<double> pulses){
+// evaluate F(t) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses with period t_DD
+int F_AXY(const double t, const vector<double> pulses, double t_DD){
+  const double x = t/t_DD - floor(t/t_DD);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) < x - floor(x)) pulse_count++;
+    if(pulses.at(i) < x) pulse_count++;
     else break;
   }
-  return (pulse_count%2 == 0 ? 1 : -1);
+  return (pulse_count % 2 == 0 ? 1 : -1);
 }
 
 // Hamiltoninan coupling two spins
@@ -430,6 +431,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance){
   const uint spins = nv.clusters.at(cluster).size()+1;
+  const double end_time = simulation_time + advance;
+  const double w_NV = w_NV_GS(nv);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -445,12 +448,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols());
-  uint pulse_count = 0;
-  for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) < normed_advance) pulse_count++;
-    else break;
-  }
-  if(pulse_count%2 != 0) U = (X*U).eval();
+  if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
 
   // propagator for whole AXY sequences
   if(simulation_time >= t_DD){
@@ -466,28 +464,26 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // propagator for AXY sequence remainder
   const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
+  double nv_phi = 0; // keep track of NV spin rotation about zhat
   for(uint i = 1; i < advanced_pulses.size(); i++){
     const double t = advanced_pulses.at(i-1)*t_DD;
     const double dt = advanced_pulses.at(i)*t_DD - t;
     if(t + dt < remaining_time){
       U = (X * exp(-j*dt*H) * U).eval();
-      pulse_count++;
+      nv_phi += F_AXY(advance + t + dt/2, pulses, t_DD) * dt * w_NV;
     } else{
       const double dtf = remaining_time - t;
       U = (exp(-j*dtf*H) *U).eval();
+      nv_phi += F_AXY(advance + t + dtf/2, pulses, t_DD) * dtf * w_NV;
       break;
     }
   }
   // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
-  if(pulse_count%2 != 0) U = (X*U).eval();
+  if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
-  const double t_NV_GS = 2*pi/w_NV_GS(nv);
-  const double flush_time = ceil(simulation_time/t_NV_GS)*t_NV_GS - simulation_time;
-  U = (U_NV_GS(nv,flush_time,spins) * U).eval();
-  // FIXME: move into NV frame without cheating!
-  const double nv_phi = real(U_decompose(j*log(U))(3));
-  U = (act(exp(j*nv_phi*sz),{0},spins) * U).eval();
+  nv_phi -= floor(nv_phi/2*pi)*2*pi;
+  U = (R_NV(nv,zhat,-nv_phi,spins) * U).eval();
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
