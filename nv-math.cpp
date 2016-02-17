@@ -537,12 +537,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
   MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols());
-  uint pulse_count = 0;
-  for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) < normed_advance) pulse_count++;
-    else break;
-  }
-  if(pulse_count%2 != 0) U = (X*U).eval();
+  if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
 
   for(uint t_i = 0; t_i < integration_steps; t_i++){
     const double t = t_i*dt+advance; // time
@@ -569,12 +564,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       const MatrixXcd H1 = H_0 + H_ctl(nv, cluster, controls.B(t+dt1/2));
       const MatrixXcd H2 = H_0 + H_ctl(nv, cluster, controls.B(t+dt1+dt2/2));
       U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
-      pulse_count++;
     }
   }
-
   // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
-  if(pulse_count%2 != 0) U = (X*U).eval();
+  if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
   const double t_NV_GS = 2*pi/w_NV_GS(nv);
