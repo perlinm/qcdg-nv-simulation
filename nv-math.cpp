@@ -494,19 +494,21 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   return U;
 }
 
-// WARNING: can be inaccurate when control fields cause the NV center to rotate at rates
-//          comparable to the rate of rotation due to zero-field splitting + static fields
+// WARNING: inaccurate when the control fields are too strong, i.e. when their effects on the
+//          NV center cannot be neglected due to zero-field splitting and static fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
                               const double advance){
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
+  const double w_NV = w_NV_GS(nv);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
   const double normed_advance = advance/t_DD - floor(advance/t_DD);
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
+  const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   // largest frequency scale of simulation
   const double frequency_scale = [&]() -> double {
@@ -570,12 +572,21 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
-  const double t_NV_GS = 2*pi/w_NV_GS(nv);
-  const double flush_time = ceil(simulation_time/t_NV_GS)*t_NV_GS - simulation_time;
-  U = (U_NV_GS(nv,flush_time,spins) * U).eval();
-  // FIXME: move into NV frame without cheating!
-  const double nv_phi = real(U_decompose(j*log(U))(3));
-  U = (act(exp(j*nv_phi*sz),{0},spins) * U).eval();
+  double nv_phi = 0;
+  const double t_DD_remainder = simulation_time - int(simulation_time/t_DD)*t_DD;
+  for(uint i = 1; i < advanced_pulses.size(); i++){
+    const double t = advanced_pulses.at(i-1)*t_DD;
+    const double dt = advanced_pulses.at(i)*t_DD - t;
+    if(t + dt < t_DD_remainder){
+      nv_phi += F_AXY(advance + t + dt/2, pulses, t_DD) * dt * w_NV;
+    } else{
+      const double dtf = t_DD_remainder - t;
+      nv_phi += F_AXY(advance + t + dtf/2, pulses, t_DD) * dtf * w_NV;
+      break;
+    }
+  }
+  nv_phi -= floor(nv_phi/(2*pi))*2*pi;
+  U = (R_NV(nv,zhat,-nv_phi,spins) * U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
