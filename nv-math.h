@@ -58,7 +58,7 @@ enum axy_harmonic { first = 1, third = 3 };
 
 // struct containing system and simulation info
 struct nv_system{
-  const spin n;
+  const spin n = spin(ao, 0., s_vec/2);
   const spin e;
   const int ms;
   const double static_Bz;
