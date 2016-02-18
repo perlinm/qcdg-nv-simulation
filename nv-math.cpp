@@ -449,7 +449,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // NV center spin flip (pi-)pulse
   const MatrixXcd X = act(sx, {0}, spins);
 
-  // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
+  // initial propagator; determine whether to start with a flipped NV center
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols());
   if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
 
@@ -467,7 +467,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // propagator for AXY sequence remainder
   const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
-  double nv_phi = 0; // keep track of NV spin rotation about zhat
+  double nv_phi = 0; // NV rotation about zhat
   for(uint i = 1; i < advanced_pulses.size(); i++){
     const double t = advanced_pulses.at(i-1)*t_DD;
     const double dt = advanced_pulses.at(i)*t_DD - t;
@@ -481,7 +481,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       break;
     }
   }
-  // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
+  // if we ended with a flipped NV center, flip it back
   if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
@@ -502,7 +502,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double advance){
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
-  const double w_NV = w_NV_GS(nv);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -537,10 +536,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   // NV center spin flip (pi-)pulse
   const MatrixXcd X = act(sx, {0}, spins);
 
-  // initial propagator; determine whether to start with a flipped NV center (i.e. F(t) = -1)
+  // initial propagator; determine whether to start with a flipped NV center
   MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols());
   if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
 
+  double nv_phi = 0; // NV rotation about zhat
   for(uint t_i = 0; t_i < integration_steps; t_i++){
     const double t = t_i*dt+advance; // time
 
@@ -555,37 +555,32 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // update propagator
     if(!pulse){
-      const MatrixXcd H = H_0 + H_ctl(nv, cluster, controls.B(t+dt/2));
-      U = (exp(-j*dt*H) * U).eval();
+      const Vector3d B = controls.B(t+dt/2);
+      const MatrixXcd H = H_0 + H_ctl(nv, cluster, B);
 
-    } else{ // if(pulse);
+      U = (exp(-j*dt*H) * U).eval();
+      nv_phi += F_AXY(t+dt/2, pulses, t_DD) * dt * w_NV_GS(nv,B);
+
+    } else{ // if(pulse)
       const double t_AXY = t - int(t/t_DD)*t_DD; // time into this AXY sequence
       const double dt1 = pulses.at(pulse)*t_DD - t_AXY; // time before the pulse
       const double dt2 = dt - dt1; // time after the pulse
 
-      const MatrixXcd H1 = H_0 + H_ctl(nv, cluster, controls.B(t+dt1/2));
-      const MatrixXcd H2 = H_0 + H_ctl(nv, cluster, controls.B(t+dt1+dt2/2));
+      const Vector3d B1 = controls.B(t+dt1/2);
+      const Vector3d B2 = controls.B(t+dt1+dt2/2);
+      const MatrixXcd H1 = H_0 + H_ctl(nv, cluster, B1);
+      const MatrixXcd H2 = H_0 + H_ctl(nv, cluster, B2);
+
       U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
+      nv_phi += F_AXY(t+dt1/2, pulses, t_DD) * dt1 * w_NV_GS(nv,B1);
+      nv_phi += F_AXY(t+dt1+dt2/2, pulses, t_DD) * dt2 * w_NV_GS(nv,B2);
     }
+    nv_phi -= floor(nv_phi/(2*pi))*2*pi;
   }
-  // if we ended with a flipped NV center (i.e. F(t) = -1), flip it back
+  // if we ended with a flipped NV center, flip it back
   if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
 
   // move into the frame of the NV center
-  double nv_phi = 0;
-  const double t_DD_remainder = simulation_time - int(simulation_time/t_DD)*t_DD;
-  for(uint i = 1; i < advanced_pulses.size(); i++){
-    const double t = advanced_pulses.at(i-1)*t_DD;
-    const double dt = advanced_pulses.at(i)*t_DD - t;
-    if(t + dt < t_DD_remainder){
-      nv_phi += F_AXY(advance + t + dt/2, pulses, t_DD) * dt * w_NV;
-    } else{
-      const double dtf = t_DD_remainder - t;
-      nv_phi += F_AXY(advance + t + dtf/2, pulses, t_DD) * dtf * w_NV;
-      break;
-    }
-  }
-  nv_phi -= floor(nv_phi/(2*pi))*2*pi;
   U = (R_NV(nv,zhat,-nv_phi,spins) * U).eval();
 
   // normalize propagator
