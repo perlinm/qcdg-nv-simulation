@@ -187,7 +187,7 @@ MatrixXcd U_basis_matrix(const uint N){
 }
 
 // decompose an operator into its basis elements
-MatrixXcd U_decompose(const MatrixXcd& U, const bool fast){
+VectorXcd U_decompose(const MatrixXcd& U, const bool fast){
   const uint N = log2(U.rows());
   if(fast) return U_basis_matrix(N).householderQr().solve(flatten(U));
   else return U_basis_matrix(N).fullPivLu().solve(flatten(U));
@@ -231,7 +231,7 @@ mvec operator*(const MatrixXcd& G, const mvec& v){
 // print operator in human-readable form
 void U_print(const MatrixXcd& U, const double threshold){
   const int N = log2(U.rows());
-  MatrixXcd hs = U_decompose(U);
+  VectorXcd hs = U_decompose(U);
   for(int p = 0; p < pow(4,N); p++){
     if(abs(hs(p)) > threshold){
       if(abs(real(hs(p))) < threshold) hs(p) -= real(hs(p));
