@@ -1,9 +1,9 @@
-change into frame of NV properly in simulate_propagator
+itemize assumptions and approximations used in simulations
 
 translate several pure states and density operators between abstract state and GA notations
 
 implement individual addressing for larmor pairs
-fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 93944 --coupling
+fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 62082 --coupling
 candidate seeds: 9746 10688 13481 15646 25272 40426 41142 47805 49308 52619 62086 91296 93794 93944 99582
 
 implement SWAP_NVST for larmor pairs
