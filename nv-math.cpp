@@ -582,7 +582,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = (act(U_NV.adjoint(),{0},spins) * U).eval();
+  const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
+  const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
+                                yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
+                                zhat*real(H_NV_vec(3))*nv.ms*2);
+  U = (R_NV(nv,nv_rotation,-nv_rotation.norm(),spins) * U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
