@@ -490,8 +490,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   return U;
 }
 
-// WARNING: inaccurate when the control fields are too strong, i.e. when their effects on the
-//          NV center cannot be neglected due to zero-field splitting and static fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
