@@ -159,27 +159,26 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
 
 // returns basis element p for an operator acting on a system with N spins
 MatrixXcd U_basis_element(const uint p, const uint N){
-  const MatrixXcd spins[4] = {st, sx, sy, sz};
+  const vector<MatrixXcd> spins = {st, sx, sy, sz};
   MatrixXcd b_p = I1;
   for(int n = 0; n < N; n++){
-    b_p = tp(b_p,spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)]);
+    b_p = tp(b_p,spins.at(int_bit(p,2*n)+2*int_bit(p,2*n+1)));
   }
   return b_p;
 }
 
 // returns element p of a basis for operators acting on a system with N qubits
 string U_basis_element_text(const uint p, const uint N){
-  const char spins[4] = {'I','X','Y','Z'};
+  const vector<char> spins = {'I','X','Y','Z'};
   stringstream stream;
   for(uint n = 0; n < N; n++){
-    stream << spins[int_bit(p,2*n)+2*int_bit(p,2*n+1)];
+    stream << spins.at(int_bit(p,2*n)+2*int_bit(p,2*n+1));
   }
   return stream.str();
 }
 
 // returns matrix whose columns are basis Hamiltonians for a system of N spins
 MatrixXcd U_basis_matrix(const uint N){
-  const MatrixXcd spins[4] = {st, sx, sy, sz};
   MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
   for(int p = 0; p < pow(4,N); p++){
     out.col(p) = flatten(U_basis_element(p,N));
