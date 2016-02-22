@@ -446,7 +446,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const MatrixXcd X = act(sx, {0}, spins); // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // initial system propagator
 
-  // if we need to start with a flipped NV center, flit it
+  // if we need to start with a flipped NV center, flip it
   if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
 
   // propagator for whole AXY sequences
@@ -530,7 +530,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // initial system propagator
   MatrixXcd U_NV = MatrixXcd::Identity(2,2); // NV-only propagator
 
-  // if we need to start with a flipped NV center, flit it
+  // if we need to start with a flipped NV center, flip it
   if(F_AXY(advance, pulses, t_DD) == -1){
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
