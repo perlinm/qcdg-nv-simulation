@@ -317,11 +317,11 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
 }
 
 // evaluate F(t) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses with period t_DD
-int F_AXY(const double t, const vector<double> pulses, double t_DD){
+int F_AXY(const double t, const vector<double> pulses, const double t_DD){
   const double x = t/t_DD - floor(t/t_DD);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) < x) pulse_count++;
+    if(pulses.at(i) <= x) pulse_count++;
     else break;
   }
   return (pulse_count % 2 == 0 ? 1 : -1);
