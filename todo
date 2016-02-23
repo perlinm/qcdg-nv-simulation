@@ -1,3 +1,6 @@
+run tests for random angles and for n*pi/4:
+fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 62087 --max_cluster_size 2 --static_Bz 200 --test --ms -1
+
 itemize assumptions and approximations used in simulations
 
 translate several pure states and density operators between abstract state and GA notations
