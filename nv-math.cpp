@@ -431,7 +431,8 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                              const double simulation_time, const double advance){
+                              const double simulation_time, const double advance,
+                              const Vector3d B_ctl){
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
   const double w_NV = w_NV_GS(nv);
@@ -442,7 +443,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
-  const MatrixXcd H = H_static(nv,cluster); // full system Hamiltonian
+  const MatrixXcd H = H_static(nv,cluster) + H_ctl(nv,cluster,B_ctl); // full Hamiltonian
   const MatrixXcd X = act(sx, {0}, spins); // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // initial system propagator
 

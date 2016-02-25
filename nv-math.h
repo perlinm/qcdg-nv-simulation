@@ -251,7 +251,8 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                              const double simulation_time, const double advance = 0);
+                              const double simulation_time, const double advance = 0,
+                              const Vector3d B_ctl = Vector3d::Zero());
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
