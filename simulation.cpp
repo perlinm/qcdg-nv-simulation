@@ -269,7 +269,7 @@ int main(const int arg_num, const char *arg_vec[]) {
               if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV lattice site
                 const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
-                if(A(nv,nucleus).norm() > hyperfine_cutoff){
+                if(hyperfine(nv,nucleus).norm() > hyperfine_cutoff){
                   nv.nuclei.push_back(nucleus);
                 }
               }
@@ -434,7 +434,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for(uint i = 0; i < nv.nuclei.size(); i++){
-      const Vector3d A_i = A(nv,i);
+      const Vector3d A_i = hyperfine(nv,i);
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
       w_larmor.at(i) = effective_larmor(nv,i).norm();
 

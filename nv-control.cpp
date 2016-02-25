@@ -15,12 +15,8 @@ using namespace Eigen;
 
 // return "natural" basis of a nucleus
 vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
-  // larmor frequency of and hyperfine field at target nucleus
-  const Vector3d larmor_eff = effective_larmor(nv,index);
-  const Vector3d hyperfine_perp = A_perp(nv,index);
-  // "natural" basis vectors for target nucleus
-  const Vector3d target_zhat = hat(larmor_eff);
-  const Vector3d target_xhat = hat(hyperfine_perp);
+  const Vector3d target_zhat = hat(effective_larmor(nv,index));
+  const Vector3d target_xhat = hat(hyperfine_perp(nv,index));
   const Vector3d target_yhat = target_zhat.cross(target_xhat);
   return {target_xhat, target_yhat, target_zhat};
 }
@@ -60,7 +56,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double t_larmor = 2*pi/w_larmor;
 
   // AXY protocol parameters
-  const double sA = nv.scale_factor * A(nv,index).norm();
+  const double sA = nv.scale_factor * hyperfine(nv,index).norm();
   const double w_DD = [&]() -> double {
     const double w_DD_large = (w_larmor+sA)/3.;
     if(w_larmor < sA){
@@ -182,15 +178,15 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
   const double w_larmor = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/w_larmor;
   const double dw_min = larmor_resolution(nv,index);
-  const Vector3d hyperfine_perp = A_perp(nv,index);
+  const Vector3d A_perp = hyperfine_perp(nv,index);
 
   // AXY sequence parameters
   const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(dw_min/(hyperfine_perp.norm()*nv.scale_factor), axy_f_max(k_DD));
+  double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), axy_f_max(k_DD));
 
-  const double interaction_period = 2*pi/abs(f_DD*hyperfine_perp.norm()/8);
-  double interaction_time = rotation_angle/(nv.ms*f_DD*hyperfine_perp.norm()/8);
+  const double interaction_period = 2*pi/abs(f_DD*A_perp.norm()/8);
+  double interaction_time = rotation_angle/(nv.ms*f_DD*A_perp.norm()/8);
   while(interaction_time >= interaction_period) interaction_time -= interaction_period;
   while(interaction_time < 0) interaction_time += interaction_period;
   if(interaction_time > interaction_period/2){

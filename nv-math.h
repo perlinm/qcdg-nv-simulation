@@ -106,23 +106,23 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster);
 //--------------------------------------------------------------------------------------------
 
 // hyperfine field experienced by target nucleus
-inline Vector3d A(const nv_system& nv, const spin& s){
+inline Vector3d hyperfine(const nv_system& nv, const spin& s){
   const Vector3d r = s.pos - nv.e.pos;
   return nv.e.g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
 };
-inline Vector3d A(const nv_system& nv, const uint index){
-  return A(nv,nv.nuclei.at(index));
+inline Vector3d hyperfine(const nv_system& nv, const uint index){
+  return hyperfine(nv,nv.nuclei.at(index));
 };
 
 // component of hyperfine field perpendicular to the larmor axis
-Vector3d A_perp(const nv_system&nv, const spin& s);
-inline Vector3d A_perp(const nv_system&nv, const uint index){
-  return A_perp(nv,nv.nuclei.at(index));
+Vector3d hyperfine_perp(const nv_system&nv, const spin& s);
+inline Vector3d hyperfine_perp(const nv_system&nv, const uint index){
+  return hyperfine_perp(nv,nv.nuclei.at(index));
 };
 
 // effective larmor frequency of target nucleus
 inline Vector3d effective_larmor(const nv_system& nv, const spin& s){
-  return s.g*nv.static_Bz*zhat - nv.ms/2.*A(nv,s);
+  return s.g*nv.static_Bz*zhat - nv.ms/2.*hyperfine(nv,s);
 };
 inline Vector3d effective_larmor(const nv_system& nv, const uint index){
   return effective_larmor(nv,nv.nuclei.at(index));

@@ -237,10 +237,10 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster){
 //--------------------------------------------------------------------------------------------
 
 // component of hyperfine field perpendicular to the larmor axis
-Vector3d A_perp(const nv_system&nv, const spin& s){
-  const Vector3d larmor_eff = effective_larmor(nv,s);
-  const Vector3d hyperfine = A(nv,s);
-  return hyperfine - dot(hyperfine,hat(larmor_eff))*hat(larmor_eff);
+Vector3d hyperfine_perp(const nv_system&nv, const spin& s){
+  const Vector3d w_eff = effective_larmor(nv,s);
+  const Vector3d A = hyperfine(nv,s);
+  return A - dot(A,hat(w_eff))*hat(w_eff);
 }
 
 // minimum difference in larmor frequencies between target nucleus and other nuclei
