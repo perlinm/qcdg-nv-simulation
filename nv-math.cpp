@@ -380,10 +380,10 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
     const MatrixXcd proj_m = act(up*up.adjoint(),{0},cluster_size+1); // |ms><ms|
     const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
 
-    // construct full Hamiltonian
-    const MatrixXcd H = H_static(nv,cluster);
+    // full system Hamiltonian
+    const MatrixXcd H = H_sys(nv,cluster);
 
-      // spin cluster Hamiltonians for single NV states
+    // spin cluster Hamiltonians for single NV states
     const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
     const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
 
@@ -429,13 +429,21 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
+// compute rotation necessary to realize U_NV.adjoint()
+MatrixXcd fix_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins){
+  const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
+  const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
+                                yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
+                                zhat*real(H_NV_vec(3))*nv.ms*2);
+  return R_NV(nv,-nv_rotation,nv_rotation.norm(),spins);
+}
+
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance,
                               const Vector3d B_ctl){
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
-  const double w_NV = w_NV_GS(nv);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -443,47 +451,58 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
-  const MatrixXcd H = H_static(nv,cluster) + H_ctl(nv,cluster,B_ctl); // full Hamiltonian
+  const MatrixXcd H = H_sys(nv,cluster) + H_ctl(nv,cluster,B_ctl); // full Hamiltonian
   const MatrixXcd X = act(sx, {0}, spins); // NV center spin flip (pi-)pulse
-  MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // initial system propagator
+  MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // system propagator
+  Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
-  if(F_AXY(advance, pulses, t_DD) == -1) U = (X*U).eval();
+  if(F_AXY(advance, pulses, t_DD) == -1){
+    U = (X * U).eval();
+    U_NV = (sx * U_NV).eval();
+  }
 
   // propagator for whole AXY sequences
   if(simulation_time >= t_DD){
     MatrixXcd U_AXY = MatrixXcd::Identity(H.rows(),H.cols());
+    Matrix2cd U_NV_AXY = I2;
     for(uint i = 1; i < advanced_pulses.size(); i++){
       const double t = advanced_pulses.at(i-1)*t_DD;
       const double dt = advanced_pulses.at(i)*t_DD - t;
       U_AXY = (X * exp(-j*dt*H) * U_AXY).eval();
+      U_NV_AXY = (sx * exp(-j*dt*H_NV(nv,B_ctl)) * U_NV_AXY).eval();
     }
-    U_AXY = (X * U_AXY).eval(); // "undo" the last pulse at t = t_DD
+    // "undo" the last pulse at t = t_DD
+    U_AXY = (X * U_AXY).eval();
+    U_NV_AXY = (sx * U_NV_AXY).eval();
+
     U = (pow(U_AXY, int(simulation_time/t_DD)) * U).eval();
+    U_NV = (pow(U_NV_AXY, int(simulation_time/t_DD)) * U_NV).eval();
   }
 
   // propagator for AXY sequence remainder
   const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
-  double nv_phi = 0; // NV rotation about zhat
   for(uint i = 1; i < advanced_pulses.size(); i++){
     const double t = advanced_pulses.at(i-1)*t_DD;
     const double dt = advanced_pulses.at(i)*t_DD - t;
     if(t + dt < remaining_time){
       U = (X * exp(-j*dt*H) * U).eval();
-      nv_phi += F_AXY(advance + t + dt/2, pulses, t_DD) * dt * w_NV;
+      U_NV = (sx * exp(-j*dt*H_NV(nv,B_ctl)) * U_NV).eval();
     } else{
       const double dtf = remaining_time - t;
-      U = (exp(-j*dtf*H) *U).eval();
-      nv_phi += F_AXY(advance + t + dtf/2, pulses, t_DD) * dtf * w_NV;
+      U = (exp(-j*dtf*H) * U).eval();
+      U_NV = (exp(-j*dtf*H_NV(nv,B_ctl)) * U_NV).eval();
       break;
     }
   }
   // if we ended with a flipped NV center, flip it back
-  if(F_AXY(end_time, pulses, t_DD) == -1) U = (X*U).eval();
+  if(F_AXY(end_time, pulses, t_DD) == -1){
+    U = (X * U).eval();
+    U_NV = (sx * U_NV).eval();
+  }
 
   // rotate into the frame of the NV center
-  nv_phi -= floor(nv_phi/(2*pi))*2*pi;
-  U = (R_NV(nv,zhat,-nv_phi,spins) * U).eval();
+  U = (fix_NV(nv,U_NV,spins) * U).eval();
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -526,10 +545,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const uint integration_steps = simulation_time*frequency_scale*nv.integration_factor;
   const double dt = simulation_time/integration_steps;
 
-  const MatrixXcd H_0 = H_static(nv,cluster); // full system (static) Hamiltonian
+  const MatrixXcd H_0 = H_sys(nv,cluster); // full system Hamiltonian
   const MatrixXcd X = act(sx, {0}, spins); // NV center spin flip (pi-)pulse
-  MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // initial system propagator
-  MatrixXcd U_NV = MatrixXcd::Identity(2,2); // NV-only propagator
+  MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // system propagator
+  Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
   if(F_AXY(advance, pulses, t_DD) == -1){
@@ -581,11 +600,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
-  const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
-                                yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
-                                zhat*real(H_NV_vec(3))*nv.ms*2);
-  U = (R_NV(nv,nv_rotation,-nv_rotation.norm(),spins) * U).eval();
+  U = (fix_NV(nv,U_NV,spins) * U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));

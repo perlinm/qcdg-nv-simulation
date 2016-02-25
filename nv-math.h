@@ -163,8 +163,13 @@ inline MatrixXcd H_NV_GS(const nv_system& nv){
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
 };
 
-// total static Hamiltonian for the entire system
-inline MatrixXcd H_static(const nv_system& nv, const uint cluster){
+// net NV Hamiltonian
+inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& B){
+  return H_NV_GS(nv) + H_NV_Z(nv,B);
+};
+
+// total internal system Hamiltonian
+inline MatrixXcd H_sys(const nv_system& nv, const uint cluster){
   return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 };
@@ -243,6 +248,9 @@ struct control_fields{
 // return control field for decoupling a single nucleus from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
+
+// compute rotation necessary to realize U_NV.adjoint()
+MatrixXcd fix_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
