@@ -179,11 +179,6 @@ inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& 
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
 };
 
-// larmor frequency of NV center due to zero-field splitting and magnetic fields
-inline double w_NV_GS(const nv_system& nv){
-  return nv.ms*NV_ZFS - nv.e.g*nv.static_Bz;
-};
-
 // rotate NV spin about a given axis by phi
 inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& axis, const double phi,
                       const uint spins){
@@ -249,8 +244,8 @@ struct control_fields{
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
-// compute rotation necessary to realize U_NV.adjoint()
-MatrixXcd fix_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
+// rotate into the frame of the NV center
+MatrixXcd to_NV_frame(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV);
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
