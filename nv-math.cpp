@@ -587,9 +587,9 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       const MatrixXcd H2 = H_0 + H_ctl(nv, cluster, B2);
 
       U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
-      U_NV = (exp(-j*dt2*H_NV(nv,B)) *
+      U_NV = (exp(-j*dt2*H_NV(nv,B2)) *
               sx *
-              exp(-j*dt1*H_NV(nv,B)) *
+              exp(-j*dt1*H_NV(nv,B1)) *
               U_NV).eval();
     }
   }
