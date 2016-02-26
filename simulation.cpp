@@ -133,33 +133,33 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   vector<uint> target_nuclei;
   double rotation_angle;
-  double rotation_angle_over_2pi;
+  double rotation_angle_over_pi;
   double target_axis_azimuth;
-  double target_axis_azimuth_over_2pi;
+  double target_axis_azimuth_over_pi;
 
   po::options_description addressing_options("Single nucleus addressing options",
                                              help_text_length);
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target (if applicable)")
-    ("rotation", po::value<double>(&rotation_angle_over_2pi)->default_value(0.25,"0.25"),
-     "rotation angle in units of 2*pi")
-    ("target_azimuth", po::value<double>(&target_axis_azimuth_over_2pi)->default_value(0),
-     "azimuthal angle of target rotation axis in units of 2*pi"
-     " (e.g. 0 for xhat, 0.25 or for yhat)")
+    ("rotation", po::value<double>(&rotation_angle_over_pi)->default_value(0.5,"0.5"),
+     "rotation angle in units of pi")
+    ("target_azimuth", po::value<double>(&target_axis_azimuth_over_pi)->default_value(0),
+     "azimuthal angle of target rotation axis in units of pi"
+     " (e.g. 0 for xhat, 0.5 or for yhat)")
     ;
 
   double nv_axis_azimuth;
-  double nv_axis_azimuth_over_2pi;
+  double nv_axis_azimuth_over_pi;
   double nv_axis_polar;
-  double nv_axis_polar_over_2pi;
+  double nv_axis_polar_over_pi;
 
   po::options_description single_coupling_options("NV coupling options",help_text_length);
   single_coupling_options.add_options()
-    ("nv_azimuth", po::value<double>(&nv_axis_azimuth_over_2pi)->default_value(0),
-     "azimuthal angle of NV rotation axis in units of 2*pi")
-    ("nv_polar", po::value<double>(&nv_axis_polar_over_2pi)->default_value(0),
-     "polar angle of NV rotation axis in units of 2*pi")
+    ("nv_azimuth", po::value<double>(&nv_axis_azimuth_over_pi)->default_value(0),
+     "azimuthal angle of NV rotation axis in units of pi")
+    ("nv_polar", po::value<double>(&nv_axis_polar_over_pi)->default_value(0),
+     "polar angle of NV rotation axis in units of pi")
     ;
 
   po::options_description all("Allowed options");
@@ -220,10 +220,10 @@ int main(const int arg_num, const char *arg_vec[]) {
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
-  rotation_angle = rotation_angle_over_2pi*2*pi;
-  target_axis_azimuth = target_axis_azimuth_over_2pi*2*pi;
-  nv_axis_azimuth = nv_axis_azimuth_over_2pi*2*pi;
-  nv_axis_polar = nv_axis_polar_over_2pi*2*pi;
+  rotation_angle = rotation_angle_over_pi*pi;
+  target_axis_azimuth = target_axis_azimuth_over_pi*pi;
+  nv_axis_azimuth = nv_axis_azimuth_over_pi*pi;
+  nv_axis_polar = nv_axis_polar_over_pi*pi;
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
