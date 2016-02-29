@@ -539,4 +539,101 @@ int main(const int arg_num, const char *arg_vec[]) {
                           SWAP_NVST(nv,idx1,idx2,k_DD,false)) << endl;
   }
 
+  // -----------------------------------------------------------------------------------------
+  // Testing - targeting larmor pairs
+  // -----------------------------------------------------------------------------------------
+
+  if(testing){
+
+    const uint idx1 = target_nuclei.at(0);
+    const uint idx2 = target_nuclei.at(1);
+
+    const uint cluster = get_cluster_containing_index(nv,idx1);
+    const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
+    const uint idx2_in_cluster = get_index_in_cluster(idx2,nv.clusters.at(cluster));
+    const uint spins = nv.clusters.at(cluster).size()+1;
+
+    const MatrixXcd R =
+      act(rotate(natural_basis(nv,idx1),{xhat,yhat,zhat}), {idx1_in_cluster+1},spins) *
+      act(rotate(natural_basis(nv,idx2),{xhat,yhat,zhat}), {idx2_in_cluster+1},spins);
+
+
+    // exact propagator
+    MatrixXcd U_exact =
+      U_int(nv, idx1, k_DD, nv_axis_azimuth, nv_axis_polar,
+            target_axis_azimuth, rotation_angle, true);
+
+
+    // NV spin axis
+    const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
+
+    // larmor frequency of and perpendicular component of hyperfine field at target nucleus
+    const double w_larmor = effective_larmor(nv,idx1).norm();
+    const double t_larmor = 2*pi/w_larmor;
+    const double dw_min = larmor_resolution(nv,idx1);
+    const Vector3d A_perp = hyperfine_perp(nv,idx1);
+    const Vector3d A_perp_alt = hyperfine_perp(nv,idx2);
+
+    // const Vector3d A_int = A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt);
+    // const Vector3d B_ctl = nv.static_Bz*hat(A_int)/100.;
+    // const MatrixXcd target_rot = act(rotate(hat(A_int),hat(A_perp)),
+                                    // {idx1_in_cluster+1}, spins);
+
+    const Vector3d B_ctl = Vector3d::Zero();
+    const Vector3d A_int = A_perp;
+    const MatrixXcd target_rot = act(I2,{0},spins);
+
+    // AXY sequence parameters
+    const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
+    const double t_DD = 2*pi/w_DD; // AXY protocol period
+    double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(k_DD));
+
+    const double interaction_period = 2*pi/abs(f_DD*A_int.norm()/8);
+    double interaction_time = rotation_angle/(nv.ms*f_DD*A_int.norm()/8);
+    while(interaction_time >= interaction_period) interaction_time -= interaction_period;
+    while(interaction_time < 0) interaction_time += interaction_period;
+    if(interaction_time > interaction_period/2){
+      f_DD *= -1;
+      interaction_time = interaction_period-interaction_time;
+    }
+
+    const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+                                                interaction_time, -target_axis_azimuth/w_DD,
+                                                B_ctl);
+
+    const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
+    const MatrixXcd U_flush = simulate_propagator(nv, cluster, 2*w_DD, 0, k_DD, flush_time,
+                                                  interaction_time - target_axis_azimuth/w_DD,
+                                                  B_ctl);
+
+    // rotate the NV spin between the desired axis and zhat
+    const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
+
+    // rotate into the frame of the "pair" nucleus
+    const Vector3d w_larmor_alt = effective_larmor(nv,idx2);
+    const double total_time = interaction_time + flush_time;
+    const MatrixXcd U_flush_alt = act(rotate(total_time*w_larmor_alt),
+                                      {idx2_in_cluster+1}, spins);
+
+    // full propagator
+    MatrixXcd U =
+      U_flush_alt * U_flush * nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
+
+    U_exact = (R.adjoint() * U_exact * R).eval();
+    U = (R.adjoint() * U * R).eval();
+
+    cout << "exact:" << endl;
+    // cout << clean(U_exact,1e-3) << endl << endl;
+    U_print(j*log(U_exact)/pi,1e-3);
+    cout << endl << endl;
+
+    cout << "approximate:" << endl;
+    // cout << clean(U,1e-3) << endl << endl;
+    U_print(j*log(U)/pi,1e-3);
+    cout << endl;
+
+    cout << idx1 << ": " << gate_fidelity(U,U_exact) << endl;
+
+  }
+
 }
