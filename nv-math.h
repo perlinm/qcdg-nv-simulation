@@ -28,15 +28,21 @@ const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
 // perform spin-1/2 rotation about arbitrary axis
-Matrix2cd rotate(const Vector3d axis, const double phi);
+inline Matrix2cd rotate(const Vector3d axis){
+  if(axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
+  else return I2;
+};
+inline Matrix2cd rotate(const Vector3d axis, const double angle){
+  return rotate(angle*hat(axis));
+};
 
 // rotate into one axis from another
-inline Matrix2cd rotate(const Vector3d axis_end, const Vector3d axis_start){
+inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start){
   return rotate(hat(axis_start.cross(axis_end)), acos(dot(hat(axis_start),hat(axis_end))));
-}
+};
 
 // rotate into one basis from another
-Matrix2cd rotate(const vector<Vector3d> basis_end, const vector<Vector3d> basis_start);
+Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start);
 
 // struct for spins
 struct spin{
@@ -44,7 +50,7 @@ struct spin{
   const double g; // gyromagnetic ratio
   const mvec S; // spin vector
 
-  spin(const Vector3d pos, const double g, const mvec S);
+  spin(const Vector3d& pos, const double g, const mvec& S);
 
   bool operator==(const spin& s) const {
     return ((pos == s.pos) && (g == s.g) && (S == s.S));

@@ -12,14 +12,8 @@ using namespace Eigen;
 // Spin vectors and structs
 //--------------------------------------------------------------------------------------------
 
-// perform spin-1/2 rotation about arbitrary axis
-Matrix2cd rotate(const Vector3d axis, const double phi){
-  if(axis.squaredNorm() > 0) return cos(phi/2.)*I2 - j*sin(phi/2.)*dot(s_vec,hat(axis));
-  else return I2;
-}
-
 // rotate into one basis from another
-Matrix2cd rotate(const vector<Vector3d> basis_end, const vector<Vector3d> basis_start){
+Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start){
   assert(basis_start.size() == 3);
   assert(basis_end.size() == 3);
   assert(dot(basis_start.at(0).cross(basis_start.at(1)),basis_start.at(2)) > 0);
@@ -51,7 +45,7 @@ Matrix2cd rotate(const vector<Vector3d> basis_end, const vector<Vector3d> basis_
   }
 }
 
-spin::spin(const Vector3d pos, const double g, const mvec S) :
+spin::spin(const Vector3d& pos, const double g, const mvec& S) :
   pos(pos), g(g), S(S)
 {};
 
@@ -436,7 +430,9 @@ MatrixXcd to_NV_frame(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& 
   const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
                                 yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
                                 zhat*real(H_NV_vec(3))*nv.ms*2);
-  return R_NV(nv,-hat(nv_rotation),nv_rotation.norm(),spins) * U;
+  if(nv_rotation.squaredNorm() > 0){
+    return R_NV(nv,-hat(nv_rotation),nv_rotation.norm(),spins) * U;
+  } else return U;
 }
 
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
