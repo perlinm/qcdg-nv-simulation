@@ -1,28 +1,30 @@
-run tests for random angles and for n*pi/4:
-fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 62087 --max_cluster_size 2 --static_Bz 200 --test --ms -1
-
 itemize assumptions and approximations used in simulations
 
 translate several pure states and density operators between abstract state and GA notations
 
 implement individual addressing for larmor pairs
-fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 62082 --coupling
+fac && ./simulate --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 62086 --coupling
 candidate seeds: 9746 10688 13481 15646 25272 40426 41142 47805 49308 52619 62086 91296 93794 93944 99582
 
 implement SWAP_NVST for larmor pairs
 
-implement state decay model
-use non-ideal NV pulses?
-
 add a mode to output operation protocol
  - use secondary script to remove operations which cancel out (e.g. two consecutive XX pulses)
 
-compute corrections that need to be made to approximate gates, and perform them
-
-is it worthwhile to implement a zz coupling protocol?
+remove "flushing"; correct for rotations in NV center rather than nuclei
 
 if two SWAP_NVST targets are not larmor pairs,
   is it better to use natural bases, or a standard basis?
+
+is it worthwhile to implement a zz coupling protocol?
+
+implement state decay model
+use non-ideal NV pulses?
+
+compute corrections that need to be made to approximate gates, and perform them
+
+
+
 
 investigate bad fidelities:
    target 9:
