@@ -93,7 +93,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
   const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
 
-  MatrixXcd U_ctl = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  MatrixXcd U_ctl;
   if(!adjust_AXY){
     U_ctl = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, control_time, controls);
   } else{ // if(adjust_AXY)
