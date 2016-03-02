@@ -550,22 +550,12 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     const uint cluster = get_cluster_containing_index(nv,idx1);
     const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
-    const uint idx2_in_cluster = get_index_in_cluster(idx2,nv.clusters.at(cluster));
     const uint spins = nv.clusters.at(cluster).size()+1;
-
-    const MatrixXcd R =
-      act(rotate(natural_basis(nv,idx1),{xhat,yhat,zhat}), {idx1_in_cluster+1},spins) *
-      act(rotate(natural_basis(nv,idx2),{xhat,yhat,zhat}), {idx2_in_cluster+1},spins);
-
 
     // exact propagator
     MatrixXcd U_exact =
       U_int(nv, idx1, k_DD, nv_axis_azimuth, nv_axis_polar,
             target_axis_azimuth, rotation_angle, true);
-
-
-    // NV spin axis
-    const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
 
     // larmor frequency of and perpendicular component of hyperfine field at target nucleus
     const double w_larmor = effective_larmor(nv,idx1).norm();
@@ -574,14 +564,14 @@ int main(const int arg_num, const char *arg_vec[]) {
     const Vector3d A_perp = hyperfine_perp(nv,idx1);
     const Vector3d A_perp_alt = hyperfine_perp(nv,idx2);
 
-    // const Vector3d A_int = A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt);
-    // const Vector3d B_ctl = nv.static_Bz*hat(A_int)/100.;
-    // const MatrixXcd target_rot = act(rotate(hat(A_int),hat(A_perp)),
-                                    // {idx1_in_cluster+1}, spins);
-
-    const Vector3d B_ctl = Vector3d::Zero();
     const Vector3d A_int = A_perp;
-    const MatrixXcd target_rot = act(I2,{0},spins);
+    // const Vector3d A_int = A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt);
+    const Vector3d B_ctl = nv.static_Bz/100 * hat(A_int);
+    // const Vector3d B_ctl = Vector3d::Zero();
+    const control_fields controls(B_ctl,w_larmor);
+
+    const MatrixXcd target_rot = act(rotate(hat(A_int),hat(A_perp)),
+                                    {idx1_in_cluster+1}, spins);
 
     // AXY sequence parameters
     const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
@@ -597,39 +587,56 @@ int main(const int arg_num, const char *arg_vec[]) {
       interaction_time = interaction_period-interaction_time;
     }
 
-    const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
-                                                interaction_time, -target_axis_azimuth/w_DD,
-                                                B_ctl);
 
-    const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
-    const MatrixXcd U_flush = simulate_propagator(nv, cluster, 2*w_DD, 0, k_DD, flush_time,
-                                                  interaction_time - target_axis_azimuth/w_DD,
-                                                  B_ctl);
+    const uint cycles = int(interaction_time/t_DD);
+    const double leading_time = interaction_time - cycles*t_DD;
+    const double trailing_time = t_DD - leading_time;
+
+    const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+                                                    leading_time, controls);
+    const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+                                                     trailing_time, controls, leading_time);
+
+    const MatrixXcd U_int = U_leading * pow(U_trailing*U_leading,cycles);
+
 
     // rotate the NV spin between the desired axis and zhat
+    const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
     const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
 
-    // rotate into the frame of the "pair" nucleus
-    const Vector3d w_larmor_alt = effective_larmor(nv,idx2);
-    const double total_time = interaction_time + flush_time;
-    const MatrixXcd U_flush_alt = act(rotate(total_time*w_larmor_alt),
-                                      {idx2_in_cluster+1}, spins);
-
     // full propagator
-    MatrixXcd U =
-      U_flush_alt * U_flush * nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
+    MatrixXcd U = nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
+
+    // rotate into the frame of the "pair" nucleus
+    MatrixXcd R = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+    for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
+      const uint index = nv.clusters.at(cluster).at(i);
+      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+
+      const Vector3d w_larmor = effective_larmor(nv,index);
+      const MatrixXcd U_flush_z = act(rotate(interaction_time*w_larmor), {index+1}, spins);
+
+      const Vector3d w_ctl = nv.nuclei.at(index).g*B_ctl/2.;
+      const MatrixXcd U_flush_xy = act(rotate(interaction_time*w_ctl), {index+1}, spins);
+
+      U = (U_flush_xy * U_flush_z * U).eval();
+
+      R = (act(rotate(natural_basis(nv,index),
+                      {xhat,yhat,zhat}), {index_in_cluster+1},spins) * R).eval();
+
+    }
 
     U_exact = (R.adjoint() * U_exact * R).eval();
     U = (R.adjoint() * U * R).eval();
 
     cout << "exact:" << endl;
-    // cout << clean(U_exact,1e-3) << endl << endl;
-    U_print(j*log(U_exact)/pi,1e-3);
+    cout << clean(U_exact,1e-2) << endl << endl;
+    U_print(j*log(U_exact)/pi,1e-2);
     cout << endl << endl;
 
     cout << "approximate:" << endl;
-    // cout << clean(U,1e-3) << endl << endl;
-    U_print(j*log(U)/pi,1e-3);
+    cout << clean(U,1e-2) << endl << endl;
+    U_print(j*log(U)/pi,1e-2);
     cout << endl;
 
     cout << idx1 << ": " << gate_fidelity(U,U_exact) << endl;
