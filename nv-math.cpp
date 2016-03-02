@@ -519,6 +519,11 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
                               const double advance){
+  if(controls.all_fields_static()){
+    return simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+                               simulation_time, advance, controls.B(0));
+  }
+
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
 

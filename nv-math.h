@@ -238,6 +238,13 @@ struct control_fields{
     }
     return net_B;
   }
+
+  bool all_fields_static() const{
+    for(uint c = 0; c < num(); c++){
+      if(freqs.at(c) > 0) return false;
+    }
+    return true;
+  }
 };
 
 // return control field for decoupling a single nucleus from other nuclei
