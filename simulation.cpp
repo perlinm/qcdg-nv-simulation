@@ -599,7 +599,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     // rotate the NV spin between the desired axis and zhat
     const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
-    const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
+    const MatrixXcd nv_axis_to_zhat = target_NV(nv,rotate(zhat,nv_axis),spins);
 
     // full propagator
     MatrixXcd U = nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;

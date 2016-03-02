@@ -202,7 +202,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
                                                 interaction_time - target_axis_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_axis_to_zhat = act(rotate(zhat,nv_axis), {0}, spins);
+  const MatrixXcd nv_axis_to_zhat = target_NV(nv,rotate(zhat,nv_axis),spins);
 
   return U_flush * nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
 }

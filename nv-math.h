@@ -245,9 +245,7 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
 // rotate NV spin about a given axis by phi
-inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins){
-  return act( exp(-j*dot(nv.e.S,rotation)), {0}, spins);
-}
+MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
 
 // compute and perform NV rotation necessary to realize U_NV
 MatrixXcd target_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);

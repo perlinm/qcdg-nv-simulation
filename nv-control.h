@@ -51,7 +51,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
 
 // iSWAP operation
 MatrixXcd iSWAP(const nv_system& nv, const uint index, const axy_harmonic k_DD,
-                const bool exact = true);
+                const bool exact);
 
 // SWAP_NVST operation
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
