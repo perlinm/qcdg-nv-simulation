@@ -205,8 +205,8 @@ struct control_fields{
   vector<double> phases;
 
   control_fields(){};
-  control_fields(const Vector3d& B, const double w, const double phase){
-    this->add(B,w,phase);
+  control_fields(const Vector3d& B, const double freq = 0, const double phase = 0){
+    this->add(B,freq,phase);
   };
   control_fields(const vector<Vector3d>& Bs, const vector<double>& freqs,
                  const vector<double>& phases){
@@ -216,9 +216,9 @@ struct control_fields{
     this->phases = phases;
   };
 
-  void add(const Vector3d& B, const double w, const double phase){
+  void add(const Vector3d& B, const double freq, const double phase){
     Bs.push_back(B);
-    freqs.push_back(w);
+    freqs.push_back(freq);
     phases.push_back(phase);
   };
   void add(const control_fields& controls){

@@ -91,7 +91,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   }
 
   const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
-  const control_fields controls(B_ctl*axis_ctl, w_ctl, 0.); // control field object
+  const control_fields controls(B_ctl*axis_ctl, w_ctl); // control field object
 
   MatrixXcd U_ctl;
   if(!adjust_AXY){
