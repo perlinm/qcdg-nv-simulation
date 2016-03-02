@@ -545,33 +545,30 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(testing){
 
-    const uint idx1 = target_nuclei.at(0);
-    const uint idx2 = target_nuclei.at(1);
+    const uint target = target_nuclei.at(0);
+    const uint alt = target_nuclei.at(1);
 
-    const uint cluster = get_cluster_containing_index(nv,idx1);
-    const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
+    const uint cluster = get_cluster_containing_index(nv,target);
+    const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
     const uint spins = nv.clusters.at(cluster).size()+1;
 
     // exact propagator
     MatrixXcd U_exact =
-      U_int(nv, idx1, k_DD, nv_axis_azimuth, nv_axis_polar,
+      U_int(nv, target, k_DD, nv_axis_azimuth, nv_axis_polar,
             target_axis_azimuth, rotation_angle, true);
 
     // larmor frequency of and perpendicular component of hyperfine field at target nucleus
-    const double w_larmor = effective_larmor(nv,idx1).norm();
+    const double w_larmor = effective_larmor(nv,target).norm();
     const double t_larmor = 2*pi/w_larmor;
-    const double dw_min = larmor_resolution(nv,idx1);
-    const Vector3d A_perp = hyperfine_perp(nv,idx1);
-    const Vector3d A_perp_alt = hyperfine_perp(nv,idx2);
+    const double dw_min = larmor_resolution(nv,target);
+    const Vector3d A_perp = hyperfine_perp(nv,target);
+    const Vector3d A_perp_alt = hyperfine_perp(nv,alt);
 
-    const Vector3d A_int = A_perp;
-    // const Vector3d A_int = A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt);
-    const Vector3d B_ctl = nv.static_Bz/100 * hat(A_int);
-    // const Vector3d B_ctl = Vector3d::Zero();
-    const control_fields controls(B_ctl,w_larmor);
-
-    const MatrixXcd target_rot = act(rotate(hat(A_int),hat(A_perp)),
-                                    {idx1_in_cluster+1}, spins);
+    const double B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
+    const Vector3d axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
+    const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
+    const control_fields controls(B_ctl*axis_ctl,w_larmor);
+    const MatrixXcd target_rot = act(rotate(axis_ctl,A_perp), {target_in_cluster+1}, spins);
 
     // AXY sequence parameters
     const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
@@ -614,32 +611,37 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
 
       const Vector3d w_larmor = effective_larmor(nv,index);
-      const MatrixXcd U_flush_z = act(rotate(interaction_time*w_larmor), {index+1}, spins);
+      const MatrixXcd U_flush_z = act(rotate(interaction_time*w_larmor),
+                                      {index_in_cluster+1}, spins);
+      U = (U_flush_z * U).eval();
 
-      const Vector3d w_ctl = nv.nuclei.at(index).g*B_ctl/2.;
-      const MatrixXcd U_flush_xy = act(rotate(interaction_time*w_ctl), {index+1}, spins);
-
-      U = (U_flush_xy * U_flush_z * U).eval();
+      if(is_larmor_pair(nv,index,target)){
+        const Vector3d w_ctl = nv.nuclei.at(index).g*B_ctl*axis_ctl/2;
+        const MatrixXcd U_flush_xy = act(rotate(interaction_time*w_ctl),
+                                         {index_in_cluster+1}, spins);
+        U = (U_flush_xy * U).eval();
+      }
 
       R = (act(rotate(natural_basis(nv,index),
                       {xhat,yhat,zhat}), {index_in_cluster+1},spins) * R).eval();
 
     }
+    U = (target_rot.adjoint() * U * target_rot).eval();
 
     U_exact = (R.adjoint() * U_exact * R).eval();
     U = (R.adjoint() * U * R).eval();
 
     cout << "exact:" << endl;
-    cout << clean(U_exact,1e-2) << endl << endl;
+    // cout << clean(U_exact,1e-2) << endl << endl;
     U_print(j*log(U_exact)/pi,1e-2);
     cout << endl << endl;
 
     cout << "approximate:" << endl;
-    cout << clean(U,1e-2) << endl << endl;
+    // cout << clean(U,1e-2) << endl << endl;
     U_print(j*log(U)/pi,1e-2);
     cout << endl;
 
-    cout << idx1 << ": " << gate_fidelity(U,U_exact) << endl;
+    cout << target << ": " << gate_fidelity(U,U_exact) << endl;
 
   }
 
