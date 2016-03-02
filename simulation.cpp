@@ -568,7 +568,10 @@ int main(const int arg_num, const char *arg_vec[]) {
     const Vector3d axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
     const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
     const control_fields controls(B_ctl*axis_ctl,w_larmor);
-    const MatrixXcd target_rot = act(rotate(axis_ctl,A_perp), {target_in_cluster+1}, spins);
+
+    const Vector3d target_axis = natural_axis(nv, target, target_axis_azimuth);
+    const MatrixXcd target_rot = act(rotate(axis_ctl,target_axis),
+                                     {target_in_cluster+1}, spins);
 
     // AXY sequence parameters
     const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
