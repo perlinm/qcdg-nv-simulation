@@ -593,9 +593,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double trailing_time = t_DD - leading_time;
 
     const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
-                                                    leading_time, controls);
+                                                    controls, leading_time);
     const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
-                                                     trailing_time, controls, leading_time);
+                                                     controls, trailing_time, leading_time);
 
     const MatrixXcd U_int = U_leading * pow(U_trailing*U_leading,cycles);
 

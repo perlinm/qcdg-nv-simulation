@@ -266,5 +266,5 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 // simulate propagator with dynamic control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                              const double simulation_time, const control_fields& controls,
+                              const control_fields& controls, const double simulation_time,
                               const double advance = 0);

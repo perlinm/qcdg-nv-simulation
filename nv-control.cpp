@@ -95,7 +95,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 
   MatrixXcd U_ctl;
   if(!adjust_AXY){
-    U_ctl = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, control_time, controls);
+    U_ctl = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
     if(w_DD < w_larmor){
@@ -108,9 +108,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const double trailing_time = t_DD_adjusted - leading_time;
 
       const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                      leading_time, controls);
+                                                      controls, leading_time);
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                       trailing_time, controls, leading_time);
+                                                       controls, trailing_time, leading_time);
 
       U_ctl = U_leading * pow(U_trailing*U_leading,cycles);
     } else{ // if(w_DD > w_larmor)
@@ -123,9 +123,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
       const double trailing_time = t_larmor - leading_time;
 
       const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                      leading_time, controls);
+                                                      controls, leading_time);
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                       trailing_time, controls, leading_time);
+                                                       controls, trailing_time, leading_time);
 
       U_ctl = U_leading * pow(U_trailing*U_leading,cycles);
     }
