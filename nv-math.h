@@ -245,13 +245,12 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
 // rotate NV spin about a given axis by phi
-inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& axis, const double phi,
-                      const uint spins){
-  return act( exp(-j*phi*dot(nv.e.S,hat(axis))), {0}, spins);
+inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins){
+  return act( exp(-j*dot(nv.e.S,rotation)), {0}, spins);
 }
 
 // compute and perform NV rotation necessary to realize U_NV
-MatrixXcd target_NV(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV);
+MatrixXcd target_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
 
 // simulate propagator with static control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,

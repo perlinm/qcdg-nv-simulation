@@ -424,15 +424,14 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 }
 
 // compute and perform NV rotation necessary to realize U_NV
-MatrixXcd target_NV(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV){
-  const uint spins = log2(U.rows());
+MatrixXcd target_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins){
   const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
   const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
                                 yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
                                 zhat*real(H_NV_vec(3))*nv.ms*2);
   if(nv_rotation.squaredNorm() > 0){
-    return R_NV(nv,hat(nv_rotation),nv_rotation.norm(),spins) * U;
-  } else return U;
+    return R_NV(nv,nv_rotation,spins);
+  } else return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
 }
 
 // simulate propagator with static control fields
@@ -500,7 +499,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = target_NV(nv,U,U_NV.adjoint());
+  U = (target_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -598,7 +597,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = target_NV(nv,U,U_NV.adjoint());
+  U = (target_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
