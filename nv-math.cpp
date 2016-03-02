@@ -49,11 +49,11 @@ spin::spin(const Vector3d& pos, const double g, const mvec& S) :
   pos(pos), g(g), S(S)
 {};
 
-nv_system::nv_system(const int ms, const double static_Bz,
+nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
                      const double scale_factor, const uint integration_factor) :
   e(Vector3d::Zero(), ge,
     mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat)),
-  ms(ms), static_Bz(static_Bz),
+  ms(ms), static_Bz(static_Bz), k_DD(k_DD),
   scale_factor(scale_factor), integration_factor(integration_factor)
 {};
 
@@ -361,10 +361,10 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B)
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
-                             const axy_harmonic k_DD, const double scan_time){
-  const double w_DD = w_scan/k_DD; // AXY protocol angular frequency
+                             const double scan_time){
+  const double w_DD = w_scan/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  const vector<double> pulse_times = axy_pulse_times(f_DD,k_DD); // AXY pulse times
+  const vector<double> pulse_times = axy_pulse_times(f_DD,nv.k_DD); // AXY pulse times
 
   double coherence = 1;
   for(uint cluster = 0; cluster < nv.clusters.size(); cluster++){
@@ -432,8 +432,8 @@ MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins){
   }
 }
 
-// compute and perform NV rotation necessary to realize U_NV
-MatrixXcd target_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins){
+// compute and perform rotation of NV center necessary to generate U_NV
+MatrixXcd rotate_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins){
   const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
   const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
                                 yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
@@ -456,7 +456,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   const MatrixXcd H = H_sys(nv,cluster) + H_ctl(nv,cluster,B_ctl); // full Hamiltonian
-  const MatrixXcd X = target_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
+  const MatrixXcd X = rotate_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
 
@@ -506,7 +506,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = (target_NV(nv,U_NV.adjoint(),spins) * U).eval();
+  U = (rotate_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -555,7 +555,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   const double dt = simulation_time/integration_steps;
 
   const MatrixXcd H_0 = H_sys(nv,cluster); // full system Hamiltonian
-  const MatrixXcd X = target_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
+  const MatrixXcd X = rotate_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
 
@@ -609,7 +609,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = (target_NV(nv,U_NV.adjoint(),spins) * U).eval();
+  U = (rotate_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));

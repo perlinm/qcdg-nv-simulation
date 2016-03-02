@@ -253,7 +253,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, scale_factor, integration_factor);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD, scale_factor, integration_factor);
 
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei
@@ -463,7 +463,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for(uint i = 0; i < scan_bins; i++){
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, k_DD, scan_time);
+      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
            << w_scan.at(i)/(2*pi*1e3) << " " << coherence.at(i) << endl;
     }
@@ -506,7 +506,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint index = 0; index < nv.nuclei.size(); index++){
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = U_int(nv, index, k_DD, nv_axis_azimuth, nv_axis_polar,
+        U.at(exact) = U_int(nv, index, nv_axis_azimuth, nv_axis_polar,
                             target_axis_azimuth, rotation_angle, exact);
       }
       cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
@@ -520,8 +520,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   if(iswap_fidelities){
     for(uint index = 0; index < nv.nuclei.size(); index++){
       cout << index << ": "
-           << gate_fidelity(iSWAP(nv,index,k_DD,true),
-                            iSWAP(nv,index,k_DD,false)) << endl;
+           << gate_fidelity(iSWAP(nv,index,true), iSWAP(nv,index,false)) << endl;
     }
   }
 
@@ -535,8 +534,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const uint idx1 = target_nuclei.at(0);
     const uint idx2 = target_nuclei.at(1);
     cout << idx1 << " " << idx2 << ": "
-         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,k_DD,true),
-                          SWAP_NVST(nv,idx1,idx2,k_DD,false)) << endl;
+         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,true),SWAP_NVST(nv,idx1,idx2,false)) << endl;
   }
 
   // -----------------------------------------------------------------------------------------
@@ -554,7 +552,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     // exact propagator
     MatrixXcd U_exact =
-      U_int(nv, target, k_DD, nv_axis_azimuth, nv_axis_polar,
+      U_int(nv, target, nv_axis_azimuth, nv_axis_polar,
             target_axis_azimuth, rotation_angle, true);
 
     // larmor frequency of and perpendicular component of hyperfine field at target nucleus
@@ -592,9 +590,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double leading_time = interaction_time - cycles*t_DD;
     const double trailing_time = t_DD - leading_time;
 
-    const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+    const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                     controls, leading_time);
-    const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+    const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                      controls, trailing_time, leading_time);
 
     const MatrixXcd U_int = U_leading * pow(U_trailing*U_leading,cycles);
@@ -602,7 +600,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     // rotate the NV spin between the desired axis and zhat
     const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
-    const MatrixXcd nv_axis_to_zhat = target_NV(nv,rotate(zhat,nv_axis),spins);
+    const MatrixXcd nv_axis_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
 
     // full propagator
     MatrixXcd U = nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;

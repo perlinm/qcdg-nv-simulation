@@ -68,6 +68,7 @@ struct nv_system{
   const spin e;
   const int ms;
   const double static_Bz;
+  const axy_harmonic k_DD;
   const double scale_factor;
   const uint integration_factor;
 
@@ -75,7 +76,7 @@ struct nv_system{
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
-  nv_system(const int ms, const double static_Bz,
+  nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
             const double scale_factor, const uint integration_factor);
 };
 
@@ -187,7 +188,7 @@ inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& 
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
-                             const axy_harmonic k_DD, const double scan_time);
+                             const double scan_time);
 
 //--------------------------------------------------------------------------------------------
 // Control fields and simulation
@@ -254,8 +255,8 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 // rotate NV spin about a given axis by phi
 MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
 
-// compute and perform NV rotation necessary to realize U_NV
-MatrixXcd target_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
+// compute and perform rotation of NV center necessary to generate U_NV
+MatrixXcd rotate_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
 
 // simulate propagator with static control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,

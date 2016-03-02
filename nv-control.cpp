@@ -139,10 +139,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
 }
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
-                const double nv_axis_azimuth, const double nv_axis_polar,
-                const double target_axis_azimuth, const double rotation_angle,
-                const bool exact){
+MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_axis_azimuth,
+                const double nv_axis_polar, const double target_axis_azimuth,
+                const double rotation_angle, const bool exact){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
   const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
@@ -181,9 +180,9 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
   const Vector3d A_perp = hyperfine_perp(nv,index);
 
   // AXY sequence parameters
-  const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
+  const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), axy_f_max(k_DD));
+  double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
 
   const double interaction_period = 2*pi/abs(f_DD*A_perp.norm()/8);
   double interaction_time = rotation_angle/(nv.ms*f_DD*A_perp.norm()/8);
@@ -194,15 +193,15 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
     interaction_time = interaction_period-interaction_time;
   }
 
-  const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
+  const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                               interaction_time, -target_axis_azimuth/w_DD);
 
   const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
-  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, k_DD, flush_time,
+  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, nv.k_DD, flush_time,
                                                 interaction_time - target_axis_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_axis_to_zhat = target_NV(nv,rotate(zhat,nv_axis),spins);
+  const MatrixXcd nv_axis_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
 
   return U_flush * nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
 }
@@ -212,19 +211,17 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const axy_harmonic k_DD,
 //--------------------------------------------------------------------------------------------
 
 // iSWAP operation
-MatrixXcd iSWAP(const nv_system& nv, const uint index, const axy_harmonic k_DD,
-                const bool exact){
+MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact){
   const double iswap_angle = -pi/4;
   const double xy_polar = pi/2;
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
   return
-    U_int(nv, index, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, iswap_angle, exact) *
-    U_int(nv, index, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, iswap_angle, exact);
+    U_int(nv, index, xhat_azimuth, xy_polar, xhat_azimuth, iswap_angle, exact) *
+    U_int(nv, index, yhat_azimuth, xy_polar, yhat_azimuth, iswap_angle, exact);
 };
 
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
-                    const axy_harmonic k_DD, const bool exact){
+MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact){
   // assert that both target nuclei are in the same cluster
   const vector<uint> cluster = nv.clusters.at(get_cluster_containing_index(nv,idx1));
   assert(in_vector(idx2,cluster));
@@ -237,17 +234,17 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
   const double yhat_azimuth = pi/2;
 
   // compute components of SWAP_NVST
-  const MatrixXcd Rz_NV = target_NV(nv, rotate(2*angle*zhat), cluster.size()+1);
+  const MatrixXcd Rz_NV = rotate_NV(nv, rotate(2*angle*zhat), cluster.size()+1);
   const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
   const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
   const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
   const MatrixXcd iSWAP_NV_1 =
-    U_int(nv, idx1, k_DD, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
-    U_int(nv, idx1, k_DD, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
+    U_int(nv, idx1, xhat_azimuth, xy_polar, xhat_azimuth, -angle, exact) *
+    U_int(nv, idx1, yhat_azimuth, xy_polar, yhat_azimuth, -angle, exact);
   const MatrixXcd cNOT_NV_1 =
-    Rz_NV * Rx_1 * U_int(nv, idx1, k_DD, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
+    Rz_NV * Rx_1 * U_int(nv, idx1, xhat_azimuth, z_polar, xhat_azimuth, -angle, exact);
   const MatrixXcd E_NV_2 =
-    U_int(nv, idx2, k_DD, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
+    U_int(nv, idx2, yhat_azimuth, xy_polar, xhat_azimuth, -angle, exact);
 
   // combine componenets into full SWAP_NVST operation
   const MatrixXcd M = E_NV_2.adjoint() * iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV;
