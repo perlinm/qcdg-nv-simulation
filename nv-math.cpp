@@ -423,18 +423,19 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
-// rotate into the frame of the NV center
-MatrixXcd to_NV_frame(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV){
+// compute and perform NV rotation necessary to realize U_NV
+MatrixXcd target_NV(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV){
   const uint spins = log2(U.rows());
   const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
   const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
                                 yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
                                 zhat*real(H_NV_vec(3))*nv.ms*2);
   if(nv_rotation.squaredNorm() > 0){
-    return R_NV(nv,-hat(nv_rotation),nv_rotation.norm(),spins) * U;
+    return R_NV(nv,hat(nv_rotation),nv_rotation.norm(),spins) * U;
   } else return U;
 }
 
+// simulate propagator with static control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance,
@@ -499,7 +500,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = to_NV_frame(nv,U,U_NV);
+  U = target_NV(nv,U,U_NV.adjoint());
 
   // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
@@ -507,6 +508,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   return U;
 }
 
+// simulate propagator with dynamic control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
@@ -596,7 +598,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   // rotate into the frame of the NV center
-  U = to_NV_frame(nv,U,U_NV);
+  U = target_NV(nv,U,U_NV.adjoint());
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));

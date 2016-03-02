@@ -28,11 +28,11 @@ const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
 // perform spin-1/2 rotation about arbitrary axis
-inline Matrix2cd rotate(const Vector3d axis){
+inline Matrix2cd rotate(const Vector3d& axis){
   if(axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
   else return I2;
 };
-inline Matrix2cd rotate(const Vector3d axis, const double angle){
+inline Matrix2cd rotate(const Vector3d& axis, const double angle){
   return rotate(angle*hat(axis));
 };
 
@@ -185,12 +185,6 @@ inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& 
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
 };
 
-// rotate NV spin about a given axis by phi
-inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& axis, const double phi,
-                      const uint spins){
-  return act( exp(-j*phi*dot(nv.e.S,hat(axis))), {0}, spins);
-}
-
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const axy_harmonic k_DD, const double scan_time);
@@ -250,14 +244,22 @@ struct control_fields{
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
-// rotate into the frame of the NV center
-MatrixXcd to_NV_frame(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV);
+// rotate NV spin about a given axis by phi
+inline MatrixXcd R_NV(const nv_system& nv, const Vector3d& axis, const double phi,
+                      const uint spins){
+  return act( exp(-j*phi*dot(nv.e.S,hat(axis))), {0}, spins);
+}
 
+// compute and perform NV rotation necessary to realize U_NV
+MatrixXcd target_NV(const nv_system& nv, const MatrixXcd& U, const Matrix2cd& U_NV);
+
+// simulate propagator with static control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const double advance = 0,
                               const Vector3d B_ctl = Vector3d::Zero());
 
+// simulate propagator with dynamic control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
                               const double w_DD, const double f_DD, const axy_harmonic k_DD,
                               const double simulation_time, const control_fields& controls,
