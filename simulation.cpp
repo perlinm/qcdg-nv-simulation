@@ -488,9 +488,10 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(single_control){
     for(uint index = 0; index < nv.nuclei.size(); index++){
+      const MatrixXcd U_rot = rotate(axis(target_azimuth,target_polar), rotation_angle);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = U_ctl(nv, index, target_azimuth, rotation_angle, exact);
+        U.at(exact) = rotate_target(nv, index, U_rot, exact);
       }
       cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
     }
