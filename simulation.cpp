@@ -567,7 +567,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
     const control_fields controls(B_ctl*axis_ctl,w_larmor);
 
-    const Vector3d target_axis = natural_axis(nv, target, target_axis_azimuth);
+    const Vector3d target_axis = natural_axis(nv, target, target_azimuth);
     const MatrixXcd target_rot = act(rotate(axis_ctl,target_axis),
                                      {target_in_cluster+1}, spins);
 
