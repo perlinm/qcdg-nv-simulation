@@ -134,32 +134,29 @@ int main(const int arg_num, const char *arg_vec[]) {
   vector<uint> target_nuclei;
   double rotation_angle;
   double rotation_angle_over_pi;
+  double target_polar;
+  double target_polar_over_pi;
   double target_azimuth;
   double target_azimuth_over_pi;
+  double nv_polar;
+  double nv_polar_over_pi;
+  double nv_azimuth;
+  double nv_azimuth_over_pi;
 
-  po::options_description addressing_options("Single nucleus addressing options",
-                                             help_text_length);
+  po::options_description addressing_options("Nucleus addressing options", help_text_length);
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target (if applicable)")
     ("rotation", po::value<double>(&rotation_angle_over_pi)->default_value(0.5,"0.5"),
      "rotation angle in units of pi")
+    ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5,"0.5"),
+     "polar angle of target rotation axis (in units of pi radians)")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
-     "azimuthal angle of target rotation axis in units of pi"
-     " (e.g. 0 for xhat, 0.5 or for yhat)")
-    ;
-
-  double nv_azimuth;
-  double nv_azimuth_over_pi;
-  double nv_polar;
-  double nv_polar_over_pi;
-
-  po::options_description single_coupling_options("NV coupling options",help_text_length);
-  single_coupling_options.add_options()
-    ("nv_azimuth", po::value<double>(&nv_azimuth_over_pi)->default_value(0),
-     "azimuthal angle of NV rotation axis in units of pi")
+     "azimuthal angle of target rotation axis (in units of pi radians)")
     ("nv_polar", po::value<double>(&nv_polar_over_pi)->default_value(0),
-     "polar angle of NV rotation axis in units of pi")
+     "polar angle of NV rotation axis (in units of pi radians)")
+    ("nv_azimuth", po::value<double>(&nv_azimuth_over_pi)->default_value(0),
+     "azimuthal angle of NV rotation axis (in units of pi radians)")
     ;
 
   po::options_description all("Allowed options");
@@ -169,7 +166,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   all.add(simulation_options);
   all.add(scan_options);
   all.add(addressing_options);
-  all.add(single_coupling_options);
 
   // collect inputs
   po::variables_map inputs;
@@ -220,10 +216,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
+
   rotation_angle = rotation_angle_over_pi*pi;
+  target_polar = target_polar_over_pi*pi;
   target_azimuth = target_azimuth_over_pi*pi;
-  nv_azimuth = nv_azimuth_over_pi*pi;
   nv_polar = nv_polar_over_pi*pi;
+  nv_azimuth = nv_azimuth_over_pi*pi;
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
