@@ -211,7 +211,7 @@ struct control_fields{
     this->phases = phases;
   };
 
-  void add(const Vector3d& B, const double freq, const double phase){
+  void add(const Vector3d& B, const double freq, const double phase = 0){
     Bs.push_back(B);
     freqs.push_back(freq);
     phases.push_back(phase);
@@ -252,11 +252,11 @@ struct control_fields{
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
-// rotate NV spin about a given axis by phi
-MatrixXcd R_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
+// perform given rotation on the NV center
+MatrixXcd rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
 
-// compute and perform rotation of NV center necessary to generate U_NV
-MatrixXcd rotate_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
+// compute and perform rotation of NV center necessary to generate U
+MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
 
 // simulate propagator with static control fields
 MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,

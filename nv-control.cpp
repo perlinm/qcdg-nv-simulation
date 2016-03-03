@@ -43,15 +43,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
     return act(G, {index_in_cluster+1}, spins);
   }
 
-  for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
-    if(nv.clusters.at(cluster).at(i) == index) continue;
-    if(is_larmor_pair(nv, index, nv.clusters.at(cluster).at(i))){
-      cout << "Cannot address nuclei with larmor pairs: "
-           << index << ", " << nv.clusters.at(cluster).at(i) << endl;
-      return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-    }
-  }
-
   // larmor frequency of target nucleus
   const double w_larmor = effective_larmor(nv,index).norm();
   const double t_larmor = 2*pi/w_larmor;
@@ -140,14 +131,14 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
   return U_flush * U_ctl;
 }
 
-// compute and perform rotation of target nucleus necessary to generate U
-MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U,
-                        const bool exact, const bool adjust_AXY){
-  if(exact){
-    const uint cluster = get_cluster_containing_index(nv,index);
-    const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
-    const uint spins = nv.clusters.at(cluster).size()+1;
+// compute and perform operationc necessary to act U on target nucleus
+MatrixXcd act_target(const nv_system& nv, const uint index, const Matrix2cd& U,
+                     const bool exact, const bool adjust_AXY){
+  const uint cluster = get_cluster_containing_index(nv,index);
+  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+  const uint spins = nv.clusters.at(cluster).size()+1;
 
+  if(exact){
     const MatrixXcd to_natural_axis = rotate({xhat,yhat,zhat},natural_basis(nv,index));
     return act(to_natural_axis.adjoint() * U * to_natural_axis, {index_in_cluster+1}, spins);
   }
@@ -158,6 +149,8 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
   const double rz = real(H_vec(3))*2;
 
   const double rotation_angle = sqrt(rx*rx + ry*ry + rz*rz);
+  if(rotation_angle == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+
   const double azimuth = atan2(ry,rx);
   const double pitch = asin(rz/rotation_angle);
 
@@ -181,6 +174,12 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
 
     return to_equator.adjoint() * rotate * to_equator;
   }
+}
+
+// perform given rotation on a target nucleus
+MatrixXcd rotate_target(const nv_system& nv, const uint index, const Vector3d& rotation,
+                        const bool exact, const bool adjust_AXY){
+  return act_target(nv, index, rotate(rotation), exact, adjust_AXY);
 }
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
@@ -246,7 +245,7 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_azimuth,
                                                 interaction_time - target_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
+  const MatrixXcd nv_to_zhat = act_NV(nv,rotate(zhat,nv_axis),spins);
 
   return U_flush * nv_to_zhat.adjoint() * U_int * nv_to_zhat;
 }
@@ -279,7 +278,7 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
   const double yhat_azimuth = pi/2;
 
   // compute components of SWAP_NVST
-  const MatrixXcd Rz_NV = rotate_NV(nv, rotate(2*angle*zhat), cluster.size()+1);
+  const MatrixXcd Rz_NV = act_NV(nv, rotate(2*angle*zhat), cluster.size()+1);
   const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
   const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
   const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();

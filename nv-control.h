@@ -39,8 +39,12 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
                 const double rotation_angle, const bool exact, const bool adjust_AXY = true,
                 const double z_phase = 0);
 
-// compute and perform rotation of target nucleus necessary to generate U
-MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U,
+// compute and perform operationc necessary to act U on target nucleus
+MatrixXcd act_target(const nv_system& nv, const uint index, const Matrix2cd& U,
+                     const bool exact = false, const bool adjust_AXY = true);
+
+// perform given rotation on a target nucleus
+MatrixXcd rotate_target(const nv_system& nv, const uint index, const Vector3d& rotation,
                         const bool exact = false, const bool adjust_AXY = true);
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
