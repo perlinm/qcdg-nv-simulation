@@ -157,16 +157,22 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
 
   const double rotation_angle = sqrt(rx*rx + ry*ry + rz*rz);
   const double azimuth = atan2(ry,rx);
-  const double polar = acos(rz/rotation_angle);
-  const double pitch = pi/2 - polar;
+  const double pitch = asin(rz/rotation_angle);
 
-  if(2*abs(polar) < 2*abs(pitch) + abs(rotation_angle)){
-    const MatrixXcd to_pole = U_ctl(nv, index, azimuth + pi/2, -polar/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, index, 0, 0, exact, adjust_AXY, rotation_angle);
+  if(pi - 2*abs(pitch) < 2*abs(pitch) + abs(rotation_angle)){
+    const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
+    const double angle_to_pole = pi/2 - abs(pitch);
+
+    const MatrixXcd to_pole =
+      U_ctl(nv, index, azimuth - pi/2, pole*angle_to_pole/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, index, 0, 0, exact, adjust_AXY, pole*rotation_angle);
+
     return to_pole.adjoint() * rotate * to_pole;
+
   } else{
     const MatrixXcd to_equator = U_ctl(nv, index, azimuth + pi/2, pitch/2, exact, adjust_AXY);
     const MatrixXcd rotate = U_ctl(nv, index, azimuth, rotation_angle/2, exact, adjust_AXY);
+
     return to_equator.adjoint() * rotate * to_equator;
   }
 }
