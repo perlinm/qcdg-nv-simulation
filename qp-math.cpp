@@ -195,9 +195,7 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast){
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G){
-  assert(U.rows() == U.cols());
-  assert(G.rows() == G.cols());
-  assert(U.rows() == G.rows());
+  assert(U.size() == G.size());
 
   const uint D = U.rows();
   const uint N = log2(D);
@@ -210,6 +208,31 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G){
   fidelity /= D*D*(D+1);
 
   return fidelity;
+}
+
+// compute mean fidelity of propagator acting on system_qubits
+double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei){
+  assert(U.size() == G.size());
+
+  const uint spins = log2(G.rows());
+  vector<uint> system_qubits = {0};
+  for(uint n: nuclei) system_qubits.push_back(n+1);
+
+  const MatrixXcd U_err = G.adjoint() * U;
+  const VectorXcd H_err_vec = U_decompose(j*log(U_err));
+
+  MatrixXcd H_env = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
+  for(uint h = 0; h < H_err_vec.size(); h++){
+    bool add_this_element = true;
+    for(uint q: system_qubits){
+      if(int_bit(h,2*q) + int_bit(h,2*q+1)){
+        add_this_element = false;
+        break;
+      }
+    }
+    if(add_this_element) H_env += H_err_vec(h)*U_basis_element(h,spins);
+  }
+  return gate_fidelity(U*exp(j*H_env),G);
 }
 
 //--------------------------------------------------------------------------------------------

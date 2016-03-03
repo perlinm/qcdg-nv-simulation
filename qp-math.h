@@ -106,6 +106,9 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G);
 
+// compute mean fidelity of propagator acting on given nuclei
+double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei);
+
 // compute fidelity of state rho with respect to state sigma, i.e. how close rho is to sigma
 inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma){
   const MatrixXcd sqrt_rho = sqrt(rho);
