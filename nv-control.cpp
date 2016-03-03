@@ -147,7 +147,9 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
     const uint cluster = get_cluster_containing_index(nv,index);
     const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
     const uint spins = nv.clusters.at(cluster).size()+1;
-    return act(U, {index_in_cluster+1}, spins);
+
+    const MatrixXcd to_natural_axis = rotate({xhat,yhat,zhat},natural_basis(nv,index));
+    return act(to_natural_axis.adjoint() * U * to_natural_axis, {index_in_cluster+1}, spins);
   }
 
   const Vector4cd H_vec = U_decompose(j*log(U));
@@ -159,7 +161,11 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
   const double azimuth = atan2(ry,rx);
   const double pitch = asin(rz/rotation_angle);
 
-  if(pi - 2*abs(pitch) < 2*abs(pitch) + abs(rotation_angle)){
+  const double net_pole_rotation = pi - 2*abs(pitch);
+  const double net_equatorial_rotation =
+    2*abs(pitch) + (rotation_angle < pi ? rotation_angle : 2*pi - rotation_angle);
+
+  if(net_pole_rotation < net_equatorial_rotation){
     const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
     const double angle_to_pole = pi/2 - abs(pitch);
 
