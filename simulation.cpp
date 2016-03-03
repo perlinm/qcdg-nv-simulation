@@ -567,8 +567,12 @@ int main(const int arg_num, const char *arg_vec[]) {
     const control_fields controls(B_ctl*axis_ctl,w_larmor);
 
     const Vector3d target_axis = natural_axis(nv, target, target_azimuth);
-    const MatrixXcd target_rot = act(rotate(axis_ctl,target_axis),
-                                     {target_in_cluster+1}, spins);
+    const Matrix2cd to_standard_basis = rotate({xhat,yhat,zhat},natural_basis(nv,target));
+
+    const MatrixXcd target_rot = rotate_target(nv, target,
+                                               to_standard_basis.adjoint() *
+                                               rotate(axis_ctl, target_axis) *
+                                               to_standard_basis);
 
     // AXY sequence parameters
     const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
