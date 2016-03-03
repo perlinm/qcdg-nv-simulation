@@ -493,7 +493,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(bool exact : {true,false}){
         U.at(exact) = rotate_target(nv, index, rotation, exact);
       }
-      cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
+      const uint cluster = get_cluster_containing_index(nv,index);
+      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+      cout << index << ": " << gate_fidelity(U.at(0),U.at(1),{index_in_cluster}) << endl;
     }
   }
 
@@ -508,7 +510,9 @@ int main(const int arg_num, const char *arg_vec[]) {
         U.at(exact) = U_int(nv, index, nv_azimuth, nv_polar,
                             target_azimuth, rotation_angle, exact);
       }
-      cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
+      const uint cluster = get_cluster_containing_index(nv,index);
+      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+      cout << index << ": " << gate_fidelity(U.at(0),U.at(1),{index_in_cluster}) << endl;
     }
   }
 
@@ -518,8 +522,11 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(iswap_fidelities){
     for(uint index = 0; index < nv.nuclei.size(); index++){
+      const uint cluster = get_cluster_containing_index(nv,index);
+      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
       cout << index << ": "
-           << gate_fidelity(iSWAP(nv,index,true), iSWAP(nv,index,false)) << endl;
+           << gate_fidelity(iSWAP(nv,index,true), iSWAP(nv,index,false), {index_in_cluster} )
+           << endl;
     }
   }
 
@@ -530,120 +537,18 @@ int main(const int arg_num, const char *arg_vec[]) {
   if(swap_nvst_fidelity){
     assert(nv.nuclei.size() >= 2);
     assert(target_nuclei.size() >= 2);
+
     const uint idx1 = target_nuclei.at(0);
     const uint idx2 = target_nuclei.at(1);
+
+    const uint cluster = get_cluster_containing_index(nv,idx1);
+    const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
+    const uint idx2_in_cluster = get_index_in_cluster(idx2,nv.clusters.at(cluster));
+
     cout << idx1 << " " << idx2 << ": "
-         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,true),SWAP_NVST(nv,idx1,idx2,false)) << endl;
-  }
-
-  // -----------------------------------------------------------------------------------------
-  // Testing - targeting larmor pairs
-  // -----------------------------------------------------------------------------------------
-
-  if(testing){
-
-    const uint target = target_nuclei.at(0);
-
-    const uint cluster = get_cluster_containing_index(nv,target);
-    const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
-    const uint spins = nv.clusters.at(cluster).size()+1;
-
-    // exact propagator
-    const MatrixXcd U_exact =
-      U_int(nv, target, nv_azimuth, nv_polar, target_azimuth, rotation_angle, true);
-
-    // larmor frequency of and perpendicular component of hyperfine field at target nucleus
-    const double w_larmor = effective_larmor(nv,target).norm();
-    const double t_larmor = 2*pi/w_larmor;
-    const double dw_min = larmor_resolution(nv,target);
-    const Vector3d A_perp = hyperfine_perp(nv,target);
-
-    // control fields and interaction vector
-    Vector3d axis_ctl = hat(A_perp);
-    double B_ctl = 0;
-    control_fields controls;
-    for(uint index: nv.clusters.at(cluster)){
-      if(index == target) continue;
-      if(is_larmor_pair(nv,index,target)){
-            const Vector3d A_perp_alt = hyperfine_perp(nv,index);
-            B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
-            axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
-
-            controls.add(B_ctl*axis_ctl, w_larmor);
-      }
-    }
-    const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
-
-    // AXY sequence parameters
-    const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
-    const double t_DD = 2*pi/w_DD; // AXY protocol period
-    double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
-
-    const double interaction_period = 2*pi/abs(f_DD*A_int.norm()/8);
-    double interaction_time = rotation_angle/(nv.ms*f_DD*A_int.norm()/8);
-    while(interaction_time >= interaction_period) interaction_time -= interaction_period;
-    while(interaction_time < 0) interaction_time += interaction_period;
-    if(interaction_time > interaction_period/2){
-      f_DD *= -1;
-      interaction_time = interaction_period-interaction_time;
-    }
-
-
-    const uint cycles = int(interaction_time/t_DD);
-    const double leading_time = interaction_time - cycles*t_DD;
-    const double trailing_time = t_DD - leading_time;
-
-    const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                    controls, leading_time);
-    const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                     controls, trailing_time, leading_time);
-
-    const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
-
-    // rotate NV axis into its interaction frame (i.e. zhat)
-    const Vector3d nv_axis = axis(nv_azimuth,nv_polar);
-    const MatrixXcd nv_frame_rotation = act_NV(nv,rotate(zhat,nv_axis),spins);
-
-    // rotate target axis into its interaction frame (i.e. axis_ctl)
-    const Vector3d target_axis = natural_axis(nv, target, target_azimuth);
-    const Matrix2cd to_standard_basis = rotate({xhat,yhat,zhat},natural_basis(nv,target));
-    const MatrixXcd target_frame_rotation = act_target(nv, target,
-                                                          to_standard_basis.adjoint() *
-                                                          rotate(axis_ctl, target_axis) *
-                                                          to_standard_basis);
-
-    // rotate all spins into their interaction frames
-    const MatrixXcd to_interaction_frames = target_frame_rotation * nv_frame_rotation;
-
-    const MatrixXcd flush_z = rotate_target(nv, target, zhat*interaction_time*w_larmor);
-
-    // full propagator
-    const MatrixXcd U =
-      to_interaction_frames.adjoint() *
-      flush_z *
-      U_coupling *
-      to_interaction_frames;
-
-    // rotate into the frame of the nuclei
-    MatrixXcd R = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-    for(uint index: nv.clusters.at(cluster)){
-      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
-      const Matrix2cd R_index = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
-      R = (act(R_index, {index_in_cluster+1},spins) * R).eval();
-    }
-
-    cout << "exact:" << endl;
-    // cout << clean(R.adjoint() * U_exact * R, 1e-2) << endl << endl;
-    U_print(j*log(R.adjoint() * U_exact * R)/pi, 1e-2);
-    cout << endl << endl;
-
-    cout << "approximate:" << endl;
-    // cout << clean(R.adjoint() * U * R, 1e-2) << endl << endl;
-    U_print(j*log(R.adjoint() * U * R)/pi, 1e-2);
-    cout << endl;
-
-    cout << target << ": " << gate_fidelity(U,U_exact) << endl;
-
+         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,true), SWAP_NVST(nv,idx1,idx2,false),
+                          {idx1_in_cluster, idx2_in_cluster})
+         << endl;
   }
 
 }

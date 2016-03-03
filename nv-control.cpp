@@ -25,30 +25,30 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 // General control methods
 //--------------------------------------------------------------------------------------------
 
-// propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimuth,
+// propagator U = exp(-i * rotation_angle * sigma_{axis}^{target})
+MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azimuth,
                 const double rotation_angle, const bool exact, const bool adjust_AXY,
                 const double z_phase){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv,index);
-  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_index(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // target axis of rotation
-  const Vector3d axis_ctl = natural_axis(nv, index, target_azimuth);
+  const Vector3d axis_ctl = natural_axis(nv, target, target_azimuth);
 
   if(exact){
     // return exact propagator
     const MatrixXcd G = exp(-j * rotation_angle * dot(s_vec,axis_ctl));
-    return act(G, {index_in_cluster+1}, spins);
+    return act(G, {target_in_cluster+1}, spins);
   }
 
   // larmor frequency of target nucleus
-  const double w_larmor = effective_larmor(nv,index).norm();
+  const double w_larmor = effective_larmor(nv,target).norm();
   const double t_larmor = 2*pi/w_larmor;
 
   // AXY protocol parameters
-  const double sA = nv.scale_factor * hyperfine(nv,index).norm();
+  const double sA = nv.scale_factor * hyperfine(nv,target).norm();
   const double w_DD = [&]() -> double {
     const double w_DD_large = (w_larmor+sA)/3.;
     if(w_larmor < sA){
@@ -70,7 +70,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
 
   // control field frequency = effective larmor frequency of target nucleus
   const double w_ctl = w_larmor; // control field frequency
-  const double dw_min = larmor_resolution(nv,index);
+  const double dw_min = larmor_resolution(nv,target);
   double g_B_ctl = dw_min/nv.scale_factor; // ctl field strength * gyromangnetic ratio
 
   const double control_period = 2*pi*4/g_B_ctl;
@@ -82,7 +82,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
     control_time = control_period-control_time;
   }
 
-  const double B_ctl = g_B_ctl/nv.nuclei.at(index).g; // control field strength
+  const double B_ctl = g_B_ctl/nv.nuclei.at(target).g; // control field strength
   const control_fields controls(B_ctl*axis_ctl, w_ctl); // control field object
 
   MatrixXcd U_ctl;
@@ -132,15 +132,15 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimu
 }
 
 // compute and perform operationc necessary to act U on target nucleus
-MatrixXcd act_target(const nv_system& nv, const uint index, const Matrix2cd& U,
+MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
                      const bool exact, const bool adjust_AXY){
-  const uint cluster = get_cluster_containing_index(nv,index);
-  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_index(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   if(exact){
-    const MatrixXcd to_natural_axis = rotate({xhat,yhat,zhat},natural_basis(nv,index));
-    return act(to_natural_axis.adjoint() * U * to_natural_axis, {index_in_cluster+1}, spins);
+    const MatrixXcd to_natural_axis = rotate({xhat,yhat,zhat},natural_basis(nv,target));
+    return act(to_natural_axis.adjoint() * U * to_natural_axis, {target_in_cluster+1}, spins);
   }
 
   const Vector4cd H_vec = U_decompose(j*log(U));
@@ -163,70 +163,78 @@ MatrixXcd act_target(const nv_system& nv, const uint index, const Matrix2cd& U,
     const double angle_to_pole = pi/2 - abs(pitch);
 
     const MatrixXcd to_pole =
-      U_ctl(nv, index, azimuth - pi/2, pole*angle_to_pole/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, index, 0, 0, exact, adjust_AXY, pole*rotation_angle);
+      U_ctl(nv, target, azimuth-pi/2, pole*angle_to_pole/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, target, 0, 0, exact, adjust_AXY, pole*rotation_angle);
 
     return to_pole.adjoint() * rotate * to_pole;
 
   } else{
-    const MatrixXcd to_equator = U_ctl(nv, index, azimuth + pi/2, pitch/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, index, azimuth, rotation_angle/2, exact, adjust_AXY);
+    const MatrixXcd to_equator = U_ctl(nv, target, azimuth+pi/2, pitch/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, target, azimuth, rotation_angle/2, exact, adjust_AXY);
 
     return to_equator.adjoint() * rotate * to_equator;
   }
 }
 
 // perform given rotation on a target nucleus
-MatrixXcd rotate_target(const nv_system& nv, const uint index, const Vector3d& rotation,
+MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& rotation,
                         const bool exact, const bool adjust_AXY){
-  return act_target(nv, index, rotate(rotation), exact, adjust_AXY);
+  return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
 }
 
-// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_azimuth,
+// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
+MatrixXcd U_int(const nv_system& nv, const uint target, const double nv_azimuth,
                 const double nv_polar, const double target_azimuth,
                 const double rotation_angle, const bool exact){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv,index);
-  const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_index(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // NV spin axis
+  // NV interaction axis
   const Vector3d nv_axis = axis(nv_azimuth,nv_polar);
 
   if(exact){
     // return exact propagator
-    const Vector3d target_axis = natural_axis(nv,index,target_azimuth);
+    const Vector3d target_axis = natural_axis(nv,target,target_azimuth);
     const MatrixXcd G = exp(-j * rotation_angle *
                             tp(dot(s_vec,nv_axis), dot(s_vec,target_axis)));
-    return act(G, {0,index_in_cluster+1}, spins);
+    return act(G, {0,target_in_cluster+1}, spins);
   }
 
   // verify that we can address this nucleus
-  if(round(4*dot(nv.nuclei.at(index).pos,ao)) == 0.){
+  if(round(4*dot(nv.nuclei.at(target).pos,ao)) == 0.){
     cout << "Cannot address nuclei without hyperfine coupling perpendicular to the NV axis: "
-         << index << endl;
+         << target << endl;
     return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  }
-  for(uint i = 0; i < nv.clusters.at(cluster).size(); i++){
-    if(nv.clusters.at(cluster).at(i) == index) continue;
-    if(is_larmor_pair(nv, index, nv.clusters.at(cluster).at(i))){
-      cout << "Cannot address nuclei with larmor pairs: "
-           << index << ", " << nv.clusters.at(cluster).at(i) << endl;
-      return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-    }
   }
 
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
-  const double w_larmor = effective_larmor(nv,index).norm();
+  const double w_larmor = effective_larmor(nv,target).norm();
   const double t_larmor = 2*pi/w_larmor;
-  const double dw_min = larmor_resolution(nv,index);
-  const Vector3d A_perp = hyperfine_perp(nv,index);
+  const double dw_min = larmor_resolution(nv,target);
+  const Vector3d A_perp = hyperfine_perp(nv,target);
+
+  // control fields and interaction vector
+  Vector3d axis_ctl = hat(A_perp);
+  double B_ctl = 0;
+  control_fields controls;
+  for(uint index: nv.clusters.at(cluster)){
+    if(index == target) continue;
+    if(is_larmor_pair(nv,index,target)){
+      const Vector3d A_perp_alt = hyperfine_perp(nv,index);
+      B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
+      axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
+
+      controls.add(B_ctl*axis_ctl, w_larmor);
+    }
+  }
+  const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
 
   // AXY sequence parameters
   const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
+  double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
 
   const double interaction_period = 2*pi/abs(f_DD*A_perp.norm()/8);
   double interaction_time = rotation_angle/(nv.ms*f_DD*A_perp.norm()/8);
@@ -237,17 +245,41 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_azimuth,
     interaction_time = interaction_period-interaction_time;
   }
 
-  const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                              interaction_time, -target_azimuth/w_DD);
+  const uint cycles = int(interaction_time/t_DD);
+  const double leading_time = interaction_time - cycles*t_DD;
+  const double trailing_time = t_DD - leading_time;
 
-  const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
-  const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, nv.k_DD, flush_time,
-                                                interaction_time - target_azimuth/w_DD);
+  const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                                  controls, leading_time);
+  const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                                   controls, trailing_time, leading_time);
 
-  // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_to_zhat = act_NV(nv,rotate(zhat,nv_axis),spins);
+  const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
 
-  return U_flush * nv_to_zhat.adjoint() * U_int * nv_to_zhat;
+  // rotate NV axis into its interaction frame (i.e. zhat)
+  const MatrixXcd nv_frame_rotation = act_NV(nv,rotate(zhat,nv_axis),spins);
+
+  // rotate target axis into its interaction frame (i.e. axis_ctl)
+  const Vector3d target_axis = natural_axis(nv, target, target_azimuth);
+  const Matrix2cd to_standard_basis = rotate({xhat,yhat,zhat},natural_basis(nv,target));
+  const MatrixXcd target_frame_rotation = act_target(nv, target,
+                                                     to_standard_basis.adjoint() *
+                                                     rotate(axis_ctl, target_axis) *
+                                                     to_standard_basis);
+
+  // rotate all spins into their interaction frames
+  const MatrixXcd to_interaction_frames = target_frame_rotation * nv_frame_rotation;
+
+  const MatrixXcd flush_z = rotate_target(nv, target, zhat*interaction_time*w_larmor);
+
+  // full propagator
+  const MatrixXcd U =
+    to_interaction_frames.adjoint() *
+    flush_z *
+    U_coupling *
+    to_interaction_frames;
+
+  return U;
 }
 
 //--------------------------------------------------------------------------------------------
