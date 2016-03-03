@@ -27,7 +27,8 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 
 // propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle, const bool exact, const bool adjust_AXY){
+                const double rotation_angle, const bool exact, const bool adjust_AXY,
+                const double z_phase){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
   const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
@@ -131,11 +132,43 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
     }
   }
 
-  const double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time;
+  double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time - z_phase/w_larmor;
+  flush_time -= floor(flush_time/t_larmor)*t_larmor;
   const MatrixXcd U_flush =
     simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
 
   return U_flush * U_ctl;
+}
+
+// compute and perform rotation of target nucleus necessary to generate U
+MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U,
+                        const bool exact, const bool adjust_AXY){
+  if(exact){
+    const uint cluster = get_cluster_containing_index(nv,index);
+    const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
+    const uint spins = nv.clusters.at(cluster).size()+1;
+    return act(U, {index_in_cluster+1}, spins);
+  }
+
+  const Vector4cd H_vec = U_decompose(j*log(U));
+  const double rx = real(H_vec(1))*2;
+  const double ry = real(H_vec(2))*2;
+  const double rz = real(H_vec(3))*2;
+
+  const double rotation_angle = sqrt(rx*rx + ry*ry + rz*rz);
+  const double azimuth = atan2(ry,rx);
+  const double polar = acos(rz/rotation_angle);
+  const double pitch = pi/2 - polar;
+
+  if(2*abs(polar) < 2*abs(pitch) + abs(rotation_angle)){
+    const MatrixXcd to_pole = U_ctl(nv, index, azimuth + pi/2, -polar/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, index, 0, 0, exact, adjust_AXY, rotation_angle);
+    return to_pole.adjoint() * rotate * to_pole;
+  } else{
+    const MatrixXcd to_equator = U_ctl(nv, index, azimuth + pi/2, pitch/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, index, azimuth, rotation_angle/2, exact, adjust_AXY);
+    return to_equator.adjoint() * rotate * to_equator;
+  }
 }
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})

@@ -36,11 +36,12 @@ inline MatrixXcd polarize(const VectorXcd psi){
 
 // propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
-                const double rotation_angle, const bool exact, const bool adjust_AXY = true);
+                const double rotation_angle, const bool exact, const bool adjust_AXY = true,
+                const double z_phase = 0);
 
 // compute and perform rotation of target nucleus necessary to generate U
 MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U,
-                        const bool exact, const bool adjust_AXY = true);
+                        const bool exact = false, const bool adjust_AXY = true);
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
 MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_axis_polar,
