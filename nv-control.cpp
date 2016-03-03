@@ -26,7 +26,7 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 //--------------------------------------------------------------------------------------------
 
 // propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_azimuth,
+MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_azimuth,
                 const double rotation_angle, const bool exact, const bool adjust_AXY,
                 const double z_phase){
   // identify cluster of target nucleus
@@ -35,7 +35,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint index, const double target_axis_
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // target axis of rotation
-  const Vector3d axis_ctl = natural_axis(nv, index, target_axis_azimuth);
+  const Vector3d axis_ctl = natural_axis(nv, index, target_azimuth);
 
   if(exact){
     // return exact propagator
@@ -172,8 +172,8 @@ MatrixXcd rotate_target(const nv_system& nv, const uint index, const Matrix2cd U
 }
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{index})
-MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_axis_azimuth,
-                const double nv_axis_polar, const double target_axis_azimuth,
+MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_azimuth,
+                const double nv_polar, const double target_azimuth,
                 const double rotation_angle, const bool exact){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,index);
@@ -181,11 +181,11 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_axis_azim
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // NV spin axis
-  const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
+  const Vector3d nv_axis = axis(nv_azimuth,nv_polar);
 
   if(exact){
     // return exact propagator
-    const Vector3d target_axis = natural_axis(nv,index,target_axis_azimuth);
+    const Vector3d target_axis = natural_axis(nv,index,target_azimuth);
     const MatrixXcd G = exp(-j * rotation_angle *
                             tp(dot(s_vec,nv_axis), dot(s_vec,target_axis)));
     return act(G, {0,index_in_cluster+1}, spins);
@@ -227,16 +227,16 @@ MatrixXcd U_int(const nv_system& nv, const uint index, const double nv_axis_azim
   }
 
   const MatrixXcd U_int = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                              interaction_time, -target_axis_azimuth/w_DD);
+                                              interaction_time, -target_azimuth/w_DD);
 
   const double flush_time = ceil(interaction_time/t_larmor)*t_larmor - interaction_time;
   const MatrixXcd U_flush = simulate_propagator(nv, cluster, w_DD, 0, nv.k_DD, flush_time,
-                                                interaction_time - target_axis_azimuth/w_DD);
+                                                interaction_time - target_azimuth/w_DD);
 
   // rotate the NV spin between the desired axis and zhat
-  const MatrixXcd nv_axis_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
+  const MatrixXcd nv_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
 
-  return U_flush * nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
+  return U_flush * nv_to_zhat.adjoint() * U_int * nv_to_zhat;
 }
 
 //--------------------------------------------------------------------------------------------

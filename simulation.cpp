@@ -134,8 +134,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   vector<uint> target_nuclei;
   double rotation_angle;
   double rotation_angle_over_pi;
-  double target_axis_azimuth;
-  double target_axis_azimuth_over_pi;
+  double target_azimuth;
+  double target_azimuth_over_pi;
 
   po::options_description addressing_options("Single nucleus addressing options",
                                              help_text_length);
@@ -144,21 +144,21 @@ int main(const int arg_num, const char *arg_vec[]) {
      "indices of nuclei to target (if applicable)")
     ("rotation", po::value<double>(&rotation_angle_over_pi)->default_value(0.5,"0.5"),
      "rotation angle in units of pi")
-    ("target_azimuth", po::value<double>(&target_axis_azimuth_over_pi)->default_value(0),
+    ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
      "azimuthal angle of target rotation axis in units of pi"
      " (e.g. 0 for xhat, 0.5 or for yhat)")
     ;
 
-  double nv_axis_azimuth;
-  double nv_axis_azimuth_over_pi;
-  double nv_axis_polar;
-  double nv_axis_polar_over_pi;
+  double nv_azimuth;
+  double nv_azimuth_over_pi;
+  double nv_polar;
+  double nv_polar_over_pi;
 
   po::options_description single_coupling_options("NV coupling options",help_text_length);
   single_coupling_options.add_options()
-    ("nv_azimuth", po::value<double>(&nv_axis_azimuth_over_pi)->default_value(0),
+    ("nv_azimuth", po::value<double>(&nv_azimuth_over_pi)->default_value(0),
      "azimuthal angle of NV rotation axis in units of pi")
-    ("nv_polar", po::value<double>(&nv_axis_polar_over_pi)->default_value(0),
+    ("nv_polar", po::value<double>(&nv_polar_over_pi)->default_value(0),
      "polar angle of NV rotation axis in units of pi")
     ;
 
@@ -221,9 +221,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
   rotation_angle = rotation_angle_over_pi*pi;
-  target_axis_azimuth = target_axis_azimuth_over_pi*pi;
-  nv_axis_azimuth = nv_axis_azimuth_over_pi*pi;
-  nv_axis_polar = nv_axis_polar_over_pi*pi;
+  target_azimuth = target_azimuth_over_pi*pi;
+  nv_azimuth = nv_azimuth_over_pi*pi;
+  nv_polar = nv_polar_over_pi*pi;
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
@@ -492,7 +492,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint index = 0; index < nv.nuclei.size(); index++){
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = U_ctl(nv, index, target_axis_azimuth, rotation_angle, exact);
+        U.at(exact) = U_ctl(nv, index, target_azimuth, rotation_angle, exact);
       }
       cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
     }
@@ -506,8 +506,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint index = 0; index < nv.nuclei.size(); index++){
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = U_int(nv, index, nv_axis_azimuth, nv_axis_polar,
-                            target_axis_azimuth, rotation_angle, exact);
+        U.at(exact) = U_int(nv, index, nv_azimuth, nv_polar,
+                            target_azimuth, rotation_angle, exact);
       }
       cout << index << ": " << gate_fidelity(U.at(0),U.at(1)) << endl;
     }
@@ -552,8 +552,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     // exact propagator
     MatrixXcd U_exact =
-      U_int(nv, target, nv_axis_azimuth, nv_axis_polar,
-            target_axis_azimuth, rotation_angle, true);
+      U_int(nv, target, nv_azimuth, nv_polar,
+            target_azimuth, rotation_angle, true);
 
     // larmor frequency of and perpendicular component of hyperfine field at target nucleus
     const double w_larmor = effective_larmor(nv,target).norm();
@@ -574,7 +574,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     // AXY sequence parameters
     const double w_DD = w_larmor/k_DD; // AXY protocol angular frequency
     const double t_DD = 2*pi/w_DD; // AXY protocol period
-    double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(k_DD));
+    double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
 
     const double interaction_period = 2*pi/abs(f_DD*A_int.norm()/8);
     double interaction_time = rotation_angle/(nv.ms*f_DD*A_int.norm()/8);
@@ -599,11 +599,11 @@ int main(const int arg_num, const char *arg_vec[]) {
 
 
     // rotate the NV spin between the desired axis and zhat
-    const Vector3d nv_axis = axis(nv_axis_azimuth,nv_axis_polar);
-    const MatrixXcd nv_axis_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
+    const Vector3d nv_axis = axis(nv_azimuth,nv_polar);
+    const MatrixXcd nv_to_zhat = rotate_NV(nv,rotate(zhat,nv_axis),spins);
 
     // full propagator
-    MatrixXcd U = nv_axis_to_zhat.adjoint() * U_int * nv_axis_to_zhat;
+    MatrixXcd U = nv_to_zhat.adjoint() * U_int * nv_to_zhat;
 
     // rotate into the frame of the "pair" nucleus
     MatrixXcd R = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
