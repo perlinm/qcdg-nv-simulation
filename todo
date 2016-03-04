@@ -1,4 +1,4 @@
-investigate errors in U_int
+test single_control and single_coupling for seeds 10688 and 10689
 
 add wrapper for U_int which accepts Vector3d target_axis
 remove 'exact' from U_ctl and U_int: they should never be exact
