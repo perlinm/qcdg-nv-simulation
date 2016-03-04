@@ -223,7 +223,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
       B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
       axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
 
-     controls.add(B_ctl*axis_ctl, w_larmor);
+      controls.add(B_ctl*axis_ctl, w_larmor);
     }
   }
   const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
@@ -251,16 +251,13 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   const double leading_time = interaction_time - cycles*t_DD;
   const double trailing_time = t_DD - leading_time;
 
-  const double coupling_angle = target_azimuth - interaction_angle;
+  const double phase_advance = (interaction_angle - target_azimuth)/w_larmor;
 
-  const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD, controls,
-                                                  leading_time, -coupling_angle/w_larmor);
+  const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                                  controls, leading_time, phase_advance);
   const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                    controls, trailing_time,
-                                                   leading_time - coupling_angle/w_larmor);
-
-fac && time ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 10688 --max_cluster_size 2 --test --static_Bz 500 --coupling --phase 0.2 --target_azimuth 0. --integration_factor 10
-
+                                                   leading_time + phase_advance);
   const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
 
   // rotate NV coupling axis into its interaction axis (i.e. zhat)
@@ -273,11 +270,13 @@ fac && time ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --
   const double z_flush_phase = (z_phase < pi) ? z_phase : 2*pi - z_phase;
   const double w_ctl = nv.nuclei.at(target).g*B_ctl/2;
   const double total_time = interaction_time + z_flush_phase/w_larmor;
-  double x_phase = interaction_time*w_ctl;
-  x_phase -= floor(x_phase/(2*pi))*2*pi;
+  double xy_phase = interaction_time*w_ctl;
+  xy_phase -= floor(xy_phase/(2*pi))*2*pi;
+
+  const Vector3d xy_axis = cos(target_azimuth)*xhat + sin(target_azimuth)*yhat;
 
   const MatrixXcd flush_target =
-    act_target(nv, target, rotate(xhat,x_phase)*rotate(zhat,z_phase));
+    act_target(nv, target, rotate(xy_axis,xy_phase)*rotate(zhat,z_phase));
 
   return flush_target * nv_axis_rotation.adjoint() * U_coupling * nv_axis_rotation;
 }
