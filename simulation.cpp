@@ -132,8 +132,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   vector<uint> target_nuclei;
-  double rotation_angle;
-  double rotation_angle_over_pi;
+  double rotation_phase;
+  double rotation_phase_over_pi;
   double target_polar;
   double target_polar_over_pi;
   double target_azimuth;
@@ -147,8 +147,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target (if applicable)")
-    ("rotation", po::value<double>(&rotation_angle_over_pi)->default_value(0.5,"0.5"),
-     "rotation angle in units of pi")
+    ("phase", po::value<double>(&rotation_phase_over_pi)->default_value(0.5,"0.5"),
+     "rotation phase in units of pi")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5,"0.5"),
      "polar angle of target rotation axis (in units of pi radians)")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
@@ -217,7 +217,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
 
-  rotation_angle = rotation_angle_over_pi*pi;
+  rotation_phase = rotation_phase_over_pi*pi;
   target_polar = target_polar_over_pi*pi;
   target_azimuth = target_azimuth_over_pi*pi;
   nv_polar = nv_polar_over_pi*pi;
@@ -488,7 +488,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(single_control){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const Vector3d rotation = axis(target_azimuth,target_polar)*rotation_angle;
+      const Vector3d rotation = 2*rotation_phase*axis(target_azimuth,target_polar);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
         U.at(exact) = rotate_target(nv, index, rotation, exact);
@@ -507,8 +507,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint index = 0; index < nv.nuclei.size(); index++){
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = U_int(nv, index, nv_azimuth, nv_polar,
-                            target_azimuth, rotation_angle, exact);
+        U.at(exact) = U_int(nv, index, axis(nv_azimuth, nv_polar),
+                            target_azimuth, rotation_phase, exact);
       }
       const uint cluster = get_cluster_containing_index(nv,index);
       const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));

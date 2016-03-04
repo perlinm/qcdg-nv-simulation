@@ -48,9 +48,8 @@ MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& 
                         const bool exact = false, const bool adjust_AXY = true);
 
 // propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
-MatrixXcd U_int(const nv_system& nv, const uint target, const double nv_azimuth,
-                const double nv_polar, const double target_azimuth,
-                const double rotation_angle, const bool exact);
+MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
+                const double target_azimuth, const double rotation_angle, const bool exact);
 
 //--------------------------------------------------------------------------------------------
 // Specific operations
