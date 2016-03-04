@@ -1,3 +1,4 @@
+#include <iostream> // for standard output
 using namespace std;
 
 #include <eigen3/Eigen/Dense> // linear algebra library
@@ -555,14 +556,15 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     U_NV = (sx * U_NV).eval();
   }
 
-  const double normed_advance = advance - floor(advance/t_DD)*t_DD;
   for(uint t_i = 0; t_i < integration_steps; t_i++){
-    const double t = t_i*dt + normed_advance; // time
+    const double t = t_i*dt + advance; // time
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
+    const double t_AXY = t - floor(t/t_DD)*t_DD; // time into this AXY sequence
     for(uint p = 1; p < pulses.size()-1; p++){
-      if(pulses.at(p)*t_DD > t && pulses.at(p)*t_DD < t + dt){
+      if(pulses.at(p)*t_DD > t_AXY &&
+         pulses.at(p)*t_DD < t_AXY + dt){
         pulse = p;
         break;
       }
@@ -577,7 +579,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       U_NV = (exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
 
     } else{ // if(pulse)
-      const double t_AXY = t - int(t/t_DD)*t_DD; // time into this AXY sequence
       const double dt1 = pulses.at(pulse)*t_DD - t_AXY; // time before the pulse
       const double dt2 = dt - dt1; // time after the pulse
 
