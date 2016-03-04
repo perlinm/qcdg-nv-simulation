@@ -1,12 +1,12 @@
-ignore action of operators on the environment when computing gate fidelities
+investigate errors in U_int
 
-fix spin drift of larmor pairs after interaction with NV center
+add wrapper for U_int which accepts Vector3d target_axis
+remove 'exact' from U_ctl and U_int: they should never be exact
 
-finish implementing individual addressing
-
-remove 'exact' from U_ctl and U_int
-
-implement SWAP_NVST for larmor pairs
+test iSWAP on larmor pairs
+fix up SWAP_NVST
+- minimize use of U_int and U_ctl
+- make it work for larmor pairs
 
 candidate larmor pair seeds: 9746 10688 13481 15646 25272 40426 41142 47805 49308 52619 62086 91296 93794 93944 99582
 
