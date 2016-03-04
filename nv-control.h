@@ -34,9 +34,9 @@ inline MatrixXcd polarize(const VectorXcd psi){
   return psi*VectorXcd::Ones(psi.size()).adjoint();
 }
 
-// propagator U = exp(-i * rotation_angle * sigma_{axis}^{index})
+// propagator U = exp(-i * rotation_phase * sigma_{axis}^{index})
 MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azimuth,
-                const double rotation_angle, const bool exact, const bool adjust_AXY = true,
+                const double rotation_phase, const bool exact, const bool adjust_AXY = true,
                 const double z_phase = 0);
 
 // compute and perform operationc necessary to act U on target nucleus
@@ -47,9 +47,9 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& rotation,
                         const bool exact = false, const bool adjust_AXY = true);
 
-// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
+// propagator U = exp(-i * rotation_phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
-                const double target_azimuth, const double rotation_angle, const bool exact);
+                const double target_azimuth, const double rotation_phase, const bool exact);
 
 //--------------------------------------------------------------------------------------------
 // Specific operations

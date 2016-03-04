@@ -25,9 +25,9 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 // General control methods
 //--------------------------------------------------------------------------------------------
 
-// propagator U = exp(-i * rotation_angle * sigma_{axis}^{target})
+// propagator U = exp(-i * rotation_phase * sigma_{axis}^{target})
 MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azimuth,
-                const double rotation_angle, const bool exact, const bool adjust_AXY,
+                const double rotation_phase, const bool exact, const bool adjust_AXY,
                 const double z_phase){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,target);
@@ -39,7 +39,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azim
 
   if(exact){
     // return exact propagator
-    const MatrixXcd G = exp(-j * rotation_angle * dot(s_vec,axis_ctl));
+    const MatrixXcd G = exp(-j * rotation_phase * dot(s_vec,axis_ctl));
     return act(G, {target_in_cluster+1}, spins);
   }
 
@@ -76,7 +76,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azim
   const double t_phase = 2*pi/w_phase;
 
   // time for which to apply the control field
-  double control_time = -rotation_angle/w_phase; // control operation time
+  double control_time = -rotation_phase/w_phase; // control operation time
   control_time -= floor(control_time/t_phase)*t_phase;
   if(control_time > t_phase/2){
     g_B_ctl *= -1;
@@ -149,15 +149,15 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const double ry = real(H_vec(2))*2;
   const double rz = real(H_vec(3))*2;
 
-  const double rotation_angle = sqrt(rx*rx + ry*ry + rz*rz);
-  if(rotation_angle == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  const double rotation_phase = sqrt(rx*rx + ry*ry + rz*rz);
+  if(rotation_phase == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
 
   const double azimuth = atan2(ry,rx);
-  const double pitch = asin(rz/rotation_angle);
+  const double pitch = asin(rz/rotation_phase);
 
   const double net_pole_rotation = pi - 2*abs(pitch);
   const double net_equatorial_rotation =
-    2*abs(pitch) + (rotation_angle < pi ? rotation_angle : 2*pi - rotation_angle);
+    2*abs(pitch) + (rotation_phase < pi ? rotation_phase : 2*pi - rotation_phase);
 
   if(net_pole_rotation < net_equatorial_rotation){
     const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
@@ -165,13 +165,13 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 
     const MatrixXcd to_pole =
       U_ctl(nv, target, azimuth-pi/2, pole*angle_to_pole/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, target, 0, 0, exact, adjust_AXY, pole*rotation_angle);
+    const MatrixXcd rotate = U_ctl(nv, target, 0, 0, exact, adjust_AXY, pole*rotation_phase);
 
     return to_pole.adjoint() * rotate * to_pole;
 
   } else{
     const MatrixXcd to_equator = U_ctl(nv, target, azimuth+pi/2, pitch/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, target, azimuth, rotation_angle/2, exact, adjust_AXY);
+    const MatrixXcd rotate = U_ctl(nv, target, azimuth, rotation_phase/2, exact, adjust_AXY);
 
     return to_equator.adjoint() * rotate * to_equator;
   }
@@ -183,9 +183,9 @@ MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& 
   return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
 }
 
-// propagator U = exp(-i * rotation_angle * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
+// propagator U = exp(-i * rotation_phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
-                const double target_azimuth, const double rotation_angle, const bool exact){
+                const double target_azimuth, const double rotation_phase, const bool exact){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,target);
   const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
@@ -194,7 +194,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   if(exact){
     // return exact propagator
     const Vector3d target_axis = natural_axis(nv,target,target_azimuth);
-    const MatrixXcd G = exp(-j * rotation_angle *
+    const MatrixXcd G = exp(-j * rotation_phase *
                             tp(dot(s_vec,nv_axis), dot(s_vec,target_axis)));
     return act(G, {0,target_in_cluster+1}, spins);
   }
@@ -240,7 +240,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to interact
-  double interaction_time = nv.ms*rotation_angle/w_phase;
+  double interaction_time = nv.ms*rotation_phase/w_phase;
   interaction_time -= floor(interaction_time/t_phase)*t_phase;
   if(interaction_time > t_phase/2){
     f_DD *= -1;
@@ -257,7 +257,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
                                                   controls, leading_time, phase_advance);
   const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                    controls, trailing_time,
-                                                   leading_time + phase_advance);
+                                                   phase_advance + leading_time);
   const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
 
   // rotate NV coupling axis into its interaction axis (i.e. zhat)
