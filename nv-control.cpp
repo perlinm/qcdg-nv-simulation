@@ -259,6 +259,8 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
                                                    controls, trailing_time,
                                                    leading_time - coupling_angle/w_larmor);
 
+fac && time ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --seed 10688 --max_cluster_size 2 --test --static_Bz 500 --coupling --phase 0.2 --target_azimuth 0. --integration_factor 10
+
   const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
 
   // rotate NV coupling axis into its interaction axis (i.e. zhat)
@@ -286,12 +288,12 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
 
 // iSWAP operation
 MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact){
-  const double iswap_angle = -pi/4;
+  const double iswap_phase = -pi/4;
   const double xhat_azimuth = 0;
   const double yhat_azimuth = pi/2;
   return
-    U_int(nv, index, xhat, xhat_azimuth, iswap_angle, exact) *
-    U_int(nv, index, yhat, yhat_azimuth, iswap_angle, exact);
+    U_int(nv, index, xhat, xhat_azimuth, iswap_phase, exact) *
+    U_int(nv, index, yhat, yhat_azimuth, iswap_phase, exact);
 };
 
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact){
