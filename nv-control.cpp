@@ -227,6 +227,8 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
     }
   }
   const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
+  const double interaction_angle = asin(dot(hat(A_perp).cross(hat(A_int)),
+                                            hat(effective_larmor(nv,target))));
 
   // AXY sequence parameters
   const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
@@ -249,14 +251,13 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   const double leading_time = interaction_time - cycles*t_DD;
   const double trailing_time = t_DD - leading_time;
 
-  const double xy_phase = target_azimuth - asin(dot(hat(A_perp).cross(hat(A_int)),
-                                                    hat(effective_larmor(nv,target))));
+  const double coupling_angle = target_azimuth - interaction_angle;
 
   const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD, controls,
-                                                  leading_time, -xy_phase/w_larmor);
+                                                  leading_time, -coupling_angle/w_larmor);
   const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                    controls, trailing_time,
-                                                   leading_time - xy_phase/w_larmor);
+                                                   leading_time - coupling_angle/w_larmor);
 
   const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
 
@@ -277,7 +278,6 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
     act_target(nv, target, rotate(xhat,x_phase)*rotate(zhat,z_phase));
 
   return flush_target * nv_axis_rotation.adjoint() * U_coupling * nv_axis_rotation;
-
 }
 
 //--------------------------------------------------------------------------------------------
