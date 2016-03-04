@@ -148,8 +148,8 @@ vector<double> axy_pulse_times(const double f, const axy_harmonic k);
 // advance pulses by a given (normalized) time
 vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance);
 
-// evaluate F(t) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses with period t_DD
-int F_AXY(const double t, const vector<double> pulses, const double t_DD);
+// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
+int F_AXY(const double x, const vector<double> pulses);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);

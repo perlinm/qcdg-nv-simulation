@@ -309,12 +309,12 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   return advanced_pulse_times;
 }
 
-// evaluate F(t) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses with period t_DD
-int F_AXY(const double t, const vector<double> pulses, const double t_DD){
-  const double x = t/t_DD - floor(t/t_DD);
+// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
+int F_AXY(const double x, const vector<double> pulses){
+  const double normed_x = x - floor(x);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) <= x) pulse_count++;
+    if(pulses.at(i) <= normed_x) pulse_count++;
     else break;
   }
   return (pulse_count % 2 == 0 ? 1 : -1);
@@ -459,7 +459,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
-  if(F_AXY(advance, pulses, t_DD) == -1){
+  if(F_AXY(advance/t_DD, pulses) == -1){
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
   }
@@ -550,7 +550,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
-  if(F_AXY(advance, pulses, t_DD) == -1){
+  if(F_AXY(advance/t_DD, pulses) == -1){
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
   }
