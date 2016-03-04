@@ -450,9 +450,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
-  const double normed_advance = advance/t_DD - floor(advance/t_DD);
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
-  const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
+  const vector<double> advanced_pulses = advanced_pulse_times(pulses, advance/t_DD);
 
   const MatrixXcd H = H_sys(nv,cluster) + H_ctl(nv,cluster,B_ctl); // full Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
@@ -498,12 +497,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       break;
     }
   }
-  // if we ended with a flipped NV center, flip it back
-  if(F_AXY(end_time, pulses, t_DD) == -1){
-    U = (X * U).eval();
-    U_NV = (sx * U_NV).eval();
-  }
-
   // rotate into the frame of the NV center
   U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
@@ -528,9 +521,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
-  const double normed_advance = advance/t_DD - floor(advance/t_DD);
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
-  const vector<double> advanced_pulses = advanced_pulse_times(pulses, normed_advance);
 
   // largest frequency scale of simulation
   const double frequency_scale = [&]() -> double {
@@ -564,8 +555,9 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     U_NV = (sx * U_NV).eval();
   }
 
+  const double normed_advance = advance - floor(advance/t_DD)*t_DD;
   for(uint t_i = 0; t_i < integration_steps; t_i++){
-    const double t = t_i*dt+advance; // time
+    const double t = t_i*dt + normed_advance; // time
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
@@ -601,12 +593,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
               U_NV).eval();
     }
   }
-  // if we ended with a flipped NV center, flip it back
-  if(F_AXY(end_time, pulses, t_DD) == -1){
-    U = (X * U).eval();
-    U_NV = (sx * U_NV).eval();
-  }
-
   // rotate into the frame of the NV center
   U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
 
