@@ -25,23 +25,13 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 // General control methods
 //--------------------------------------------------------------------------------------------
 
-// propagator U = exp(-i * rotation_phase * sigma_{axis}^{target})
-MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azimuth,
-                const double rotation_phase, const bool exact, const bool adjust_AXY,
-                const double z_phase){
+// propagator U = exp(-i * phase * sigma_{axis}^{target})
+MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
+                const double target_azimuth, const bool adjust_AXY, const double z_phase){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,target);
   const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
-
-  // target axis of rotation
-  const Vector3d axis_ctl = natural_axis(nv, target, target_azimuth);
-
-  if(exact){
-    // return exact propagator
-    const MatrixXcd G = exp(-j * rotation_phase * dot(s_vec,axis_ctl));
-    return act(G, {target_in_cluster+1}, spins);
-  }
 
   // larmor frequency of target nucleus
   const double w_larmor = effective_larmor(nv,target).norm();
@@ -76,7 +66,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azim
   const double t_phase = 2*pi/w_phase;
 
   // time for which to apply the control field
-  double control_time = -rotation_phase/w_phase; // control operation time
+  double control_time = -phase/w_phase; // control operation time
   control_time -= floor(control_time/t_phase)*t_phase;
   if(control_time > t_phase/2){
     g_B_ctl *= -1;
@@ -84,6 +74,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double target_azim
   }
 
   const double B_ctl = g_B_ctl/nv.nuclei.at(target).g; // control field strength
+  const Vector3d axis_ctl = natural_axis(nv, target, target_azimuth);
   const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
 
   MatrixXcd U_ctl;
@@ -140,8 +131,9 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   if(exact){
-    const MatrixXcd to_natural_axis = rotate({xhat,yhat,zhat},natural_basis(nv,target));
-    return act(to_natural_axis.adjoint() * U * to_natural_axis, {target_in_cluster+1}, spins);
+    const Matrix2cd to_natural_basis = rotate(natural_basis(nv,target), {xhat,yhat,zhat});
+    return act(to_natural_basis * U * to_natural_basis.adjoint(),
+               {target_in_cluster+1}, spins);
   }
 
   const Vector4cd H_vec = U_decompose(j*log(U));
@@ -149,31 +141,31 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const double ry = real(H_vec(2))*2;
   const double rz = real(H_vec(3))*2;
 
-  const double rotation_phase = sqrt(rx*rx + ry*ry + rz*rz);
-  if(rotation_phase == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  const double phase = sqrt(rx*rx + ry*ry + rz*rz);
+  if(phase == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
 
   const double azimuth = atan2(ry,rx);
-  const double pitch = asin(rz/rotation_phase);
+  const double pitch = asin(rz/phase);
 
   const double net_pole_rotation = pi - 2*abs(pitch);
   const double net_equatorial_rotation =
-    2*abs(pitch) + (rotation_phase < pi ? rotation_phase : 2*pi - rotation_phase);
+    2*abs(pitch) + (phase < pi ? phase : 2*pi - phase);
 
   if(net_pole_rotation < net_equatorial_rotation){
     const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
     const double angle_to_pole = pi/2 - abs(pitch);
 
     const MatrixXcd to_pole =
-      U_ctl(nv, target, azimuth-pi/2, pole*angle_to_pole/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, target, 0, 0, exact, adjust_AXY, pole*rotation_phase);
+      U_ctl(nv, target, pole*angle_to_pole/2, azimuth-pi/2, adjust_AXY);
+    const MatrixXcd rotate_z = U_ctl(nv, target, 0, 0, adjust_AXY, pole*phase);
 
-    return to_pole.adjoint() * rotate * to_pole;
+    return to_pole.adjoint() * rotate_z * to_pole;
 
   } else{
-    const MatrixXcd to_equator = U_ctl(nv, target, azimuth+pi/2, pitch/2, exact, adjust_AXY);
-    const MatrixXcd rotate = U_ctl(nv, target, azimuth, rotation_phase/2, exact, adjust_AXY);
+    const MatrixXcd to_equator = U_ctl(nv, target, pitch/2, azimuth+pi/2, adjust_AXY);
+    const MatrixXcd rotate_xy = U_ctl(nv, target, phase/2, azimuth, adjust_AXY);
 
-    return to_equator.adjoint() * rotate * to_equator;
+    return to_equator.adjoint() * rotate_xy * to_equator;
   }
 }
 
@@ -183,21 +175,13 @@ MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& 
   return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
 }
 
-// propagator U = exp(-i * rotation_phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
-MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
-                const double target_azimuth, const double rotation_phase, const bool exact){
+// propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
+MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
+                const Vector3d& nv_axis, const double target_azimuth){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_index(nv,target);
   const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
-
-  if(exact){
-    // return exact propagator
-    const Vector3d target_axis = natural_axis(nv,target,target_azimuth);
-    const MatrixXcd G = exp(-j * rotation_phase *
-                            tp(dot(s_vec,nv_axis), dot(s_vec,target_axis)));
-    return act(G, {0,target_in_cluster+1}, spins);
-  }
 
   // verify that we can address this nucleus
   if(round(4*dot(nv.nuclei.at(target).pos,ao)) == 0.){
@@ -240,7 +224,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to interact
-  double interaction_time = nv.ms*rotation_phase/w_phase;
+  double interaction_time = nv.ms*phase/w_phase;
   interaction_time -= floor(interaction_time/t_phase)*t_phase;
   if(interaction_time > t_phase/2){
     f_DD *= -1;
@@ -281,41 +265,54 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const Vector3d& nv_axis,
   return flush_target * nv_axis_rotation.adjoint() * U_coupling * nv_axis_rotation;
 }
 
+// perform given NV coupling operation on a target nucleus
+MatrixXcd couple_target(const nv_system& nv, const uint target, const double phase,
+                        const Vector3d& nv_axis, const Vector3d& target_axis,
+                        const bool exact, bool adjust_AXY){
+  if(exact){
+    // identify cluster of target nucleus
+    const uint cluster = get_cluster_containing_index(nv,target);
+    const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
+    const uint spins = nv.clusters.at(cluster).size()+1;
+
+    // compute and return exact propagator
+    const Matrix4cd target_to_natural_basis =
+      act(rotate(natural_basis(nv,target), {xhat,yhat,zhat}), {1}, 2);
+    const Matrix4cd U =
+      exp(-j * phase * tp(dot(s_vec,hat(nv_axis)), dot(s_vec,hat(target_axis))));
+
+    return act(target_to_natural_basis * U * target_to_natural_basis.adjoint(),
+               {0, target_in_cluster+1}, spins);
+  }
+
+  // compute pitch and azimuth of target axis
+  const double target_pitch = real(asin(-j*j*dot(hat(target_axis),zhat)));
+  const double target_azimuth = atan2(dot(target_axis,yhat),dot(target_axis,xhat));
+
+  const MatrixXcd target_to_equator =
+    U_ctl(nv, target, target_pitch/2, target_azimuth+pi/2, adjust_AXY);
+  const MatrixXcd coupling_xy = U_int(nv, target, phase, nv_axis, target_azimuth);
+
+  return target_to_equator.adjoint() * coupling_xy * target_to_equator;
+}
+
 //--------------------------------------------------------------------------------------------
 // Specific operations
 //--------------------------------------------------------------------------------------------
-
-// iSWAP operation
-MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact){
-  const double iswap_phase = -pi/4;
-  const double xhat_azimuth = 0;
-  const double yhat_azimuth = pi/2;
-  return
-    U_int(nv, index, xhat, xhat_azimuth, iswap_phase, exact) *
-    U_int(nv, index, yhat, yhat_azimuth, iswap_phase, exact);
-};
 
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact){
   // assert that both target nuclei are in the same cluster
   const vector<uint> cluster = nv.clusters.at(get_cluster_containing_index(nv,idx1));
   assert(in_vector(idx2,cluster));
 
-  // define angles
-  const double angle = pi/4;
-  const double xhat_azimuth = 0;
-  const double yhat_azimuth = pi/2;
-
   // compute components of SWAP_NVST
-  const MatrixXcd Rz_NV = act_NV(nv, rotate(2*angle*zhat), cluster.size()+1);
-  const MatrixXcd Rx_1 = U_ctl(nv, idx1, xhat_azimuth, angle, exact);
-  const MatrixXcd Ry_1 = U_ctl(nv, idx1, yhat_azimuth, angle, exact);
-  const MatrixXcd Rz_1 = Rx_1 * Ry_1 * Rx_1.adjoint();
-  const MatrixXcd iSWAP_NV_1 =
-    U_int(nv, idx1, xhat, xhat_azimuth, -angle, exact) *
-    U_int(nv, idx1, yhat, yhat_azimuth, -angle, exact);
-  const MatrixXcd cNOT_NV_1 =
-    Rz_NV * Rx_1 * U_int(nv, idx1, zhat, xhat_azimuth, -angle, exact);
-  const MatrixXcd E_NV_2 = U_int(nv, idx2, yhat, xhat_azimuth, -angle, exact);
+  const MatrixXcd Rz_NV = rotate_NV(nv, pi/2*zhat, cluster.size()+1);
+  const MatrixXcd Rx_1 = rotate_target(nv, idx1, pi/2*xhat, exact);
+  const MatrixXcd Rz_1 = rotate_target(nv, idx1, pi/2*zhat, exact);
+  const MatrixXcd iSWAP_NV_1 = iSWAP(nv, idx1, exact);
+  const MatrixXcd cNOT_NV_1 = (Rz_NV * Rx_1 *
+                               couple_target(nv, idx1, -pi/4, zhat, xhat, exact));
+  const MatrixXcd E_NV_2 = couple_target(nv, idx2, -pi/4, yhat, xhat, exact);
 
   // combine componenets into full SWAP_NVST operation
   const MatrixXcd M = E_NV_2.adjoint() * iSWAP_NV_1 * Rz_1.adjoint() * Rz_NV;
