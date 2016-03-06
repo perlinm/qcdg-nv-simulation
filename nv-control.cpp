@@ -74,7 +74,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
   }
 
   const double B_ctl = g_B_ctl/nv.nuclei.at(target).g; // control field strength
-  const Vector3d axis_ctl = natural_axis(nv, target, target_azimuth);
+  const Vector3d axis_ctl = axis(pi/2, target_azimuth, natural_basis(nv,target));
   const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
 
   MatrixXcd U_ctl;

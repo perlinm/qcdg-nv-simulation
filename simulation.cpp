@@ -486,7 +486,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(single_control){
     for(uint index = 0; index < nv.nuclei.size(); index++){
-      const Vector3d rotation = 2*phase*axis(target_azimuth,target_polar);
+      const Vector3d rotation = 2*phase * axis(target_polar,target_azimuth);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
         U.at(exact) = rotate_target(nv, index, rotation, exact);
@@ -502,11 +502,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
+    const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
     for(uint index = 0; index < nv.nuclei.size(); index++){
+      const Vector3d target_axis = axis(target_polar, target_azimuth);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = couple_target(nv, index, phase, axis(nv_azimuth, nv_polar),
-                                    axis(target_azimuth, target_polar), exact);
+        U.at(exact) = couple_target(nv, index, phase, nv_axis, target_axis, exact);
       }
       const uint cluster = get_cluster_containing_index(nv,index);
       const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));

@@ -13,16 +13,10 @@ using namespace Eigen;
 vector<Vector3d> natural_basis(const nv_system& nv, const uint index);
 
 // return axis with given azimuth and polar angles in a given basis
-inline Vector3d axis(const double azimuth, const double polar = pi/2,
+inline Vector3d axis(const double polar, const double azimuth,
                      const vector<Vector3d> basis = {xhat, yhat, zhat}){
   return cos(polar) * basis.at(2) + sin(polar) * ( cos(azimuth) * basis.at(0) +
                                                    sin(azimuth) * basis.at(1) );
-}
-
-// return axis with given polar and azimuthal angles in the "natural" basis
-inline Vector3d natural_axis(const nv_system& nv, const uint index, const double azimuth,
-                             const double polar = pi/2){
-  return axis(azimuth, polar, natural_basis(nv,index));
 }
 
 //--------------------------------------------------------------------------------------------
