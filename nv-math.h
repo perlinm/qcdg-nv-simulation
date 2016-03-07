@@ -32,13 +32,13 @@ inline Matrix2cd rotate(const Vector3d& axis){
   if(axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
   else return I2;
 };
-inline Matrix2cd rotate(const Vector3d& axis, const double angle){
+inline Matrix2cd rotate(const double angle, const Vector3d& axis){
   return rotate(angle*hat(axis));
 };
 
 // rotate into one axis from another
 inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start){
-  return rotate(hat(axis_start.cross(axis_end)), acos(dot(hat(axis_start),hat(axis_end))));
+  return rotate(acos(dot(hat(axis_start),hat(axis_end))), hat(axis_start.cross(axis_end)));
 };
 
 // rotate into one basis from another

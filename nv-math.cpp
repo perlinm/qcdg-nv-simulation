@@ -32,7 +32,7 @@ Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basi
   const double axis_z = rotation(1,0)-rotation(0,1);
   const Vector3d axis = hat((Vector3d() << axis_x, axis_y, axis_z).finished());
   if(axis.squaredNorm() > 0){
-    return rotate(axis,angle);
+    return rotate(angle, axis);
   } else{
     const EigenSolver<Matrix3d> solver(rotation);
     const Vector3cd e_vals = solver.eigenvalues();
@@ -41,7 +41,7 @@ Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basi
     for(uint i = 1; i < e_vals.size(); i++){
       if(abs(e_vals(i)-1.) < abs(e_vals(axis_index)-1.)) axis_index = i;
     }
-    return rotate(e_vecs.col(axis_index).real(),angle);
+    return rotate(angle, e_vecs.col(axis_index).real());
   }
 }
 

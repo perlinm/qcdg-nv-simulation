@@ -260,7 +260,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
   const Vector3d xy_axis = cos(target_azimuth)*xhat + sin(target_azimuth)*yhat;
 
   const MatrixXcd flush_target =
-    act_target(nv, target, rotate(xy_axis,xy_phase)*rotate(zhat,z_phase));
+    act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,zhat));
 
   return flush_target * nv_axis_rotation.adjoint() * U_coupling * nv_axis_rotation;
 }
