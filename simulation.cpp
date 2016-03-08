@@ -485,15 +485,15 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    for(uint index = 0; index < nv.nuclei.size(); index++){
+    for(uint target: target_nuclei){
       const Vector3d rotation = 2*phase * axis(target_polar,target_azimuth);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = rotate_target(nv, index, rotation, exact);
+        U.at(exact) = rotate_target(nv, target, rotation, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv,index);
-      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
-      cout << index << ": " << gate_fidelity(U.at(0),U.at(1),{index_in_cluster}) << endl;
+      const uint cluster = get_cluster_containing_index(nv, target);
+      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
 
@@ -503,15 +503,15 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if(single_coupling){
     const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
-    for(uint index = 0; index < nv.nuclei.size(); index++){
+    for(uint target: target_nuclei){
       const Vector3d target_axis = axis(target_polar, target_azimuth);
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
-        U.at(exact) = couple_target(nv, index, phase, nv_axis, target_axis, exact);
+        U.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv,index);
-      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
-      cout << index << ": " << gate_fidelity(U.at(0),U.at(1),{index_in_cluster}) << endl;
+      const uint cluster = get_cluster_containing_index(nv, target);
+      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
 
@@ -520,12 +520,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(iswap_fidelities){
-    for(uint index = 0; index < nv.nuclei.size(); index++){
-      const uint cluster = get_cluster_containing_index(nv,index);
-      const uint index_in_cluster = get_index_in_cluster(index,nv.clusters.at(cluster));
-      cout << index << ": "
-           << gate_fidelity(iSWAP(nv,index,true), iSWAP(nv,index,false), {index_in_cluster} )
-           << endl;
+    for(uint target: target_nuclei){
+      vector<MatrixXcd> U(2);
+      for(bool exact : {true,false}){
+        U.at(exact) = iSWAP(nv, target, exact);
+      }
+      const uint cluster = get_cluster_containing_index(nv, target);
+      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
 
@@ -536,17 +538,17 @@ int main(const int arg_num, const char *arg_vec[]) {
   if(swap_nvst_fidelity){
     assert(nv.nuclei.size() >= 2);
     assert(target_nuclei.size() >= 2);
-
     const uint idx1 = target_nuclei.at(0);
     const uint idx2 = target_nuclei.at(1);
-
+    vector<MatrixXcd> U(2);
+    for(bool exact : {true,false}){
+      U.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
+    }
     const uint cluster = get_cluster_containing_index(nv,idx1);
     const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
     const uint idx2_in_cluster = get_index_in_cluster(idx2,nv.clusters.at(cluster));
-
     cout << idx1 << " " << idx2 << ": "
-         << gate_fidelity(SWAP_NVST(nv,idx1,idx2,true), SWAP_NVST(nv,idx1,idx2,false),
-                          {idx1_in_cluster, idx2_in_cluster})
+         << gate_fidelity(U.at(0), U.at(1), {idx1_in_cluster, idx2_in_cluster})
          << endl;
   }
 
