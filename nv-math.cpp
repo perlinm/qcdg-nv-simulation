@@ -581,10 +581,10 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       U_NV = (exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
 
     } else{ // if(pulse)
+      const double t_AXY_initial = t_AXY;
+      const double dt_full = dt;
 
       bool overflow = false;
-      const double dt_0 = dt;
-      const double t_AXY_0 = t_AXY;
       do{
         const double t_pulse = (pulses.at(pulse)+overflow)*t_DD;
         const double dt = t_pulse - t_AXY; // time before pulse
@@ -594,19 +594,15 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
         U = (X * exp(-j*dt*H) * U).eval();
         U_NV = (sx * exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
 
-        if(f_DD > axy_f_max(k_DD)/2){
-          cout << pulse << ": " << pulses.at(pulse) << endl;
-        }
-
         t_AXY = t_pulse;
         pulse++;
         if(pulse == pulses.size()-1){
           pulse = 1;
           overflow = true;
         }
-      } while((pulses.at(pulse)+overflow)*t_DD - t_AXY_0 < dt_0);
+      } while((pulses.at(pulse)+overflow)*t_DD - t_AXY_initial < dt_full);
 
-      const double dt = t_AXY_0 + dt_0 - t_AXY; // time before pulse
+      const double dt = t_AXY_initial + dt_full - t_AXY; // time after last pulse
       const Vector3d B = controls.B(t+dt/2);
       const MatrixXcd H = H_0 + H_ctl(nv, cluster, B);
 
@@ -619,6 +615,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-  cout << endl;
+
   return U;
 }
