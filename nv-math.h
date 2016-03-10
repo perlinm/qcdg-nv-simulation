@@ -70,14 +70,14 @@ struct nv_system{
   const double static_Bz;
   const axy_harmonic k_DD;
   const double scale_factor;
-  const uint integration_factor;
+  const double integration_factor;
 
   vector<spin> nuclei;
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
   nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
-            const double scale_factor, const uint integration_factor);
+            const double scale_factor, const double integration_factor);
 };
 
 //--------------------------------------------------------------------------------------------

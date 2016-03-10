@@ -50,7 +50,7 @@ spin::spin(const Vector3d& pos, const double g, const mvec& S) :
 {};
 
 nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
-                     const double scale_factor, const uint integration_factor) :
+                     const double scale_factor, const double integration_factor) :
   e(Vector3d::Zero(), ge,
     mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat)),
   ms(ms), static_Bz(static_Bz), k_DD(k_DD),
@@ -301,7 +301,7 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   vector<double> advanced_pulse_times;
   advanced_pulse_times.push_back(0);
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulse_times.at(p%N+1) - normed_advance > 0){
+    if(p/N + pulse_times.at(p%N+1) - normed_advance >= 0){
       advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - normed_advance);
     }
     if(advanced_pulse_times.size() == N+1) break;
@@ -518,6 +518,7 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
   }
 
   const uint spins = nv.clusters.at(cluster).size()+1;
+  if(simulation_time == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   const double end_time = simulation_time + advance;
 
   // AXY sequence parameters
@@ -561,13 +562,14 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
-    const double t_AXY = t - floor(t/t_DD)*t_DD; // time into this AXY sequence
+    double t_AXY = t - floor(t/t_DD)*t_DD; // time into this AXY sequence
     for(uint p = 1; p < pulses.size()-1; p++){
-      if(pulses.at(p)*t_DD > t_AXY &&
-         pulses.at(p)*t_DD < t_AXY + dt){
-        pulse = p;
-        break;
-      }
+      if(pulses.at(p)*t_DD < t_AXY + dt){
+        if(pulses.at(p)*t_DD >= t_AXY){
+          pulse = p;
+          break;
+        }
+      } else break;
     }
 
     // update propagator
@@ -579,19 +581,37 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       U_NV = (exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
 
     } else{ // if(pulse)
-      const double dt1 = pulses.at(pulse)*t_DD - t_AXY; // time before the pulse
-      const double dt2 = dt - dt1; // time after the pulse
 
-      const Vector3d B1 = controls.B(t+dt1/2);
-      const Vector3d B2 = controls.B(t+dt1+dt2/2);
-      const MatrixXcd H1 = H_0 + H_ctl(nv, cluster, B1);
-      const MatrixXcd H2 = H_0 + H_ctl(nv, cluster, B2);
+      bool overflow = false;
+      const double dt_0 = dt;
+      const double t_AXY_0 = t_AXY;
+      do{
+        const double t_pulse = (pulses.at(pulse)+overflow)*t_DD;
+        const double dt = t_pulse - t_AXY; // time before pulse
+        const Vector3d B = controls.B(t+dt/2);
+        const MatrixXcd H = H_0 + H_ctl(nv, cluster, B);
 
-      U = (exp(-j*dt2*H2) * X * exp(-j*dt1*H1) * U).eval();
-      U_NV = (exp(-j*dt2*H_NV(nv,B2)) *
-              sx *
-              exp(-j*dt1*H_NV(nv,B1)) *
-              U_NV).eval();
+        U = (X * exp(-j*dt*H) * U).eval();
+        U_NV = (sx * exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
+
+        if(f_DD > axy_f_max(k_DD)/2){
+          cout << pulse << ": " << pulses.at(pulse) << endl;
+        }
+
+        t_AXY = t_pulse;
+        pulse++;
+        if(pulse == pulses.size()-1){
+          pulse = 1;
+          overflow = true;
+        }
+      } while((pulses.at(pulse)+overflow)*t_DD - t_AXY_0 < dt_0);
+
+      const double dt = t_AXY_0 + dt_0 - t_AXY; // time before pulse
+      const Vector3d B = controls.B(t+dt/2);
+      const MatrixXcd H = H_0 + H_ctl(nv, cluster, B);
+
+      U = (exp(-j*dt*H) * U).eval();
+      U_NV = (exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
     }
   }
   // rotate into the frame of the NV center
@@ -599,6 +619,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
   // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-
+  cout << endl;
   return U;
 }

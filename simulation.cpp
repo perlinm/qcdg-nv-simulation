@@ -92,7 +92,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   axy_harmonic k_DD;
   double static_Bz_in_gauss;
   double scale_factor;
-  uint integration_factor;
+  double integration_factor;
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
@@ -110,7 +110,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "strength of static magnetic field along the NV axis (gauss)")
     ("scale_factor", po::value<double>(&scale_factor)->default_value(10),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
-    ("integration_factor", po::value<uint>(&integration_factor)->default_value(10000),
+    ("integration_factor", po::value<double>(&integration_factor)->default_value(10000),
      "factor used to determine size of integration step size")
     ;
 
