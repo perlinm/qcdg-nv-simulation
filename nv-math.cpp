@@ -586,15 +586,14 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 
       bool overflow = false;
       do{
-        const double t_pulse = (pulses.at(pulse)+overflow)*t_DD;
-        const double dt = t_pulse - t_AXY; // time before pulse
+        const double dt = (pulses.at(pulse)+overflow)*t_DD - t_AXY; // time before pulse
         const Vector3d B = controls.B(t+dt/2);
         const MatrixXcd H = H_0 + H_ctl(nv, cluster, B);
 
         U = (X * exp(-j*dt*H) * U).eval();
         U_NV = (sx * exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
 
-        t_AXY = t_pulse;
+        t_AXY = (pulses.at(pulse)+overflow)*t_DD;
         pulse++;
         if(pulse == pulses.size()-1){
           pulse = 1;
