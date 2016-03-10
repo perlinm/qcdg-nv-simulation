@@ -82,36 +82,33 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
     U_ctl = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
+
+    uint cycles;
+    double cycle_time;
+    double w_DD_adjusted;
     if(w_DD < w_larmor){
       const uint freq_ratio = 2*round(0.5*w_larmor/w_DD);
-      const double w_DD_adjusted = w_larmor/freq_ratio;
-      const double t_DD_adjusted = 2*pi/w_DD_adjusted;
-      const uint cycles = int(control_time/t_DD_adjusted);
+      w_DD_adjusted = w_larmor/freq_ratio;
+      cycle_time = 2*pi/w_DD_adjusted;
 
-      const double leading_time = control_time - cycles*t_DD_adjusted;
-      const double trailing_time = t_DD_adjusted - leading_time;
-
-      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                      controls, leading_time);
-      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                       controls, trailing_time, leading_time);
-
-      U_ctl = U_leading * pow(U_trailing*U_leading,cycles);
     } else{ // if(w_DD > w_larmor)
       const uint freq_ratio = round(w_DD/w_larmor);
-      const double w_DD_adjusted = w_larmor*freq_ratio;
+      w_DD_adjusted = w_larmor*freq_ratio;
+      cycle_time = t_larmor;
+    }
+
+    cycles = int(control_time/cycle_time);
+    const double leading_time = control_time - cycles*cycle_time;
+    const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                                    controls, leading_time);
+    if(cycles > 0){
       const double t_DD_adjusted = 2*pi/w_DD_adjusted;
-      const uint cycles = int(control_time/t_larmor);
-
-      const double leading_time = control_time - cycles*t_larmor;
-      const double trailing_time = t_larmor - leading_time;
-
-      const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                      controls, leading_time);
+      const double trailing_time = t_DD_adjusted - leading_time;
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                        controls, trailing_time, leading_time);
-
-      U_ctl = U_leading * pow(U_trailing*U_leading,cycles);
+      U_ctl = U_leading * pow(U_trailing*U_leading, cycles);
+    } else{
+      U_ctl = U_leading;
     }
   }
 
@@ -233,16 +230,19 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
 
   const uint cycles = int(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
-  const double trailing_time = t_DD - leading_time;
-
   const double phase_advance = (interaction_angle - target_azimuth)/w_larmor;
 
   const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                   controls, leading_time, phase_advance);
-  const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                   controls, trailing_time,
-                                                   phase_advance + leading_time);
-  const MatrixXcd U_coupling = U_leading * pow(U_trailing*U_leading,cycles);
+  const MatrixXcd U_coupling = [&]() -> MatrixXcd {
+    if(cycles > 0){
+      const double trailing_time = t_DD - leading_time;
+      const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                                       controls, trailing_time,
+                                                       phase_advance + leading_time);
+      return U_leading * pow(U_trailing*U_leading, cycles);
+    } else return U_leading;
+  }();
 
   // rotate NV coupling axis into its interaction axis (i.e. zhat)
   const MatrixXcd nv_axis_rotation = act_NV(nv,rotate(zhat,nv_axis),spins);
