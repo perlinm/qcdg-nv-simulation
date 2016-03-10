@@ -225,10 +225,10 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
 
   // time for which to interact
   double interaction_time = nv.ms*phase/w_phase;
-  interaction_time -= floor(interaction_time/t_phase)*t_phase;
-  if(interaction_time > t_phase/2){
+  interaction_time -= floor(interaction_time/(t_phase/2))*(t_phase/2);
+  if(interaction_time > t_phase/4){
     f_DD *= -1;
-    interaction_time = t_phase - interaction_time;
+    interaction_time = t_phase/2 - interaction_time;
   }
 
   const uint cycles = int(interaction_time/t_DD);
