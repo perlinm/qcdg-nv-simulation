@@ -253,6 +253,14 @@ double larmor_resolution(const nv_system& nv, const uint index){
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulse_times(const double f, const axy_harmonic k){
   assert(abs(f) <= axy_f_max(k));
+  if(abs(f) == axy_f_max(k)){
+    double x = 175/900.;
+    if(f > 0){
+      return {0, x, 0.25, 0.5-x, 0.5+x, 0.75, 1-x, 1};
+    } else{
+      return {0, 0, x, 0.25, 0.5-x, 0.5+x, 0.75, 1-x, 1, 1};
+    }
+  }
   const double fp = f*pi;
 
   // compute first two pulse times
