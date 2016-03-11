@@ -301,7 +301,7 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   vector<double> advanced_pulse_times;
   advanced_pulse_times.push_back(0);
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulse_times.at(p%N+1) - normed_advance > 0){
+    if(p/N + pulse_times.at(p%N+1) - normed_advance >= 0){
       advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - normed_advance);
     }
     if(advanced_pulse_times.size()-1 == N) break;
