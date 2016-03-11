@@ -301,10 +301,10 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
   vector<double> advanced_pulse_times;
   advanced_pulse_times.push_back(0);
   for(uint p = 0; p < 2*N; p++){
-    if(p/N + pulse_times.at(p%N+1) - normed_advance >= 0){
+    if(p/N + pulse_times.at(p%N+1) - normed_advance > 0){
       advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - normed_advance);
     }
-    if(advanced_pulse_times.size() == N+1) break;
+    if(advanced_pulse_times.size()-1 == N) break;
   }
   advanced_pulse_times.push_back(1);
   return advanced_pulse_times;
@@ -315,7 +315,7 @@ int F_AXY(const double x, const vector<double> pulses){
   const double normed_x = x - floor(x);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
-    if(pulses.at(i) <= normed_x) pulse_count++;
+    if(pulses.at(i) < normed_x) pulse_count++;
     else break;
   }
   return (pulse_count % 2 == 0 ? 1 : -1);
@@ -516,7 +516,6 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
     return simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
                                simulation_time, advance, controls.B(0));
   }
-
   const uint spins = nv.clusters.at(cluster).size()+1;
   if(simulation_time == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   const double end_time = simulation_time + advance;
