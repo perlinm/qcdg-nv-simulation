@@ -1,6 +1,8 @@
 work out how to perform a single-target rotation
   ... or perform SWAP_NVST differently
 
+make SWAP_NVST sensitive to whether the targets are larmor pairs
+
 make simulate_propagator correct for effects of control fields on specified nuclei
 
 test single_control and single_coupling
