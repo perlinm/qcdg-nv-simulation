@@ -5,7 +5,7 @@ using namespace Eigen;
 
 #include "qp-math.h"
 
-struct gates{
+struct nv_gates{
 
   // single qubit gates
   const MatrixXcd Z = sz;
@@ -36,7 +36,6 @@ struct gates{
                        0, 1, 1, 0,
                        0,-1, 1, 0,
                        -1, 0, 0, 1).finished()/sqrt(2);
-  const MatrixXcd uE = E.inverse();
 
   // change between coupled and uncoupled basis for two spins
   const MatrixXcd uncouple = (Matrix4cd() <<
@@ -44,25 +43,26 @@ struct gates{
                               0, 1/sqrt(2), 1/sqrt(2), 0,
                               0,-1/sqrt(2), 1/sqrt(2), 0,
                               0, 0,         0,         1).finished();
-  const MatrixXcd couple = uncouple.inverse();
+  const MatrixXcd couple = uncouple.adjoint();
 
   const VectorXcd S = (ud-du)/sqrt(2);
   const VectorXcd T = (ud+du)/sqrt(2);
 
   // identity on Hilbert space of two qubits mod the ST subspace
-  const MatrixXcd unused_ST_I = uu*uu.transpose() + dd*dd.transpose();
+  const MatrixXcd unused_ST_I = uu*uu.adjoint() + dd*dd.adjoint();
 
   // phase-flip, bit-flip, and Hadamard gates on an ST qubit
-  const MatrixXcd Z_ST = S*S.transpose() - T*T.transpose() + j*unused_ST_I;
-  const MatrixXcd X_ST = S*T.transpose() + T*S.transpose() + j*unused_ST_I;
-  const MatrixXcd H_ST = ((S+T)*S.transpose()+(S-T)*T.transpose())/sqrt(2.) + j*unused_ST_I;
+  const MatrixXcd Z_ST = S*S.adjoint() - T*T.adjoint() + j*unused_ST_I;
+  const MatrixXcd X_ST = S*T.adjoint() + T*S.adjoint() + j*unused_ST_I;
+  const MatrixXcd H_ST = ((S+T)*S.adjoint()+(S-T)*T.adjoint())/sqrt(2.) + j*unused_ST_I;
 
   // operation to store ST state into NV spin
   const MatrixXcd R_NVST = act(X*HG,{0},3)*act(SWAP,{0,1},3);
 
-  // SWAP between NV and ST qubits
-  const MatrixXcd SWAP_NVST = act(E,{1,2},3) * act(cNOT,{1,2},3) * act(X*HG,{0},3)
-    * act(cNOT,{0,2},3) * act(SWAP,{0,1},3);
+  // operations between NV and ST qubits
+  const MatrixXcd cNOT_NVST = act(cZ,{0,1},3);
+  const MatrixXcd cNOT_STNV = act(E,{1,2},3) * act(cNOT,{1,0},3) * act(E.adjoint(),{1,2},3);
+  const MatrixXcd SWAP_NVST = cNOT_NVST * cNOT_STNV * cNOT_NVST;
 
   // spin propagators; Ua corresponds to a Hamiltonian H = h s_a
   MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
@@ -102,16 +102,16 @@ struct gates{
 
   // rotation operators
   MatrixXcd Rx_ST(double phi){
-    return (cos(phi/2.)*(S*S.transpose()+T*T.transpose())
-            - j*sin(phi/2.)*(S*T.transpose()+T*S.transpose()) + unused_ST_I);
+    return (cos(phi/2.)*(S*S.adjoint()+T*T.adjoint())
+            - j*sin(phi/2.)*(S*T.adjoint()+T*S.adjoint()) + unused_ST_I);
   }
   MatrixXcd Ry_ST(double phi){
-    return (cos(phi/2)*(S*S.transpose()+T*T.transpose())
-            + sin(phi/2)*(-S*T.transpose()+T*S.transpose()) + unused_ST_I);
+    return (cos(phi/2)*(S*S.adjoint()+T*T.adjoint())
+            + sin(phi/2)*(-S*T.adjoint()+T*S.adjoint()) + unused_ST_I);
   }
   MatrixXcd Rz_ST(double phi){
-    return (exp(-j*phi/2.)*S*S.transpose() +
-            exp( j*phi/2.)*T*T.transpose() + unused_ST_I);
+    return (exp(-j*phi/2.)*S*S.adjoint() +
+            exp( j*phi/2.)*T*T.adjoint() + unused_ST_I);
   }
 
 };
