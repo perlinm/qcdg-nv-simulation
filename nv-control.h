@@ -55,10 +55,11 @@ MatrixXcd couple_target(const nv_system& nv, const uint target, const double pha
 //--------------------------------------------------------------------------------------------
 
 // iSWAP operation
-inline MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact){
+inline MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact = false){
   return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
           couple_target(nv, index, -pi/4, yhat, yhat, exact));
 };
 
 // SWAP_NVST operation
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact);
+MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
+                    const bool exact = false);

@@ -15,9 +15,8 @@ namespace po = boost::program_options;
 #include "constants.h"
 #include "qp-math.h"
 #include "nv-math.h"
+#include "nv-gates.h"
 #include "nv-control.h"
-
-#include "gates.h"
 
 int main(const int arg_num, const char *arg_vec[]) {
 
@@ -493,6 +492,29 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint cluster = get_cluster_containing_index(nv, target);
       const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+
+
+
+      // rotate into the frame of the nuclei
+      const uint spins = nv.clusters.at(cluster).size()+1;
+      MatrixXcd R = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+      for(uint index: nv.clusters.at(cluster)){
+        const uint index_in_cluster = get_index_in_cluster(index, nv.clusters.at(cluster));
+        const Matrix2cd R_index = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
+        R = (act(R_index, {index_in_cluster+1},spins) * R).eval();
+      }
+      const MatrixXcd U_e = R.adjoint() * U.at(true) * R;
+      const MatrixXcd U_a = R.adjoint() * U.at(false) * R;
+      const double err = 1e-2;
+      cout << endl;
+      U_print(j*log(U_e)/pi, err);
+      cout << endl << endl;
+      U_print(j*log(U_a)/pi, err);
+      cout << endl;
+
+
+
+
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
@@ -511,6 +533,28 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint cluster = get_cluster_containing_index(nv, target);
       const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+
+
+
+      // rotate into the frame of the nuclei
+      const uint spins = nv.clusters.at(cluster).size()+1;
+      MatrixXcd R = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+      for(uint index: nv.clusters.at(cluster)){
+        const uint index_in_cluster = get_index_in_cluster(index, nv.clusters.at(cluster));
+        const Matrix2cd R_index = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
+        R = (act(R_index, {index_in_cluster+1},spins) * R).eval();
+      }
+      const MatrixXcd U_e = R.adjoint() * U.at(true) * R;
+      const MatrixXcd U_a = R.adjoint() * U.at(false) * R;
+      const double err = 1e-2;
+      cout << endl;
+      U_print(j*log(U_e)/pi, err);
+      cout << endl << endl;
+      U_print(j*log(U_a)/pi, err);
+      cout << endl;
+
+
+
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }

@@ -985,8 +985,7 @@ In this notation,
 \end{align}
 \begin{align}
   \t{cNOT}^{m,n}=U\sp{\f\pi4\p{\sigma_z^m+\sigma_x^n
-      -\sigma_z^m\sigma_x^n}}
-  =U\sp{\f\pi4\sigma_z^m}U\sp{\f\pi4\sigma_x^n}
+      -\sigma_z^m\sigma_x^n}} =R_z^m\p{\f\pi2} R_x^1\p{\f\pi2}
   U\sp{-\f\pi4\sigma_z^m\sigma_x^n}
 \end{align}
 \begin{align}
@@ -997,39 +996,39 @@ In this notation,
 \begin{align}
   \E^{m,n}=U\sp{-\f\pi4\sigma_y^m\sigma_x^n},
 \end{align}
-and therefore
-\begin{multline}
-  \t{SWAP}^{NV,ST}= U\sp{\f\pi4\sigma_z^{NV}}U\sp{\f\pi4\sigma_z^1}
-  U\sp{\f\pi4\sigma_x^{NV}\sigma_x^1}
-  U\sp{\f\pi4\sigma_y^{NV}\sigma_y^1}
-  U\sp{-\f\pi4\sigma_y^{NV}\sigma_x^2} \\
-  U\sp{\f\pi4\sigma_z^{NV}}U\sp{\f\pi4\sigma_x^1}
-  U\sp{-\f\pi4\sigma_z^{NV}\sigma_x^1}
-  U\sp{\f\pi4\sigma_y^{NV}\sigma_x^2} \\
+and therefore, defining
+\begin{align}
+  \mathcal M &={\E^\dag}^{NV,2} i\t{SWAP}^{NV,1}
+  R_z^1\p{-\f\pi2}R_z^{NV}\p{-\f\pi2} \tag*{} \\
+  &=U\sp{\f\pi4\sigma_y^{NV}\sigma_x^2}
   U\sp{-\f\pi4\sigma_y^{NV}\sigma_y^1}
   U\sp{-\f\pi4\sigma_x^{NV}\sigma_x^1}
-  U\sp{-\f\pi4\sigma_z^1}U\sp{-\f\pi4\sigma_z^{NV}}.
-\end{multline}
+  R_z^1\p{-\f\pi2}R_z^{NV}\p{-\f\pi2}
+\end{align}
+we can express
+\begin{align}
+  \t{SWAP}^{NV,ST}=\mathcal M^\dag R_z^{NV}\p{\f\pi2} R_x^1\p{\f\pi2}
+  U\sp{-\f\pi4\sigma_z^{NV}\sigma_x^1} \mathcal M.
+\end{align}
 
 \section*{Optimizations}
 
-Individual nuclear control is a slow operation, whereas operations of
-the form $U\sp{\phi\sum_j\sigma_{\uv n}^j}$ can be performed
-relatively quickly and with high fidelity. We therefore modify the
-above $\t{SWAP}^{NV,ST}$ decomposition as
-\begin{multline}
-  \t{SWAP}^{NV,ST}=
-  U\sp{\f\pi4\sigma_z^{NV}}U\sp{\f\pi4\sum_j\sigma_z^j}
-  U\sp{\f\pi4\sigma_x^{NV}\sigma_x^1}
-  U\sp{\f\pi4\sigma_y^{NV}\sigma_y^1}
-  U\sp{\f\pi4\sigma_y^{NV}\sigma_y^2} \\
-  U\sp{\f\pi4\sigma_z^{NV}}U\sp{\f\pi4\sigma_x^1}
-  U\sp{-\f\pi4\sigma_z^{NV}\sigma_x^1}
-  U\sp{-\f\pi4\sigma_y^{NV}\sigma_y^2} \\
+When addressing larmor pairs with frequency $\omega_\l$, operations of
+the form $\prod_{j\in\set{k:\omega_k=\omega_\l}}R_{\uv n}^j\p\phi$ are
+easier to realize than individual rotations $R_{\uv n}^m\p\phi$. We
+therefore define
+\begin{align}
+  \mathcal M'=U\sp{-\f\pi4\sigma_y^{NV}\sigma_y^2}
   U\sp{-\f\pi4\sigma_y^{NV}\sigma_y^1}
   U\sp{-\f\pi4\sigma_x^{NV}\sigma_x^1}
-  U\sp{-\f\pi4\sum_j\sigma_z^j}U\sp{-\f\pi4\sigma_z^{NV}}.
-\end{multline}
+  \sp{\prod_{j\in\set{k:\omega_k=\omega_\l}}R_z^j\p{-\f\pi2}}
+  R_z^{NV}\p{-\f\pi2}
+\end{align}
+and express $\t{SWAP}^{NV,ST}$ as
+\begin{align}
+  \t{SWAP}^{NV,ST}={\mathcal M'}^\dag R_z^{NV}\p{\f\pi2} R_x^1\p{\f\pi2}
+  U\sp{-\f\pi4\sigma_z^{NV}\sigma_x^1} \mathcal M'.
+\end{align}
 
 \newpage
 \section*{NV decoupling for single nuclear control}
@@ -1128,99 +1127,15 @@ If (\ref{w_DD_case2}) does not satisfy $\omega_{DD}\gg A$, which by
 construction is only possible when $k_m=0$, then we revert to using
 (\ref{w_DD_case1}) with $f_1=0$.
 
-
 \newpage
 
-\section*{Coherence of a single qubit}
+\section*{Addressing larmor pairs}
 
-Any single-qubit density matrix $\rho$ can be decomposed as
+When applying a static control field $\v B_{\t{ctl}}$, we have the
+effective interaction + control Hamiltonian
 \begin{align}
-  \rho=\f12\p{I+\v v\c\v\sigma}=\f12\m{1+v_z&v_x-iv_y\\v_x+iv_y&1-v_z}.
+  H=\f12m_s\sigma_z\sum_j\v A_j\c\v I_j-\sum_j\gamma_j\v
+  B_{\t{ctl}}\c\v I_j
 \end{align}
-for a vector $\v v$ with $\v v\c\v v\le 1$. The components $v^i$ of
-$\v v$ can be recovered via the anticommutator
-\begin{align}
-  v^i=\f12\set{\sigma_i,2\rho-I}.
-\end{align}
-Question: is $C_p\p\rho=\abs{\v v}$ a proper measure of
-coherence?
-
-\subsection*{$l_1$ norm of coherence}
-
-In general,
-\begin{align}
-  C_{l_1}\p\rho=\sum_{i\ne j}\abs{\rho_{ij}}
-  =\f12\p{\abs{v_x-iv_y}+\abs{v_x+iv_y}}=\sqrt{v_x^2+v_y^2}.
-\end{align}
-Equivalently,
-\begin{align}
-  C_{l_1}\p\rho=\abs{\v v-\v v\c\v z\uv z}
-  =\abs{P\sp{\uv v,\uv x\w\uv y}}=v\sin\theta,
-\end{align}
-where $\theta\in\sp{0,\pi}$ is the polar angle of $\v v$. For any
-given state, therefore, this measure of coherence is thus minimal when
-when $\v v\parallel\uv z$ (i.e. $\theta\in\set{0,\pi}$, so
-$C_{l_1}\p\rho=0$), and maximal when $\v v\perp\uv z$
-(i.e. $\theta=\pi/2$, so $C_{l_1}\p\rho=v$).
-
-It is worthwhile to notice that when $\v v\perp\uv z$,
-$C_{l_1}\p\rho=C_p\p\rho$, but that $C_p\p\rho$ is
-basis-independent.
-
-\subsection*{Relative entropy of coherence}
-
-The relative entropy of coherence is
-\begin{align}
-  C_{\t{rel. ent.}}\p\rho=S\p{\rho_{\t{diag}}}-S\p\rho,
-\end{align}
-The von Neumann entropy is
-\begin{align}
-  S\p\rho=-\tr\p{\rho\log\rho}.
-\end{align}
-If $\rho=\sum_j\eta_j\op j$, then $S\p\rho=-\sum_j\eta_j\log\eta_j$. We
-can express
-\begin{align}
-  \rho_{\t{diag}}=\f12\p{I+v^z\sigma_z}
-  =\f12\sp{\p{1+v^z}\op{+_z}+\p{1-v^z}\op{-_z}},
-\end{align}
-and
-\begin{align}
-  \rho=\f12\p{I+v\sigma_v}
-  =\f12\sp{\p{1+v}\op{+_v}+\p{1-v}\op{-_v}}.
-\end{align}
-Letting $v_\pm\equiv \p{1\pm v}/2$ and $v^z_\pm\equiv\p{1\pm
-  v^z}/2=\p{1\pm v\cos\theta}/2$ (where $\theta$ is the polar angle of
-$\v v$),
-\begin{align}
-  \rho_{\t{diag}}=v^z_+\op{+_z}+v^z_-\op{-_z}, &&
-  \rho=v_+\op{+_v}+v_-\op{-_v},
-\end{align}
-which means
-\begin{align}
-  C_{\t{rel. ent.}}\p\rho
-  =-\p{v^z_+\log v^z_++v^z_-\log v^z_-}+\p{v_+\log v_++v_-\log v_-}.
-\end{align}
-For any given state, this measure of coherence is similarly minimal
-when $\v v\parallel\uv z$ (i.e. $\rho_{\t{diag}}=\rho$, so
-$C_{\t{rel. ent.}}=0$), and maximal when $\v v\perp\uv z$ (i.e.
-$v^z=0$ and $v^z_\pm=1/2$, so $C_{\t{rel. ent.}}\p\rho=\log2-S\p\rho$).
-
-\newpage
-
-\section*{Coherence of many qubits}
-
-Consider a density matrix of the form
-\begin{align}
-  \rho=\f1{2^N}\p{I
-    +\sum_{\substack{i_0,i_1,\cdots,i_{N-1}\\\exists n:i_n\ne0}}
-    v^{i_0i_1\cdots i_{N-1}}\bigotimes_{n<N}\sigma_{i_n}},
-\end{align}
-which identifies the state of $N$ qubits. Here all
-$i_n\in\set{0,1,2,3}$,
-$\sigma_{i_n}\in\set{I,\sigma_x,\sigma_y,\sigma_z}$, and $n$ indexes
-the qubit upon which $\sigma_{i_n}$ acts.
-
-Questions: What restrictions exist on $\rho$? What do these
-restrictions imply about $\v v$?
 
 \end{document}

@@ -1,12 +1,13 @@
-test single_control and single_coupling for seeds 10688 and 10689
+work out how to perform a single-target rotation
+  ... or perform SWAP_NVST differently
 
-add wrapper for U_int which accepts Vector3d target_axis
-remove 'exact' from U_ctl and U_int: they should never be exact
+make simulate_propagator correct for effects of control fields on specified nuclei
 
-test iSWAP on larmor pairs
-fix up SWAP_NVST
-- minimize use of U_int and U_ctl
-- make it work for larmor pairs
+test single_control and single_coupling
+- vary: phase, target_azimuth, target_polar
+
+for p in 0 05 1 15 2 25 3 35 4 45 5; do for ta in 0 05 1 15 2 25 3 35 4 45 5 55 6 65 7 75 8 85 9; do for tp in 0 05 1 15 2 25 3 35 4 45 5 55 6 65 7 75 8 85 9 95 1; do echo "0.$p 0.$ta 0.$tp" >> testing; echo "" >> testing; ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --max_cluster_size 2 --test --static_Bz 500 --integration_factor 10 --control --seed 10688 --phase 0.$p --target_azimuth 0.$ta --target_polar 0.$tp >> testing; echo "" >> testing; done; done; done
+
 
 candidate larmor pair seeds: 9746 10688 13481 15646 25272 40426 41142 47805 49308 52619 62086 91296 93794 93944 99582
 
@@ -31,6 +32,8 @@ use non-ideal NV pulses?
 compute corrections that need to be made to approximate gates, and perform them
 
 
+investigate errors:
+fac && time ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --max_cluster_size 2 --test --static_Bz 500 --integration_factor 10 --couple --seed 10688 --phase 0.1
 
 
 investigate bad fidelities:
