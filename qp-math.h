@@ -1,7 +1,5 @@
 #pragma once
 
-using namespace std;
-
 #include <eigen3/Eigen/Dense> // linear algebra library
 #include <eigen3/unsupported/Eigen/KroneckerProduct> // provides tensor product
 #include <eigen3/unsupported/Eigen/MatrixFunctions> // provides matrix functions
