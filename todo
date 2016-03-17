@@ -11,7 +11,7 @@ test single_control and single_coupling
 for p in 0 05 1 15 2 25 3 35 4 45 5; do for ta in 0 05 1 15 2 25 3 35 4 45 5 55 6 65 7 75 8 85 9; do for tp in 0 05 1 15 2 25 3 35 4 45 5 55 6 65 7 75 8 85 9 95 1; do echo "0.$p 0.$ta 0.$tp" >> testing; echo "" >> testing; ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --max_cluster_size 2 --test --static_Bz 500 --integration_factor 10 --control --seed 10688 --phase 0.$p --target_azimuth 0.$ta --target_polar 0.$tp >> testing; echo "" >> testing; done; done; done
 
 
-candidate larmor pair seeds: 9746 10688 13481 15646 25272 40426 41142 47805 49308 52619 62086 91296 93794 93944 99582
+candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
 
 itemize assumptions and approximations used in simulations
 
