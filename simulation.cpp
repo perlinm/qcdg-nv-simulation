@@ -57,6 +57,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool single_control;
   bool single_coupling;
   bool iswap_fidelities;
+  bool swap_fidelities;
   bool swap_nvst_fidelity;
   bool testing;
 
@@ -73,6 +74,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("iswap",
      po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iSWAP fidelities")
+    ("swap",
+     po::value<bool>(&swap_fidelities)->default_value(false)->implicit_value(true),
+     "compute expected SWAP fidelities")
     ("swap_nvst",
      po::value<bool>(&swap_nvst_fidelity)->default_value(false)->implicit_value(true),
      "compute expected SWAP_NVST fidelity")
@@ -189,6 +193,7 @@ int main(const int arg_num, const char *arg_vec[]) {
            + int(single_control)
            + int(single_coupling)
            + int(iswap_fidelities)
+           + int(swap_fidelities)
            + int(swap_nvst_fidelity)
            == 1);
   }
@@ -568,6 +573,22 @@ int main(const int arg_num, const char *arg_vec[]) {
       vector<MatrixXcd> U(2);
       for(bool exact : {true,false}){
         U.at(exact) = iSWAP(nv, target, exact);
+      }
+      const uint cluster = get_cluster_containing_index(nv, target);
+      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
+    }
+  }
+
+  // -----------------------------------------------------------------------------------------
+  // NV/nucleus SWAP fidelity
+  // -----------------------------------------------------------------------------------------
+
+  if(swap_fidelities){
+    for(uint target: target_nuclei){
+      vector<MatrixXcd> U(2);
+      for(bool exact : {true,false}){
+        U.at(exact) = SWAP(nv, target, exact);
       }
       const uint cluster = get_cluster_containing_index(nv, target);
       const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
