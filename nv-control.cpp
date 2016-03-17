@@ -323,17 +323,21 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
   const MatrixXcd XHG_NV = act_NV(nv, gates.X * gates.HG, spins);
   const MatrixXcd Rz_NV = rotate_NV(nv, pi/2*zhat, spins);
 
-  const uint idx1_in_cluster = get_index_in_cluster(idx1, cluster);
-  const MatrixXcd Rx_2 = (rotate_target(nv, idx2, pi/2*xhat) *
-                          act(rotate(-pi/2, hyperfine_perp(nv,idx2)),
-                              {idx1_in_cluster+1}, spins));
-
   const MatrixXcd iSWAP_NV_1 = iSWAP(nv, idx1);
   const MatrixXcd SWAP_NV_1 = SWAP(nv, idx1);
 
+  const MatrixXcd cNOT_NV_2 = (Rz_NV * rotate_target(nv, idx2, pi/2*xhat) *
+                               couple_target(nv, idx2, -pi/4, zhat, xhat));
   const MatrixXcd E_NV_2 = couple_target(nv, idx2, -pi/4, yhat, xhat);
-  const MatrixXcd cNOT_NV_2 = Rz_NV * Rx_2 * couple_target(nv, idx2, -pi/4, zhat, xhat);
 
-  return (XHG_NV * SWAP_NV_1 * E_NV_2 * cNOT_NV_2.adjoint() * iSWAP_NV_1.adjoint() *
+  const uint idx1_in_cluster = get_index_in_cluster(idx1, cluster);
+  const MatrixXcd rotation = act(rotate(pi/2, hyperfine_perp(nv,idx2)),
+                                 {idx1_in_cluster+1}, spins);
+  const MatrixXcd iSWAP_NV_1_mod = (rotation *
+                                    couple_target(nv, idx1, -pi/4, xhat, xhat) *
+                                    couple_target(nv, idx1, -pi/4, yhat, yhat) *
+                                    rotation.adjoint());
+
+  return (XHG_NV * SWAP_NV_1 * E_NV_2 * cNOT_NV_2.adjoint() * iSWAP_NV_1_mod.adjoint() *
           cNOT_NV_2 * iSWAP_NV_1);
 }
