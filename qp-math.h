@@ -204,25 +204,25 @@ mvec operator*(const MatrixXcd& G, const mvec& v);
 //--------------------------------------------------------------------------------------------
 
 // identity matrices
-const MatrixXcd I1 = MatrixXcd::Identity(1,1);
-const MatrixXcd I2 = MatrixXcd::Identity(2,2);
-const MatrixXcd I4 = MatrixXcd::Identity(4,4);
+const Matrix<std::complex<double>,1,1> I1 = MatrixXcd::Identity(1,1);
+const Matrix2cd I2 = Matrix2cd::Identity();
+const Matrix4cd I4 = Matrix4cd::Identity();
 
 // spin up/down state vectors
-const VectorXcd up = (Vector2cd() << 1,0).finished();
-const VectorXcd dn = (Vector2cd() << 0,1).finished();
+const Vector2cd up = (Vector2cd() << 1,0).finished();
+const Vector2cd dn = (Vector2cd() << 0,1).finished();
 
 // two qbit basis states
-const VectorXcd uu = tp(up,up);
-const VectorXcd ud = tp(up,dn);
+const Vector4cd uu = tp(up,up);
+const Vector4cd ud = tp(up,dn);
 const VectorXcd du = tp(dn,up);
-const VectorXcd dd = tp(dn,dn);
+const Vector4cd dd = tp(dn,dn);
 
 // pauli spin matrices
-const MatrixXcd st = up*up.adjoint() + dn*dn.adjoint();
-const MatrixXcd sx = up*dn.adjoint() + dn*up.adjoint();
-const MatrixXcd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
-const MatrixXcd sz = up*up.adjoint() - dn*dn.adjoint();
+const Matrix2cd st = up*up.adjoint() + dn*dn.adjoint();
+const Matrix2cd sx = up*dn.adjoint() + dn*up.adjoint();
+const Matrix2cd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
+const Matrix2cd sz = up*up.adjoint() - dn*dn.adjoint();
 
 //--------------------------------------------------------------------------------------------
 // Printing methods
