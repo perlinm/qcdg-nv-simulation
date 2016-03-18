@@ -270,7 +270,7 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
   double xy_phase = interaction_time*w_ctl;
   xy_phase -= floor(xy_phase/(2*pi))*2*pi;
 
-  const Vector3d xy_axis = cos(target_azimuth)*xhat + sin(target_azimuth)*yhat;
+  const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
 
   const MatrixXcd flush_target =
     act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,zhat));

@@ -419,7 +419,7 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   const Vector3d w_j = effective_larmor(nv,index);
   const double w_rfd = w_j.norm()/(1-sin(theta_rfd)/(2*sqrt(2)*nv.scale_factor));
   const double V_rfd = w_rfd/(s.g*nv.scale_factor);
-  const Vector3d n_rfd = cos(theta_rfd)*hat(w_j) + sin(theta_rfd)*hat(w_j.cross(zhat));
+  const Vector3d n_rfd = rotate(hat(hyperfine_perp(nv, index)), theta_rfd, hat(w_j));
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
