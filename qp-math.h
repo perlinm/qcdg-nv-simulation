@@ -48,14 +48,16 @@ MatrixXcd tp(const initializer_list<MatrixXcd>& list);
 MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold = 1e-12);
 
 // get global phase of matrix
-complex<double> get_phase(const MatrixXcd& A);
+complex<double> get_phase(const MatrixXcd& A, const double threshold = 1e-12);
 
 // remove global phase from matrix
-inline MatrixXcd remove_phase(const MatrixXcd& A){ return A*conj(get_phase(A)); }
+inline MatrixXcd remove_phase(const MatrixXcd& A, const double threshold = 1e-12){
+  return A*conj(get_phase(A, threshold));
+}
 
 // clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& M, double error_threshold = 1e-3){
-  return remove_artifacts(remove_phase(remove_artifacts(M,error_threshold)),error_threshold);
+inline MatrixXcd clean(const MatrixXcd& M, double threshold = 1e-3){
+  return remove_artifacts(remove_phase(M,threshold),threshold);
 }
 
 //--------------------------------------------------------------------------------------------

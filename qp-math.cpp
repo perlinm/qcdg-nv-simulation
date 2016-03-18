@@ -35,10 +35,10 @@ MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold){
 }
 
 // get global phase of matrix
-complex<double> get_phase(const MatrixXcd& A){
+complex<double> get_phase(const MatrixXcd& A, const double threshold){
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
-      if(abs(A(m,n)) != 0){
+      if(abs(A(m,n)) > threshold){
         complex<double> phase = A(m,n)/abs(A(m,n));
         return phase;
       }
