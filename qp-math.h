@@ -21,10 +21,11 @@ inline Vector3d project(const Vector3d& vec, const Vector3d& axis){
   return vec - vec.dot(hat(axis))*hat(axis);
 }
 
-// rotate vec counterclockwise by phi about axis
-inline Vector3d rotate(const Vector3d& vec, const double phi, const Vector3d axis){
-  return project(vec,axis)*cos(phi) + hat(axis).cross(vec)*sin(phi)
-    + vec.dot(hat(axis))*hat(axis);
+// return a vector rotated by a given angle about a given axis
+inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& axis){
+  return (vec.dot(hat(axis))*hat(axis) +
+          cos(angle) * project(vec,axis) +
+          sin(angle) * hat(axis).cross(vec));
 }
 
 //--------------------------------------------------------------------------------------------
