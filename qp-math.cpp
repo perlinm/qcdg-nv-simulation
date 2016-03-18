@@ -262,6 +262,7 @@ void U_print(const MatrixXcd& U, const double threshold){
       cout << U_basis_element_text(p,N) << ": " << hs(p) << endl;
     }
   }
+  cout << endl;
 }
 
 // print state vector in human readable form
@@ -277,6 +278,7 @@ void state_print(const MatrixXcd& psi){
       cout << "> " << psi(n) << endl;
     }
   }
+  cout << endl;
 }
 
 // print matrix in human readable form
@@ -297,4 +299,5 @@ void matrix_print(const MatrixXcd& M){
       }
     }
   }
+  cout << endl;
 }
