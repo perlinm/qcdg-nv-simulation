@@ -71,13 +71,14 @@ struct nv_system{
   const axy_harmonic k_DD;
   const double scale_factor;
   const double integration_factor;
+  const bool no_nn;
 
   vector<spin> nuclei;
   double cluster_coupling;
   vector<vector<uint>> clusters;
 
   nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
-            const double scale_factor, const double integration_factor);
+            const double scale_factor, const double integration_factor, const bool no_nn);
 };
 
 //--------------------------------------------------------------------------------------------
@@ -157,7 +158,7 @@ int F_AXY(const double x, const vector<double> pulses);
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2);
 
-// spin-spin coupling Hamiltonian for the entire system
+// spin coupling Hamiltonian for the entire spin system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // nuclear Zeeman Hamiltonian

@@ -1,12 +1,12 @@
-keep track of simulation time
- - make 'protocol' object?
-  - contains propagator and simulation time
-  - multiplication between protocol objects: multiply propagators, add simulation time
-
-trace errors in target control
+trace errors in swap_nvst / single_control
 
 test single_control and single_coupling, varying phase, target_azimuth, and target_polar
-debug and address problems in gate_fidelity
+debug and address problems with gate_fidelity
+
+keep track of simulation time
+ - make 'protocol' object?
+  - contains propagator, simulation time, and NV frame
+  - multiplication between protocol objects: multiply propagators, add simulation time
 
 candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
 

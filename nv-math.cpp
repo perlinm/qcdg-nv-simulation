@@ -50,11 +50,12 @@ spin::spin(const Vector3d& pos, const double g, const mvec& S) :
 {};
 
 nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
-                     const double scale_factor, const double integration_factor) :
+                     const double scale_factor, const double integration_factor,
+                     const bool no_nn) :
   e(Vector3d::Zero(), ge,
     mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat)),
   ms(ms), static_Bz(static_Bz), k_DD(k_DD),
-  scale_factor(scale_factor), integration_factor(integration_factor)
+  scale_factor(scale_factor), integration_factor(integration_factor), no_nn(no_nn)
 {};
 
 //--------------------------------------------------------------------------------------------
@@ -328,7 +329,7 @@ MatrixXcd H_ss(const spin& s1, const spin& s2){
     * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), dot(s2.S,hat(r))));
 }
 
-// spin-spin coupling Hamiltonian for the entire system
+// spin coupling Hamiltonian for the entire spin system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
@@ -336,10 +337,12 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
     H += act(H_ss(nv.e, nv.nuclei.at(cluster.at(s))), {0,s+1}, spins);
-    for(uint r = 0; r < s; r++){
+    if(!nv.no_nn){
       // interaction betwen spin r and spin s
-      H += act(H_ss(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
-               {r+1,s+1}, spins);
+      for(uint r = 0; r < s; r++){
+        H += act(H_ss(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
+                 {r+1,s+1}, spins);
+      }
     }
   }
   return H;

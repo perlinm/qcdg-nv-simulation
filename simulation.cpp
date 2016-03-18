@@ -96,6 +96,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   double static_Bz_in_gauss;
   double scale_factor;
   double integration_factor;
+  bool no_nn;
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
@@ -115,6 +116,8 @@ int main(const int arg_num, const char *arg_vec[]) {
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
     ("integration_factor", po::value<double>(&integration_factor)->default_value(10000),
      "factor used to determine size of integration step size")
+    ("no_nn" ,po::value<bool>(&no_nn)->default_value(false)->implicit_value(true),
+     "turn off internuclear couplings")
     ;
 
   uint scan_bins;
@@ -253,7 +256,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD, scale_factor, integration_factor);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD, scale_factor, integration_factor, no_nn);
 
   // -----------------------------------------------------------------------------------------
   // Construct lattice of nuclei
