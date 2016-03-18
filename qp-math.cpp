@@ -27,8 +27,8 @@ MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold){
   MatrixXcd B = MatrixXcd::Zero(A.rows(),A.cols());
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
-      if(abs(A(m,n).real()) > threshold) B(m,n) += A(m,n).real();
-      if(abs(A(m,n).imag()) > threshold) B(m,n) += A(m,n).imag()*j;
+      B(m,n) += round(A(m,n).real()/threshold)*threshold;
+      B(m,n) += round(A(m,n).imag()/threshold)*threshold*j;
     }
   }
   return B;
