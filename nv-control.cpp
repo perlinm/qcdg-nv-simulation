@@ -331,7 +331,7 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
                                couple_target(nv, idx2, -pi/4, zhat, xhat));
   const MatrixXcd E_NV_2 = couple_target(nv, idx2, -pi/4, yhat, xhat);
 
-  // correct for the rotation of n1 (idx1) together with n2 (idx2) in cNOT_NV_2, if necessary
+  // correct for the rotation of n1 (idx1) together with n2 (idx2) in cNOT_NV_2
   const vector<Vector3d> n1_basis = natural_basis(nv, idx1);
   const Vector3d n1_xhat = n1_basis.at(0);
   const Vector3d n1_yhat = n1_basis.at(1);
