@@ -23,11 +23,11 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 }
 
 // rotate into the natural frames of all nuclei in the cluster
-MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
-  const uint spins = nv.clusters.at(cluster).size()+1;
+MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
+  const uint spins = cluster.size()+1;
   MatrixXcd rotation = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  for(uint index: nv.clusters.at(cluster)){
-    const uint index_in_cluster = get_index_in_cluster(index, nv.clusters.at(cluster));
+  for(uint index: cluster){
+    const uint index_in_cluster = get_index_in_cluster(index, cluster);
     const Matrix2cd index_rotation = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
     rotation = (act(index_rotation, {index_in_cluster+1}, spins) * rotation).eval();
   }
@@ -321,15 +321,11 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
   assert(in_vector(idx2,cluster));
 
   if(exact){
-    const uint idx1_in_cluster = get_index_in_cluster(idx1, cluster);
-    const uint idx2_in_cluster = get_index_in_cluster(idx2, cluster);
-    const MatrixXcd targets_to_natural_basis =
-      act(rotate(natural_basis(nv,idx1), {xhat,yhat,zhat}), {idx1_in_cluster+1}, spins) *
-      act(rotate(natural_basis(nv,idx2), {xhat,yhat,zhat}), {idx2_in_cluster+1}, spins);
+    const uint cidx1 = get_index_in_cluster(idx1, cluster)+1;
+    const uint cidx2 = get_index_in_cluster(idx2, cluster)+1;
+    const MatrixXcd R = to_natural_frames(nv, cluster);
     const nv_gates gates;
-    return (targets_to_natural_basis *
-            act(gates.SWAP_NVST, {0, idx1_in_cluster+1, idx2_in_cluster+1}, spins) *
-            targets_to_natural_basis.adjoint());
+    return R * act(gates.SWAP_NVST, {0, cidx1, cidx2}, spins) * R.adjoint();
   }
 
   const nv_gates gates;
