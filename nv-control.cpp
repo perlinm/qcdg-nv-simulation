@@ -22,6 +22,18 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
   return {target_xhat, target_yhat, target_zhat};
 }
 
+// rotate into the natural frames of all nuclei in the cluster
+MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
+  const uint spins = nv.clusters.at(cluster).size()+1;
+  MatrixXcd rotation = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  for(uint index: nv.clusters.at(cluster)){
+    const uint index_in_cluster = get_index_in_cluster(index, nv.clusters.at(cluster));
+    const Matrix2cd index_rotation = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
+    rotation = (act(index_rotation, {index_in_cluster+1}, spins) * rotation).eval();
+  }
+  return rotation;
+}
+
 //--------------------------------------------------------------------------------------------
 // General control methods
 //--------------------------------------------------------------------------------------------

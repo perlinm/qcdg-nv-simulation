@@ -19,6 +19,9 @@ inline Vector3d axis(const double polar, const double azimuth,
                                                    sin(azimuth) * basis.at(1) );
 }
 
+// rotate into the natural frames of all nuclei in the cluster
+MatrixXcd to_natural_frames(const nv_system& nv, const uint index);
+
 //--------------------------------------------------------------------------------------------
 // General control methods
 //--------------------------------------------------------------------------------------------
