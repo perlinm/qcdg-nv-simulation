@@ -1,7 +1,5 @@
-fix "cheat" in SWAP_NVST: write method to rotate vectors
-
-make SWAP_NVST sensitive to whether its targets are larmor pairs
-- set iSWAP_NV_1_mod = iSWAP_NV_1 if targets are not larmor pairs
+make SWAP_NVST work with non-larmor pairs
+check errors with SWAP_NVST
 
 track down error in SWAP_NVST
 

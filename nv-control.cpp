@@ -330,13 +330,25 @@ MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const
                                couple_target(nv, idx2, -pi/4, zhat, xhat));
   const MatrixXcd E_NV_2 = couple_target(nv, idx2, -pi/4, yhat, xhat);
 
-  const uint idx1_in_cluster = get_index_in_cluster(idx1, cluster);
-  const MatrixXcd rotation = act(rotate(pi/2, hyperfine_perp(nv,idx2)),
-                                 {idx1_in_cluster+1}, spins);
-  const MatrixXcd iSWAP_NV_1_mod = (rotation *
-                                    couple_target(nv, idx1, -pi/4, xhat, xhat) *
-                                    couple_target(nv, idx1, -pi/4, yhat, yhat) *
-                                    rotation.adjoint());
+  // correct for the rotation of n1 (idx1) together with n2 (idx2) in cNOT_NV_2, if necessary
+  const MatrixXcd iSWAP_NV_1_mod = [&]() -> MatrixXcd {
+    if(!is_larmor_pair(nv, idx1, idx2)){
+      return iSWAP_NV_1;
+    } else{
+      const vector<Vector3d> n1_basis = natural_basis(nv, idx1);
+      const Vector3d n1_xhat = n1_basis.at(0);
+      const Vector3d n1_yhat = n1_basis.at(1);
+      const Vector3d n1_zhat = n1_basis.at(2);
+      const Vector3d n2_xhat = natural_basis(nv, idx2).at(0);
+      const Vector3d rotation_axis = (dot(n2_xhat,n1_xhat)*xhat +
+                                      dot(n2_xhat,n1_yhat)*yhat +
+                                      dot(n2_xhat,n1_zhat)*zhat);
+      const Vector3d xhat_p = rotate(xhat, pi/2, rotation_axis);
+      const Vector3d yhat_p = rotate(yhat, pi/2, rotation_axis);
+      return (couple_target(nv, idx1, -pi/4, xhat, xhat_p) *
+              couple_target(nv, idx1, -pi/4, yhat, yhat_p));
+    }
+  }();
 
   return (XHG_NV * SWAP_NV_1 * E_NV_2 * cNOT_NV_2.adjoint() * iSWAP_NV_1_mod.adjoint() *
           cNOT_NV_2 * iSWAP_NV_1);
