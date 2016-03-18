@@ -31,15 +31,15 @@ const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 inline Matrix2cd rotate(const Vector3d& axis){
   if(axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
   else return I2;
-};
+}
 inline Matrix2cd rotate(const double angle, const Vector3d& axis){
   return rotate(angle*hat(axis));
-};
+}
 
 // rotate into one axis from another
 inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start){
   return rotate(acos(dot(hat(axis_start),hat(axis_end))), hat(axis_start.cross(axis_end)));
-};
+}
 
 // rotate into one basis from another
 Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start);
@@ -116,24 +116,24 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster);
 inline Vector3d hyperfine(const nv_system& nv, const spin& s){
   const Vector3d r = s.pos - nv.e.pos;
   return nv.e.g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
-};
+}
 inline Vector3d hyperfine(const nv_system& nv, const uint index){
   return hyperfine(nv,nv.nuclei.at(index));
-};
+}
 
 // component of hyperfine field perpendicular to the larmor axis
 Vector3d hyperfine_perp(const nv_system&nv, const spin& s);
 inline Vector3d hyperfine_perp(const nv_system&nv, const uint index){
   return hyperfine_perp(nv,nv.nuclei.at(index));
-};
+}
 
 // effective larmor frequency of target nucleus
 inline Vector3d effective_larmor(const nv_system& nv, const spin& s){
   return s.g*nv.static_Bz*zhat - nv.ms/2.*hyperfine(nv,s);
-};
+}
 inline Vector3d effective_larmor(const nv_system& nv, const uint index){
   return effective_larmor(nv,nv.nuclei.at(index));
-};
+}
 
 // minimum difference in larmor frequencies between target nucleus and other nuclei
 //   i.e. min{ |w_s - w_{index}| for all s != index }
@@ -143,7 +143,7 @@ double larmor_resolution(const nv_system& nv, const uint index);
 inline double axy_f_max(const axy_harmonic k){
   if(k == first) return (8*cos(pi/9) - 4) / pi;
   else return 4/pi;
-};
+}
 
 // pulse times for harmonic h and fourier component f
 vector<double> axy_pulse_times(const double f, const axy_harmonic k);
@@ -166,28 +166,28 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B)
 // NV Zeeman Hamiltonian
 inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& B){
   return -nv.e.g*dot(B,nv.e.S);
-};
+}
 
 // NV zero-field splitting + static Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const nv_system& nv){
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
-};
+}
 
 // net NV Hamiltonian
 inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& B){
   return H_NV_GS(nv) + H_NV_Z(nv,B);
-};
+}
 
 // total internal system Hamiltonian
 inline MatrixXcd H_sys(const nv_system& nv, const uint cluster){
   return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
-};
+}
 
 // total control Hamiltonian for the entire system
 inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl){
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
-};
+}
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
@@ -205,33 +205,33 @@ struct control_fields{
   control_fields(){};
   control_fields(const Vector3d& B, const double freq = 0, const double phase = 0){
     this->add(B,freq,phase);
-  };
+  }
   control_fields(const vector<Vector3d>& Bs, const vector<double>& freqs,
                  const vector<double>& phases){
     assert((Bs.size() == freqs.size()) && (Bs.size() == phases.size()));
     this->Bs = Bs;
     this->freqs = freqs;
     this->phases = phases;
-  };
+  }
 
   void add(const Vector3d& B, const double freq, const double phase = 0){
     Bs.push_back(B);
     freqs.push_back(freq);
     phases.push_back(phase);
-  };
+  }
   void add(const control_fields& controls){
     for(uint i = 0; i < controls.num(); i++){
       Bs.push_back(controls.Bs.at(i));
       freqs.push_back(controls.freqs.at(i));
       phases.push_back(controls.phases.at(i));
     }
-  };
+  }
   void remove(const uint i){
     assert(i < Bs.size());
     Bs.erase(Bs.begin() + i);
     freqs.erase(freqs.begin() + i);
     phases.erase(phases.begin() + i);
-  };
+  }
 
   uint num() const { return Bs.size(); }
 

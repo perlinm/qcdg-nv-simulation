@@ -130,7 +130,7 @@ struct mvec{
     for(uint i = 0; i < v_vec.size(); i++){
       v.push_back(v_mat*v_vec(i));
     }
-  };
+  }
 
   uint size() const { return v.size(); }
   MatrixXcd at(const uint i) const { return v.at(i); }
