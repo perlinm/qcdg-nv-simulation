@@ -115,8 +115,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
     const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                     controls, leading_time);
     if(cycles > 0){
-      const double t_DD_adjusted = 2*pi/w_DD_adjusted;
-      const double trailing_time = t_DD_adjusted - leading_time;
+      const double trailing_time = cycle_time - leading_time;
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                        controls, trailing_time, leading_time);
       U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
