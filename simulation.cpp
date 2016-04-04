@@ -283,6 +283,21 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
     if(nv.nuclei.size() == 0) return 0;
+
+    vector<uint> unaddressable_targets(0);
+    for(uint n = 0; n < nv.nuclei.size(); n++){
+      if(!can_address(nv,n)){
+        unaddressable_targets.push_back(n);
+      }
+    }
+    if(unaddressable_targets.size() > 0){
+      cout << "The following nuclei cannot be addressed:";
+      for(uint n: unaddressable_targets){
+        cout << " " << n;
+      }
+      cout << endl << endl;
+    }
+
     if(!set_target_nuclei){
       for(uint n = 0; n < nv.nuclei.size(); n++){
         if(can_address(nv,n)){
@@ -290,16 +305,20 @@ int main(const int arg_num, const char *arg_vec[]) {
         }
       }
     } else{ // if(set_target_nuclei)
-      bool unaddressable_targets = false;
-      for(uint target: target_nuclei){
-        if(!can_address(nv,target)){
-          cout << "Target has no hyperfine coupling perpendicular to the NV axis: "
-               << target << endl;
-          unaddressable_targets = true;
+      vector<uint> invalid_targets(0);
+      for(uint n = 0; n < target_nuclei.size(); n++){
+        if(!can_address(nv,target_nuclei.at(n))){
+          invalid_targets.push_back(target_nuclei.at(n));
+          target_nuclei.erase(target_nuclei.begin()+n);
+          n--;
         }
       }
-      if(unaddressable_targets){
-        return 2;
+      if(invalid_targets.size() > 0){
+        cout << "(WARNING) Ignoring following target nuclei:";
+        for(uint n: invalid_targets){
+          cout << " " << n;
+        }
+        cout << endl << endl;
       }
     }
 
@@ -426,10 +445,10 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < size_hist.size(); i++){
       cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
     }
-    cout << endl;
-  } else {
+  } else{ // if(max_cluster_size == 1)
     cout << "Largest internuclear coupling: " << nv.cluster_coupling << " Hz\n";
   }
+  cout << endl;
 
   // now that we are done with initialization, fix up the output filename suffix
   boost::replace_all(output_suffix, "[cell_radius]", to_string(cell_radius));
