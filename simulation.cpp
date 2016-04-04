@@ -233,7 +233,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
       cout << "file does not exist: " << lattice_file << endl;
-      return -1;
+      return 1;
     }
     lattice_path = lattice_file;
 
@@ -281,11 +281,25 @@ int main(const int arg_num, const char *arg_vec[]) {
         }
       }
     }
-    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n";
+    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
     if(nv.nuclei.size() == 0) return 0;
     if(!set_target_nuclei){
-      for(uint i = 0; i < nv.nuclei.size(); i++){
-        target_nuclei.push_back(i);
+      for(uint n = 0; n < nv.nuclei.size(); n++){
+        if(can_address(nv,n)){
+          target_nuclei.push_back(n);
+        }
+      }
+    } else{ // if(set_target_nuclei)
+      bool unaddressable_targets = false;
+      for(uint target: target_nuclei){
+        if(!can_address(nv,target)){
+          cout << "Target has no hyperfine coupling perpendicular to the NV axis: "
+               << target << endl;
+          unaddressable_targets = true;
+        }
+      }
+      if(unaddressable_targets){
+        return 2;
       }
     }
 
@@ -329,12 +343,10 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nv.nuclei.size(); i++){
       if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
         cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
-        return -2;
+        return 3;
       }
     }
   }
-
-  cout << endl;
 
   // -----------------------------------------------------------------------------------------
   // Perform search for larmor pairs
@@ -370,7 +382,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     nv.clusters = group_clusters(nv);
     const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if(max_cluster_size < min_cluster_size_cap) return -3;
+    if(max_cluster_size < min_cluster_size_cap) return 4;
   }
 
   uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size()));

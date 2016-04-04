@@ -90,9 +90,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
   const Vector3d axis_ctl = axis(pi/2, target_azimuth, natural_basis(nv,target));
   const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
 
-  MatrixXcd U_ctl;
+  MatrixXcd U_rotate;
   if(!adjust_AXY){
-    U_ctl = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
+    U_rotate = simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
 
@@ -119,9 +119,9 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
       const double trailing_time = t_DD_adjusted - leading_time;
       const MatrixXcd U_trailing = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                        controls, trailing_time, leading_time);
-      U_ctl = U_leading * pow(U_trailing*U_leading, cycles);
+      U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
     } else{
-      U_ctl = U_leading;
+      U_rotate = U_leading;
     }
   }
 
@@ -130,7 +130,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
   const MatrixXcd U_flush =
     simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
 
-  return U_flush * U_ctl;
+  return U_flush * U_rotate;
 }
 
 // compute and perform operationc necessary to act U on target nucleus
@@ -192,13 +192,6 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
   const uint cluster = get_cluster_containing_index(nv,target);
   const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
   const uint spins = nv.clusters.at(cluster).size()+1;
-
-  // verify that we can address this nucleus
-  if(round(4*dot(nv.nuclei.at(target).pos,ao)) == 0.){
-    cout << "Cannot address nuclei without hyperfine coupling perpendicular to the NV axis: "
-         << target << endl;
-    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  }
 
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
   const double w_larmor = effective_larmor(nv,target).norm();

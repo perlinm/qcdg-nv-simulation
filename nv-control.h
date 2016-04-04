@@ -29,6 +29,11 @@ inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
 // General control methods
 //--------------------------------------------------------------------------------------------
 
+// check whether a nucleus is addressable
+inline bool can_address(const nv_system& nv, const uint target){
+  return (round(4*dot((nv.nuclei.at(target).pos - nv.e.pos),ao)) != 0.);
+}
+
 // polarize an arbitrary state into the pure state psi; warning: not a unitary operation
 inline MatrixXcd polarize(const VectorXcd psi){
   return psi*VectorXcd::Ones(psi.size()).adjoint();
