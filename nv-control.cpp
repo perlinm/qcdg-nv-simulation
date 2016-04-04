@@ -179,12 +179,6 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   }
 }
 
-// perform given rotation on a target nucleus
-MatrixXcd rotate_target(const nv_system& nv, const uint target, const Vector3d& rotation,
-                        const bool exact, const bool adjust_AXY){
-  return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
-}
-
 // propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
                 const Vector3d& nv_axis, const double target_azimuth){
