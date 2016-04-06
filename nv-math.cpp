@@ -501,12 +501,9 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       break;
     }
   }
-  // rotate into the frame of the NV center
+  // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
-
-  // normalize the propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-
   return U;
 }
 
@@ -611,11 +608,8 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
       U_NV = (exp(-j*dt*H_NV(nv,B)) * U_NV).eval();
     }
   }
-  // rotate into the frame of the NV center
+  // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
-
-  // normalize propagator
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
-
   return U;
 }

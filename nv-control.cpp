@@ -124,7 +124,7 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
     }
   }
 
-  double flush_time = ceil(control_time/t_larmor)*t_larmor - control_time - z_phase/w_larmor;
+  double flush_time = -control_time - z_phase/w_larmor;
   flush_time -= floor(flush_time/t_larmor)*t_larmor;
   const MatrixXcd U_flush =
     simulate_propagator(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
