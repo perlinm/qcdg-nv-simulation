@@ -324,7 +324,7 @@ int F_AXY(const double x, const vector<double> pulses){
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2){
-  const Vector3d r = s2.pos-s1.pos;
+  const Vector3d r = s2.pos - s1.pos;
   return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))
     * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), dot(s2.S,hat(r))));
 }

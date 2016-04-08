@@ -38,6 +38,14 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
 // General control methods
 //--------------------------------------------------------------------------------------------
 
+// check whether a nucleus is addressable
+bool can_address(const nv_system& nv, const uint target){
+  const Vector3d r = nv.nuclei.at(target).pos - nv.e.pos;
+  const bool in_xy_plane = (round(4*dot(r,ao)) == 0);
+  const bool on_z_axis = (round(6*(r-dot(r,zhat)*zhat).squaredNorm()) == 0);
+  return !in_xy_plane && !on_z_axis;
+}
+
 // propagator U = exp(-i * phase * sigma_{axis}^{target})
 MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
                 const double target_azimuth, const bool adjust_AXY, const double z_phase){
