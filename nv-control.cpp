@@ -104,21 +104,19 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
   } else{ // if(adjust_AXY)
     assert(w_DD != w_larmor);
 
-    uint cycles;
-    double cycle_time;
-    double w_DD_adjusted;
-    if(w_DD < w_larmor){
-      const uint freq_ratio = 2*round(0.5*w_larmor/w_DD);
-      w_DD_adjusted = w_larmor/freq_ratio;
-      cycle_time = 2*pi/w_DD_adjusted;
+    const double freq_ratio = [&]() -> double {
+      if(w_DD < w_larmor){
+        return 2*round(0.5*w_larmor/w_DD);
+      } else{
+        return 1/round(w_DD/w_larmor);
+      }
+    }();
+    const double w_DD_adjusted = w_larmor/freq_ratio;
+    const double t_DD_adjusted = 2*pi/w_DD_adjusted;
 
-    } else{ // if(w_DD > w_larmor)
-      const uint freq_ratio = round(w_DD/w_larmor);
-      w_DD_adjusted = w_larmor*freq_ratio;
-      cycle_time = t_larmor;
-    }
+    const double cycle_time = max(t_DD_adjusted, t_larmor);
+    const uint cycles = int(control_time/cycle_time);
 
-    cycles = int(control_time/cycle_time);
     const double leading_time = control_time - cycles*cycle_time;
     const MatrixXcd U_leading = simulate_propagator(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                                     controls, leading_time);
