@@ -1,16 +1,25 @@
-trace errors in swap_nvst / single_control
-
 test single_control and single_coupling, varying phase, target_azimuth, and target_polar
 debug and address problems with gate_fidelity
 
-keep track of simulation time
- - make 'protocol' object?
-  - contains propagator, simulation time, and NV frame
-  - multiplication between protocol objects: multiply propagators, add simulation time
+make 'protocol' object?
+- contains propagator, simulation time
+- multiplication between protocol objects: multiply propagators, add simulation time
 
-candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
+generate example systems for performing SWAP_NVST, tabulate fidelities and operation times
+- candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
+
+determine how likely we are to perform SWAP_NVST with high fidelity, as a function of:
+- hyperfine_cutoff
+- dw_min
+- c13_abundance
+- collect metadata on these cases (e.g. the magnitude of hyperfine_perp, operation time, etc.)
+- consider nonzero dw_12 (difference between larmor frequencies of target nuclei)?
+
 
 itemize assumptions and approximations used in simulations
+
+cluster nuclei whose effective larmor frequencies are within cluster_factor
+
 
 translate several pure states and density operators between abstract state and GA notations
 
@@ -18,25 +27,11 @@ translate several pure states and density operators between abstract state and G
 add a mode to output operation protocol
  - use secondary script to remove operations which cancel out (e.g. two consecutive XX pulses)
 
-remove "flushing"; correct for rotations in NV center rather than nuclei
-
 if two SWAP_NVST targets are not larmor pairs,
   is it better to use natural bases, or a standard basis?
 
 is it worthwhile to implement a zz coupling protocol?
 
-implement state decay model
-use non-ideal NV pulses?
+implement state decay model, non-ideal NV pulses
 
 compute corrections that need to be made to approximate gates, and perform them
-
-
-investigate errors:
-fac && time ./simulate --no_output --hyperfine_cutoff 10 --c13_abundance 0.01 --max_cluster_size 2 --test --static_Bz 500 --integration_factor 10 --couple --seed 10688 --phase 0.1
-
-
-investigate bad fidelities:
-   target 9:
-fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --static_Bz 2000 --iswap
-   targets 3, 6, 9:
-fac && time ./simulate --no_output --max_cluster_size 1 --hyperfine_cutoff 10 --c13_abundance 0.1 --seed 1 --static_Bz 2000 --control

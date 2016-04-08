@@ -917,22 +917,8 @@ equivalently rearrange the above to
 \begin{align}
   \t{SWAP}^{NV,ST}=\p{X\t{HG}}^{NV}\t{SWAP}^{NV,1}\E^{NV,2}
   \t{cNOT}^{NV,2}{i\t{SWAP}^\dag}^{NV,1}\t{cNOT}^{NV,2}i\t{SWAP}^{NV,1},
+  \label{swap_own}
 \end{align}
-and in turn
-\begin{multline}
-  \t{SWAP}^{NV,ST}\cong \\
-  \exp\p{i\f\pi4\sigma_x^{NV}\sigma_x^{ST}}
-  \p{X\t{HG}}^{NV}i\t{SWAP}^{NV,1}\E^{NV,2}
-  \t{cNOT}^{NV,2}{i\t{SWAP}^\dag}^{NV,1}\t{cNOT}^{NV,2}i\t{SWAP}^{NV,1},
-  \label{swap_no_zz}
-\end{multline}
-where
-\begin{align}
-  \sigma_x^{ST}=\op{S}{T}+\op{T}{S}+iI_r
-  \cong\f12\p{\sigma_z^1-\sigma_z^2}.
-\end{align}
-The construction in (\ref{swap_no_zz}) avoids couplings of the form
-$\sigma_z^{NV}\sigma_z^j$.
 
 Alternately, we can construct the SWAP gate from controlled-NOT
 operations as
@@ -962,10 +948,10 @@ which can further be reduced to
   R_z^{NV}\p{\f\pi2}R_z^1\p{\f\pi2}{i\t{SWAP}^\dag}^{NV,1}
   \E^{NV,2}\t{cNOT}^{NV,1}{\E^\dag}^{NV,2}
   i\t{SWAP}^{NV,1}R_z^1\p{-\f\pi2}R_z^{NV}\p{-\f\pi2}.
-  \label{swap_no_zz_cnot}
+  \label{swap_cnots}
 \end{multline}
-The constructions in (\ref{swap_no_zz}) and (\ref{swap_no_zz_cnot})
-are theoretically equal (up to global phase), but may have different
+The constructions in (\ref{swap_own}) and (\ref{swap_cnots}) are
+theoretically equal (up to global phase), but may have different
 fidelities in practice.
 
 Note that in order to function properly, $\t{SWAP}^{NV,ST}$ requires
@@ -1126,16 +1112,5 @@ with
 If (\ref{w_DD_case2}) does not satisfy $\omega_{DD}\gg A$, which by
 construction is only possible when $k_m=0$, then we revert to using
 (\ref{w_DD_case1}) with $f_1=0$.
-
-\newpage
-
-\section*{Addressing larmor pairs}
-
-When applying a static control field $\v B_{\t{ctl}}$, we have the
-effective interaction + control Hamiltonian
-\begin{align}
-  H=\f12m_s\sigma_z\sum_j\v A_j\c\v I_j-\sum_j\gamma_j\v
-  B_{\t{ctl}}\c\v I_j
-\end{align}
 
 \end{document}
