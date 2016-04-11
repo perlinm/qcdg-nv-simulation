@@ -66,7 +66,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("pairs", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
-     "perform coherence scan of effective larmor frequencies")
+     "perform coherence scan for effective larmor frequencies")
     ("control", po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
      "control individual nucleus")
     ("couple", po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
@@ -104,7 +104,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "relative isotopic abundance of C-13 (percentage)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
-    ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(100),
+    ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
      "set cutoff scale for hyperfine field (kHz)")
     ("ms", po::value<int>(&ms)->default_value(1),
      "NV center spin state used with |0> for an effective two-level system (+/-1)")
@@ -191,16 +191,18 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_target_nuclei = inputs.count("targets");
 
   // run a sanity check on inputs
-  if(!testing){
-    assert(int(pair_search)
-           + int(coherence_scan)
-           + int(single_control)
-           + int(single_coupling)
-           + int(iswap_fidelities)
-           + int(swap_fidelities)
-           + int(swap_nvst_fidelity)
-           == 1);
+  if(!testing && (int(pair_search)
+                  + int(coherence_scan)
+                  + int(single_control)
+                  + int(single_coupling)
+                  + int(iswap_fidelities)
+                  + int(swap_fidelities)
+                  + int(swap_nvst_fidelity)
+                  != 1)){
+    cout << "Please choose one simulation to perform\n";
+    return -1;
   }
+
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
   assert(hyperfine_cutoff_in_kHz > 0);
@@ -233,8 +235,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   fs::path lattice_path;
   if(using_input_lattice){
     if(!fs::exists(lattice_file)){
-      cout << "file does not exist: " << lattice_file << endl;
-      return 1;
+      cout << "File does not exist: " << lattice_file << endl;
+      return -1;
     }
     lattice_path = lattice_file;
 
@@ -362,8 +364,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     // assert that no C-13 nuclei lie at the NV lattice sites
     for(uint i = 0; i < nv.nuclei.size(); i++){
       if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
-        cout << "input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
-        return 3;
+        cout << "The input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
+        return -1;
       }
     }
   }
@@ -373,18 +375,24 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(pair_search){
-    uint pairs_found = 0;
+    vector<vector<uint>> pairs(0);
     for(uint i = 0; i < nv.nuclei.size(); i++){
       for(uint j = i+1; j < nv.nuclei.size(); j++){
         if(is_larmor_pair(nv,i,j)){
-          cout << "larmor pair: " << i << " " << j << endl;
-          pairs_found++;
+          pairs.push_back({i,j});
         }
       }
     }
 
-    if(!pairs_found){ cout << "no larmor pairs found\n"; }
-    return pairs_found;
+ if(pairs.size() > 0){
+      cout << "Larmor pairs:\n";
+      for(vector<uint> pair: pairs){
+        cout << " " << pair.at(0) << " " << pair.at(1) << endl;
+      }
+    } else{
+      cout << "No larmor pairs found\n";
+    }
+    return pairs.size();
   }
 
   // -----------------------------------------------------------------------------------------
@@ -402,7 +410,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     nv.clusters = group_clusters(nv);
     const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if(max_cluster_size < min_cluster_size_cap) return 4;
+    if(max_cluster_size < min_cluster_size_cap) return -1;
   }
 
   uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size()));
