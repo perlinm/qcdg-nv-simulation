@@ -114,7 +114,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "strength of static magnetic field along the NV axis (gauss)")
     ("scale_factor", po::value<double>(&scale_factor)->default_value(10),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
-    ("integration_factor", po::value<double>(&integration_factor)->default_value(10000),
+    ("integration_factor", po::value<double>(&integration_factor)->default_value(10),
      "factor used to determine size of integration step size")
     ("no_nn" ,po::value<bool>(&no_nn)->default_value(false)->implicit_value(true),
      "turn off internuclear couplings")
@@ -147,20 +147,21 @@ int main(const int arg_num, const char *arg_vec[]) {
   double nv_azimuth;
   double nv_azimuth_over_pi;
 
-  po::options_description addressing_options("Nucleus addressing options", help_text_length);
+  po::options_description addressing_options("Nucleus addressing options"
+                                             " (all angles are in units of pi radians)",
+                                             help_text_length);
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
-     "indices of nuclei to target (if applicable)")
-    ("phase", po::value<double>(&phase_over_pi)->default_value(0.5,"0.5"),
-     "operation phase in units of pi")
+     "indices of nuclei to target")
+    ("phase", po::value<double>(&phase_over_pi)->default_value(0.5,"0.5"), "operation phase")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5,"0.5"),
-     "polar angle of target rotation axis (in units of pi radians)")
+     "polar angle of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
-     "azimuthal angle of target rotation axis (in units of pi radians)")
+     "azimuthal angle of target rotation axis")
     ("nv_polar", po::value<double>(&nv_polar_over_pi)->default_value(0),
-     "polar angle of NV rotation axis (in units of pi radians)")
+     "polar angle of NV rotation axis")
     ("nv_azimuth", po::value<double>(&nv_azimuth_over_pi)->default_value(0),
-     "azimuthal angle of NV rotation axis (in units of pi radians)")
+     "azimuthal angle of NV rotation axis")
     ;
 
   po::options_description all("Allowed options");
@@ -376,7 +377,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     for(uint i = 0; i < nv.nuclei.size(); i++){
       for(uint j = i+1; j < nv.nuclei.size(); j++){
         if(is_larmor_pair(nv,i,j)){
-          cout << "larmor pair: " << i << ", " << j << endl;
+          cout << "larmor pair: " << i << " " << j << endl;
           pairs_found++;
         }
       }
