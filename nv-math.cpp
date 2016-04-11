@@ -120,7 +120,7 @@ vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
   return clusters;
 }
 
-// group together clusters close nuclei have similar larmor frequencies
+// group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv){
   vector<vector<uint>> old_clusters = nv.clusters;
   vector<vector<uint>> new_clusters;

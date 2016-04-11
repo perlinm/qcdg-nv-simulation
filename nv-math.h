@@ -100,7 +100,7 @@ double coupling_strength(const spin& s1, const spin& s2);
 vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
                                     const double min_coupling_strength);
 
-// group together clusters close nuclei have similar larmor frequencies
+// group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv);
 
 // get size of largest spin cluster
