@@ -28,7 +28,13 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
   MatrixXcd rotation = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   for(uint index: cluster){
     const uint index_in_cluster = get_index_in_cluster(index, cluster);
-    const Matrix2cd index_rotation = rotate(natural_basis(nv,index), {xhat,yhat,zhat});
+    const Matrix2cd index_rotation = [&]() -> Matrix2cd {
+      if(can_address(nv,index)){
+        return rotate(natural_basis(nv,index), {xhat,yhat,zhat});
+      } else{
+        return I2;
+      }
+    }();
     rotation = (act(index_rotation, {index_in_cluster+1}, spins) * rotation).eval();
   }
   return rotation;
