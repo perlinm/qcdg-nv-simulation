@@ -110,9 +110,12 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters);
 double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
                             const uint cluster_size_target, const double dcc_cutoff);
 
-uint get_cluster_containing_index(const nv_system& nv, const uint index);
+uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
 uint get_index_in_cluster(const uint index, const vector<uint> cluster);
+inline uint get_index_in_cluster(const nv_system& nv, const uint index){
+  return get_index_in_cluster(index, nv.clusters.at(get_cluster_containing_target(nv,index)));
+}
 
 //--------------------------------------------------------------------------------------------
 // AXY scanning methods

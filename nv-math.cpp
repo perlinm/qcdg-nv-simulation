@@ -207,7 +207,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   return cluster_coupling;
 }
 
-uint get_cluster_containing_index(const nv_system& nv, const uint index){
+uint get_cluster_containing_target(const nv_system& nv, const uint index){
   assert(index < nv.nuclei.size());
   for(uint c = 0; c < nv.clusters.size(); c++){
     for(uint s = 0; s < nv.clusters.at(c).size(); s++){

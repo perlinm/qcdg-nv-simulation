@@ -56,8 +56,8 @@ bool can_address(const nv_system& nv, const uint target){
 MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
                 const double target_azimuth, const bool adjust_AXY, const double z_phase){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // larmor frequency of target nucleus
@@ -147,8 +147,8 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
 // compute and perform operationc necessary to act U on target nucleus
 MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
                      const bool exact, const bool adjust_AXY){
-  const uint cluster = get_cluster_containing_index(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   if(exact){
@@ -194,8 +194,8 @@ MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
                 const Vector3d& nv_axis, const double target_azimuth){
   // identify cluster of target nucleus
-  const uint cluster = get_cluster_containing_index(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint target_in_cluster = get_index_in_cluster(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
@@ -282,8 +282,8 @@ MatrixXcd couple_target(const nv_system& nv, const uint target, const double pha
                         const bool exact, bool adjust_AXY){
   if(exact){
     // identify cluster of target nucleus
-    const uint cluster = get_cluster_containing_index(nv,target);
-    const uint target_in_cluster = get_index_in_cluster(target,nv.clusters.at(cluster));
+    const uint cluster = get_cluster_containing_target(nv,target);
+    const uint target_in_cluster = get_index_in_cluster(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
     // compute and return exact propagator
@@ -314,7 +314,7 @@ MatrixXcd couple_target(const nv_system& nv, const uint target, const double pha
 MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact){
   // assert that both target nuclei are larmor pairs in the same cluster
   assert(is_larmor_pair(nv,idx1,idx2));
-  const vector<uint> cluster = nv.clusters.at(get_cluster_containing_index(nv,idx1));
+  const vector<uint> cluster = nv.clusters.at(get_cluster_containing_target(nv,idx1));
   const uint spins = cluster.size()+1;
   assert(in_vector(idx2,cluster));
 

@@ -52,7 +52,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "don't generate output files")
     ;
 
-  bool pair_search;
+  bool print_pairs;
   bool coherence_scan;
   bool single_control;
   bool single_coupling;
@@ -63,7 +63,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
-    ("pairs", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+    ("pairs", po::value<bool>(&print_pairs)->default_value(false)->implicit_value(true),
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
@@ -191,7 +191,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_target_nuclei = inputs.count("targets");
 
   // run a sanity check on inputs
-  if(!testing && (int(pair_search)
+  if(!testing && (int(print_pairs)
                   + int(coherence_scan)
                   + int(single_control)
                   + int(single_coupling)
@@ -326,7 +326,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
 
     // write cell radius and nucleus positions to file
-    if(!no_output && !pair_search){
+    if(!no_output && !print_pairs){
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
       for(uint i = 0; i < nv.nuclei.size(); i++){
@@ -371,28 +371,28 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // -----------------------------------------------------------------------------------------
-  // Perform search for larmor pairs
+  // Identify larmor pairs
   // -----------------------------------------------------------------------------------------
 
-  if(pair_search){
-    vector<vector<uint>> pairs(0);
-    for(uint i = 0; i < nv.nuclei.size(); i++){
-      for(uint j = i+1; j < nv.nuclei.size(); j++){
-        if(is_larmor_pair(nv,i,j)){
-          pairs.push_back({i,j});
-        }
+  vector<vector<uint>> larmor_pairs(0);
+  for(uint i = 0; i < nv.nuclei.size(); i++){
+    for(uint j = i+1; j < nv.nuclei.size(); j++){
+      if(is_larmor_pair(nv,i,j)){
+        larmor_pairs.push_back({i,j});
       }
     }
+  }
 
- if(pairs.size() > 0){
+  if(print_pairs){
+    if(larmor_pairs.size() > 0){
       cout << "Larmor pairs:\n";
-      for(vector<uint> pair: pairs){
+      for(vector<uint> pair: larmor_pairs){
         cout << " " << pair.at(0) << " " << pair.at(1) << endl;
       }
     } else{
       cout << "No larmor pairs found\n";
     }
-    return pairs.size();
+    return larmor_pairs.size();
   }
 
   // -----------------------------------------------------------------------------------------
@@ -538,8 +538,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(bool exact : {true,false}){
         U.at(exact) = rotate_target(nv, target, rotation, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv, target);
-      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
@@ -556,8 +555,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(bool exact : {true,false}){
         U.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv, target);
-      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
@@ -572,8 +570,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(bool exact : {true,false}){
         U.at(exact) = iSWAP(nv, target, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv, target);
-      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
@@ -588,8 +585,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(bool exact : {true,false}){
         U.at(exact) = SWAP(nv, target, exact);
       }
-      const uint cluster = get_cluster_containing_index(nv, target);
-      const uint target_in_cluster = get_index_in_cluster(target, nv.clusters.at(cluster));
+      const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << ": " << gate_fidelity(U.at(0), U.at(1), {target_in_cluster}) << endl;
     }
   }
@@ -599,20 +595,27 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(swap_nvst_fidelity){
-    assert(nv.nuclei.size() >= 2);
-    assert(target_nuclei.size() >= 2);
-    const uint idx1 = target_nuclei.at(0);
-    const uint idx2 = target_nuclei.at(1);
-    vector<MatrixXcd> U(2);
-    for(bool exact : {true,false}){
-      U.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
+    if(larmor_pairs.size() == 0){
+      cout << "There are no larmor pairs in this system\n";
+      return -1;
     }
-    const uint cluster = get_cluster_containing_index(nv,idx1);
-    const uint idx1_in_cluster = get_index_in_cluster(idx1,nv.clusters.at(cluster));
-    const uint idx2_in_cluster = get_index_in_cluster(idx2,nv.clusters.at(cluster));
-    cout << idx1 << " " << idx2 << ": "
-         << gate_fidelity(U.at(0), U.at(1), {idx1_in_cluster, idx2_in_cluster})
-         << endl;
+    if(set_target_nuclei){
+      assert(target_nuclei.size() == 2);
+      larmor_pairs = {{target_nuclei.at(0), target_nuclei.at(1)}};
+    }
+    for(vector<uint> idxs: larmor_pairs){
+      const uint idx1 = idxs.at(0);
+      const uint idx2 = idxs.at(1);
+      vector<MatrixXcd> U(2);
+      for(bool exact : {true,false}){
+        U.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
+      }
+      const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
+      const uint idx2_in_cluster = get_index_in_cluster(nv,idx2);
+      cout << idx1 << " " << idx2 << ": "
+           << gate_fidelity(U.at(0), U.at(1), {idx1_in_cluster, idx2_in_cluster})
+           << endl;
+    }
   }
 
 }
