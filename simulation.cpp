@@ -413,9 +413,11 @@ int main(const int arg_num, const char *arg_vec[]) {
     if(max_cluster_size < min_cluster_size_cap) return -1;
   }
 
-  uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size()));
+  uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size())) + 1;
   do{
+    cluster_size_target--; // decrease cluster_size_target every time we perform this loop
     assert(cluster_size_target > 0);
+
     // get cluster_coupling for which the largest cluster size is >= cluster_size_target
     nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
                                                cluster_size_target, dcc_cutoff);
@@ -424,17 +426,16 @@ int main(const int arg_num, const char *arg_vec[]) {
     //   which can occur when (largest cluster size == cluster_size_target) is impossible,
     //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
     while(largest_cluster_size(nv.clusters) > cluster_size_target){
-      const uint cluster_size_target
-        = largest_cluster_size(cluster_nuclei(nv.nuclei, nv.cluster_coupling+dcc_cutoff));
+      const uint temp_cluster_size_target
+        = largest_cluster_size(cluster_nuclei(nv.nuclei, nv.cluster_coupling + dcc_cutoff));
       nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
-                                                 cluster_size_target, dcc_cutoff);
+                                                 temp_cluster_size_target, dcc_cutoff);
       nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
     }
 
     // if we are going to perform an actual simulation instead of just a coherence scan,
     //   we want to group together clusters sharing nuclei with similar larmor frequencies.
     if(group_larmor_pairs) nv.clusters = group_clusters(nv);
-    cluster_size_target--; // decrease cluster_size_target every time we perform this loop
 
     // grouping together clusters might create a cluster greater than max_cluster_size,
     //   so we check to make sure that we do not go over the limit

@@ -204,7 +204,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
       dcc /= 2;
     }
   }
-  return cluster_coupling;
+  return cluster_coupling + dcc;
 }
 
 uint get_cluster_containing_target(const nv_system& nv, const uint index){
