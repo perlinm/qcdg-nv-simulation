@@ -16,9 +16,14 @@ const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
 const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
 
 // unit vectors along bonding axes
-const Vector3d zhat = (Vector3d() << 1,1,1).finished()/sqrt(3); // direction from V to N
-const Vector3d xhat = (Vector3d() << 2,-1,-1).finished()/sqrt(6);
-const Vector3d yhat = (Vector3d() << 0,1,-1).finished()/sqrt(2);
+const Vector3d zhat = hat(ao); // direction from V to N
+const Vector3d xhat = hat(a1-a2);
+const Vector3d yhat = zhat.cross(xhat);
+
+// print vec in the {xhat,yhat,zhat} basis
+inline Vector3d in_crystal_basis(const Vector3d& vec){
+  return (Vector3d() << dot(vec,xhat), dot(vec,yhat), dot(vec,zhat)).finished();
+}
 
 //--------------------------------------------------------------------------------------------
 // Spin vectors and structs
