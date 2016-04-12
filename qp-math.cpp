@@ -39,7 +39,7 @@ complex<double> get_phase(const MatrixXcd& A, const double threshold){
   for(uint m = 0; m < A.rows(); m++){
     for(uint n = 0; n < A.cols(); n++){
       if(abs(A(m,n)) > threshold){
-        complex<double> phase = A(m,n)/abs(A(m,n));
+        const complex<double> phase = A(m,n)/abs(A(m,n));
         return phase;
       }
     }
@@ -159,7 +159,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
 
 // returns basis element p for an operator acting on a system with N spins
 MatrixXcd U_basis_element(const uint p, const uint N){
-  const vector<MatrixXcd> spins = {st, sx, sy, sz};
+  const vector<MatrixXcd> spins = {I2, sx, sy, sz};
   MatrixXcd b_p = I1;
   for(int n = 0; n < N; n++){
     b_p = tp(b_p,spins.at(int_bit(p,2*n)+2*int_bit(p,2*n+1)));
@@ -194,8 +194,16 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast){
 }
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
-double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G){
+double gate_fidelity(MatrixXcd U, MatrixXcd G){
   assert(U.size() == G.size());
+
+  for(uint i = 0; i < U.size(); i++){
+    if(abs(U(i)) > 0.5){
+      G *= conj(G(i))/abs(G(i));
+      U *= conj(U(i))/abs(U(i));
+      break;
+    }
+  }
 
   const uint D = U.rows();
   const uint N = log2(D);

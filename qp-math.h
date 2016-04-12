@@ -105,7 +105,7 @@ MatrixXcd U_basis_matrix(const uint N);
 VectorXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
-double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G);
+double gate_fidelity(MatrixXcd U, MatrixXcd G);
 
 // compute mean fidelity of propagator acting on given nuclei
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei);
@@ -221,7 +221,6 @@ const VectorXcd du = tp(dn,up);
 const Vector4cd dd = tp(dn,dn);
 
 // pauli spin matrices
-const Matrix2cd st = up*up.adjoint() + dn*dn.adjoint();
 const Matrix2cd sx = up*dn.adjoint() + dn*up.adjoint();
 const Matrix2cd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
 const Matrix2cd sz = up*up.adjoint() - dn*dn.adjoint();
