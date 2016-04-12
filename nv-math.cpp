@@ -337,7 +337,6 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
     const spin n_s = nv.nuclei.at(cluster.at(s));
-    // H += act(tp(dot(nv.e.S,zhat), dot(hyperfine(nv,n_s),n_s.S)), {0,s+1}, spins);
     H += act(H_ss(nv.e,n_s), {0,s+1}, spins);
     if(!nv.no_nn){
       // interaction betwen spin r and spin s
