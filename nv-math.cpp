@@ -445,10 +445,10 @@ MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins){
 }
 
 // simulate propagator with static control fields
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                              const double simulation_time, const double advance,
-                              const Vector3d B_ctl){
+MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
+                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                        const double simulation_time, const double advance,
+                        const Vector3d B_ctl){
   const uint spins = nv.clusters.at(cluster).size()+1;
   const double end_time = simulation_time + advance;
 
@@ -508,13 +508,13 @@ MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
 }
 
 // simulate propagator with dynamic control fields
-MatrixXcd simulate_propagator(const nv_system& nv, const uint cluster,
-                              const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                              const control_fields& controls, const double simulation_time,
-                              const double advance){
+MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
+                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                        const control_fields& controls, const double simulation_time,
+                        const double advance){
   if(controls.all_fields_static()){
-    return simulate_propagator(nv, cluster, w_DD, f_DD, k_DD,
-                               simulation_time, advance, controls.B(0));
+    return simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD,
+                         simulation_time, advance, controls.B(0));
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
   if(simulation_time == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
