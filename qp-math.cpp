@@ -161,7 +161,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace){
 MatrixXcd U_basis_element(const uint p, const uint N){
   const vector<MatrixXcd> spins = {I2, sx, sy, sz};
   MatrixXcd b_p = I1;
-  for(int n = 0; n < N; n++){
+  for(uint n = 0; n < N; n++){
     b_p = tp(b_p,spins.at(int_bit(p,2*n)+2*int_bit(p,2*n+1)));
   }
   return b_p;
@@ -291,7 +291,7 @@ void state_print(const MatrixXcd& psi){
 
 // print matrix in human readable form
 void matrix_print(const MatrixXcd& M){
-  const int qbits = log2(M.rows());
+  const uint qbits = log2(M.rows());
   for(uint m = 0; m < M.rows(); m++){
     for(uint n = 0; n < M.cols(); n++){
       if(abs(M(m,n)) != 0){

@@ -57,8 +57,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
                 const double target_azimuth, const bool adjust_AXY, const double z_phase){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_target(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(nv,target);
-  const uint spins = nv.clusters.at(cluster).size()+1;
 
   // larmor frequency of target nucleus
   const double w_larmor = effective_larmor(nv,target).norm();
@@ -81,7 +79,6 @@ MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
     }
   }();
 
-  const double t_DD = 2*pi/w_DD;
   const axy_harmonic k_DD = abs(w_DD - w_larmor) < abs(3*w_DD - w_larmor) ? first : third;
   const double f_DD = 0;
 
@@ -193,12 +190,10 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
                 const Vector3d& nv_axis, const double target_azimuth){
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_target(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // larmor frequency of and perpendicular component of hyperfine field at target nucleus
   const double w_larmor = effective_larmor(nv,target).norm();
-  const double t_larmor = 2*pi/w_larmor;
   const double dw_min = larmor_resolution(nv,target);
   const Vector3d A_perp = hyperfine_perp(nv,target);
 
@@ -259,17 +254,20 @@ MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
   // correct for larmor precession of the nucleus
   double z_phase = interaction_time*w_larmor;
   z_phase -= floor(z_phase/(2*pi))*2*pi;
+  Vector3d z_phase_axis = zhat;
 
-  const double z_flush_phase = (z_phase < pi) ? z_phase : 2*pi - z_phase;
+  if(z_phase > pi){
+    z_phase = 2*pi - z_phase;
+    z_phase_axis *= -1;
+  }
   const double w_ctl = nv.nuclei.at(target).g*B_ctl/2;
-  const double total_time = interaction_time + z_flush_phase/w_larmor;
   double xy_phase = interaction_time*w_ctl;
   xy_phase -= floor(xy_phase/(2*pi))*2*pi;
 
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
 
   const MatrixXcd flush_target =
-    act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,zhat));
+    act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,z_phase_axis));
 
   return flush_target * nv_axis_rotation.adjoint() * U_coupling * nv_axis_rotation;
 }

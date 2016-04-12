@@ -216,6 +216,7 @@ uint get_cluster_containing_target(const nv_system& nv, const uint index){
       }
     }
   }
+  return 0;
 }
 
 uint get_index_in_cluster(const uint index, const vector<uint> cluster){
@@ -225,6 +226,7 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster){
       return s;
     }
   }
+  return 0;
 }
 
 //--------------------------------------------------------------------------------------------
@@ -451,7 +453,6 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
                         const double simulation_time, const double advance,
                         const Vector3d B_ctl){
   const uint spins = nv.clusters.at(cluster).size()+1;
-  const double end_time = simulation_time + advance;
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -519,7 +520,6 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
   if(simulation_time == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  const double end_time = simulation_time + advance;
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;

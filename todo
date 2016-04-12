@@ -1,6 +1,3 @@
-test single_control and single_coupling, varying phase, target_azimuth, and target_polar
-debug and address problems with gate_fidelity
-
 implement T1 decay
 entanglement fidelity
 
