@@ -336,12 +336,14 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index){
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for(uint s = 0; s < cluster.size(); s++){
     // interaction between NV center and spin s
-    H += act(H_ss(nv.e, nv.nuclei.at(cluster.at(s))), {0,s+1}, spins);
+    const spin n_s = nv.nuclei.at(cluster.at(s));
+    // H += act(tp(dot(nv.e.S,zhat), dot(hyperfine(nv,n_s),n_s.S)), {0,s+1}, spins);
+    H += act(H_ss(nv.e,n_s), {0,s+1}, spins);
     if(!nv.no_nn){
       // interaction betwen spin r and spin s
       for(uint r = 0; r < s; r++){
-        H += act(H_ss(nv.nuclei.at(cluster.at(r)), nv.nuclei.at(cluster.at(s))),
-                 {r+1,s+1}, spins);
+        const spin n_r = nv.nuclei.at(cluster.at(r));
+        H += act(H_ss(n_s,n_r), {s+1,r+1}, spins);
       }
     }
   }
