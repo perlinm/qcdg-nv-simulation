@@ -1,6 +1,9 @@
 test single_control and single_coupling, varying phase, target_azimuth, and target_polar
 debug and address problems with gate_fidelity
 
+implement T1 decay
+entanglement fidelity
+
 make 'protocol' object?
 - contains propagator, simulation time
 - multiplication between protocol objects: multiply propagators, add simulation time
