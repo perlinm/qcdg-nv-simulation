@@ -120,7 +120,7 @@ vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
   return clusters;
 }
 
-// group together clusters sharing nuclei with |w_i - w_j| < cluster_coupling
+// group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv){
   vector<vector<uint>> old_clusters = nv.clusters;
   vector<vector<uint>> new_clusters;
@@ -133,17 +133,10 @@ vector<vector<uint>> group_clusters(const nv_system& nv){
     bool grouped = false;
     vector<uint> new_cluster = new_clusters.back();
     for(uint i = 0; i < new_cluster.size(); i++){
-      const uint s_new = new_cluster.at(i);
-
       for(uint c = 0; c < old_clusters.size(); c++){
         const vector<uint> old_cluster = old_clusters.at(c);
-
         for(uint j = 0; j < old_clusters.at(c).size(); j++){
-          const uint s_old = old_cluster.at(j);
-
-          if(is_larmor_pair(nv, s_new, s_old) ||
-             abs(effective_larmor(nv, s_new).norm() - effective_larmor(nv, s_old).norm())
-             < nv.cluster_coupling){
+          if(is_larmor_pair(nv, new_cluster.at(i), old_cluster.at(j))){
             new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
             old_clusters.erase(old_clusters.begin()+c);
             c--;

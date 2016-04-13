@@ -14,6 +14,8 @@ determine how likely we are to perform SWAP_NVST with high fidelity, as a functi
 
 itemize assumptions and approximations used in simulations
 
+cluster nuclei whose effective larmor frequencies are within cluster_factor
+
 
 translate several pure states and density operators between abstract state and GA notations
 
