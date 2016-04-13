@@ -399,64 +399,51 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
-  const double cluster_coupling_guess = 100; // this value doesn't actually matter
-  const double dcc_cutoff = 1e-5; // cutoff for tuning of cluster_coupling
+  const double initial_cluster_coupling_guess = 100; // this value doesn't actually matter
+  const double cc_resolution = 1e-5; // cutoff for tuning of cluster_coupling
 
-  // if we are going to perform an actual simulation instead of just a coherence scan,
-  //   we want to group together clusters sharing nuclei with similar larmor frequencies.
-  const bool group_larmor_pairs = !coherence_scan && !testing;
-  if(group_larmor_pairs){
-    nv.clusters = cluster_nuclei(nv, DBL_MAX);
-    nv.clusters = group_clusters(nv);
-    const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
+  // unless we are performing a coherence scan, we will be grouping together clusters by
+  //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
+  //  for the given min_cluster_size_cap
+  const uint min_cluster_size_cap = min_cluster_size_target(nv);
+  const bool cluster_by_larmor_frequency =
+    !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
+  if(!coherence_scan){
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if(max_cluster_size < min_cluster_size_cap) return -1;
+    if(!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
   }
 
-  uint cluster_size_target = min(max_cluster_size,uint(nv.nuclei.size())) + 1;
-  do{
-    cluster_size_target--; // decrease cluster_size_target every time we perform this loop
-    assert(cluster_size_target > 0);
+  // start with all nuclei in one cluster
+  nv.clusters.push_back({});
+  for(uint i = 0; i < nv.nuclei.size(); i++){
+    nv.clusters.at(0).push_back(i);
+  }
 
-    // get cluster_coupling for which the largest cluster size is >= cluster_size_target
-    nv.cluster_coupling = find_target_coupling(nv, cluster_coupling_guess,
-                                               cluster_size_target, dcc_cutoff);
-    nv.clusters = cluster_nuclei(nv, nv.cluster_coupling);
-    // if (largest cluster size > cluster_size_target),
-    //   which can occur when (largest cluster size == cluster_size_target) is impossible,
-    //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
-    while(largest_cluster_size(nv.clusters) > cluster_size_target){
-      const uint temp_cluster_size_target
-        = largest_cluster_size(cluster_nuclei(nv, nv.cluster_coupling + dcc_cutoff));
-      nv.cluster_coupling = find_target_coupling(nv, nv.cluster_coupling,
-                                                 temp_cluster_size_target, dcc_cutoff);
-      nv.clusters = cluster_nuclei(nv, nv.cluster_coupling);
-    }
+  while(largest_cluster_size(nv.clusters) > max_cluster_size){
+    const vector<vector<uint>> cluster =
+      cluster_nuclei(nv, nv.cluster_coupling + cc_resolution, cluster_by_larmor_frequency);
+    const uint cluster_size_target = min(max_cluster_size, largest_cluster_size(cluster));
+    nv.cluster_coupling = find_target_coupling(nv, initial_cluster_coupling_guess,
+                                               cluster_size_target, cc_resolution,
+                                               cluster_by_larmor_frequency);
+    // take care of possible clipping issues
+    if(max_cluster_size <= min_cluster_size_cap) nv.cluster_coupling += cc_resolution;
 
-    // if we are going to perform an actual simulation instead of just a coherence scan,
-    //   we want to group together clusters sharing nuclei with similar larmor frequencies.
-    if(group_larmor_pairs) nv.clusters = group_clusters(nv);
+    nv.clusters = cluster_nuclei(nv, nv.cluster_coupling, cluster_by_larmor_frequency);
+  }
 
-    // grouping together clusters might create a cluster greater than max_cluster_size,
-    //   so we check to make sure that we do not go over the limit
-  } while(largest_cluster_size(nv.clusters) > max_cluster_size);
+  cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
+       << " with a coupling factor of "  << nv.cluster_coupling << " Hz\n";
 
-  if(max_cluster_size > 1){
-    cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
-         << " with a coupling factor of "  << nv.cluster_coupling << " Hz\n";
-
-    // collect and print histogram of cluster sizes
-    max_cluster_size = largest_cluster_size(nv.clusters);
-    vector<uint> size_hist(max_cluster_size);
-    for(uint i = 0; i < nv.clusters.size(); i++){
-      size_hist.at(nv.clusters.at(i).size()-1) += 1;
-    }
-    cout << "Cluster size histogram:\n";
-    for(uint i = 0; i < size_hist.size(); i++){
-      cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
-    }
-  } else{ // if(max_cluster_size == 1)
-    cout << "Largest internuclear coupling: " << nv.cluster_coupling << " Hz\n";
+  // collect and print histogram of cluster sizes
+  max_cluster_size = largest_cluster_size(nv.clusters);
+  vector<uint> size_hist(max_cluster_size);
+  for(uint i = 0; i < nv.clusters.size(); i++){
+    size_hist.at(nv.clusters.at(i).size()-1) += 1;
+  }
+  cout << "Cluster size histogram:\n";
+  for(uint i = 0; i < size_hist.size(); i++){
+    cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
   }
   cout << endl;
 

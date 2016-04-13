@@ -76,14 +76,28 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
   return par_1 == par_2 && perp_1 == perp_2;
 }
 
+// determine whether two spins should be in the same cluster
+bool in_same_cluster(const nv_system& nv, const uint idx1, const uint idx2,
+                     const double min_coupling_strength,
+                     const bool cluster_by_larmor_frequency){
+  if(coupling_strength(nv,idx1,idx2) > min_coupling_strength) return true;
+  if(cluster_by_larmor_frequency){
+    if(is_larmor_pair(nv,idx1,idx2)) return true;
+    // if(abs(effective_larmor(nv,idx1).norm() - effective_larmor(nv,idx2).norm())
+       // < min_coupling_strength) return true;
+  }
+  return false;
+}
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
-inline double coupling_strength(const spin& s1, const spin& s2){
+double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
   return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*dot(hat(r),zhat)*dot(hat(r),zhat)));
 }
 
-// group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength){
+// group nuclei into clusters with intercoupling strengths >= coupling_strength
+vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength,
+                                    const bool cluster_by_larmor_frequency){
 
   vector<vector<uint>> clusters; // all clusters
   vector<uint> clustered; // indices of nuclei we have already clustered
@@ -100,16 +114,17 @@ vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupli
 
       // loop over all indices of cluster
       for(uint ci = 0; ci < cluster.size(); ci++) {
+        const uint s_cluster = cluster.at(ci);
 
-        // loop over all nuclei indices greater than cluster(ci)
-        for(uint k = cluster.at(ci)+1; k < nv.nuclei.size(); k++){
+        // loop over all nuclei indices greater than s_cluster
+        for(uint s_new = cluster.at(ci)+1; s_new < nv.nuclei.size(); s_new++){
 
-          // if cluster(ci) and nuclei(k) are interacting, add k to this cluster
-          if(!in_vector(k,clustered) &&
-             coupling_strength(nv.nuclei.at(cluster.at(ci)),
-                               nv.nuclei.at(k)) >= min_coupling_strength){
-            cluster.push_back(k);
-            clustered.push_back(k);
+          // if s_cluster and s_new are interacting, add s_new to this cluster
+          if(!in_vector(s_new,clustered) &&
+             in_same_cluster(nv, s_cluster, s_new, min_coupling_strength,
+                             cluster_by_larmor_frequency)){
+            cluster.push_back(s_new);
+            clustered.push_back(s_new);
           }
         }
       }
@@ -162,38 +177,47 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters){
   return largest_size;
 }
 
-// find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
-                            const uint cluster_size_target,  const double dcc_cutoff){
-  assert(dcc_cutoff > 0);
-
-  // special case for "clusters" of 1 nucleus
-  if(cluster_size_target == 1){
-    double max_coupling = 0;
+// largest internuclear coupling
+double largest_coupling(const nv_system& nv){
+    double max = 0;
     for(uint i = 0; i < nv.nuclei.size(); i++){
       for(uint j = i+1; j < nv.nuclei.size(); j++){
-        double c_ij = coupling_strength(nv.nuclei.at(i), nv.nuclei.at(j));
-        if(c_ij > max_coupling) max_coupling = c_ij;
+        double c_ij = coupling_strength(nv,i,j);
+        if(c_ij > max) max = c_ij;
       }
     }
-    return max_coupling + dcc_cutoff;
+    return max;
+}
+
+// find largest coupling for which the largest cluster size is barely <= cluster_size_target
+double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
+                            uint cluster_size_target,  const double cc_resolution,
+                            const bool cluster_by_larmor_frequency){
+  assert(cc_resolution > 0);
+
+  // special case for "clusters" of 1 nucleus
+  const uint min_cluster_size_cap = min_cluster_size_target(nv);
+  if(cluster_size_target < min_cluster_size_cap){
+    return largest_coupling(nv);
+  } else if(cluster_size_target == min_cluster_size_cap){
+    cluster_size_target += 1;
   }
 
   double cluster_coupling = initial_cluster_coupling;
   double dcc = cluster_coupling/4;
 
-  vector<vector<uint>> clusters = cluster_nuclei(nv, cluster_coupling);
+  vector<vector<uint>> clusters = cluster_nuclei(nv, cluster_coupling,
+                                                 cluster_by_larmor_frequency);
   bool coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
   bool last_coupling_too_small;
   bool crossed_correct_coupling = false;
 
-  // determine coupling for which the largest cluster size just barely >= max_cluster_size
-  while(dcc >= dcc_cutoff || !coupling_too_small){
+  while(dcc >= cc_resolution || !coupling_too_small){
     last_coupling_too_small = coupling_too_small;
 
     cluster_coupling += coupling_too_small ? dcc : -dcc;
-    clusters = cluster_nuclei(nv, cluster_coupling);
-    coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
+    clusters = cluster_nuclei(nv, cluster_coupling, cluster_by_larmor_frequency);
+    coupling_too_small = (largest_cluster_size(clusters) >= cluster_size_target);
 
     if(coupling_too_small != last_coupling_too_small) crossed_correct_coupling = true;
 

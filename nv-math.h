@@ -79,7 +79,7 @@ struct nv_system{
   const bool no_nn;
 
   vector<spin> nuclei;
-  double cluster_coupling;
+  double cluster_coupling = 0;
   vector<vector<uint>> clusters;
 
   nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
@@ -93,11 +93,20 @@ struct nv_system{
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
 
+// determine whether two spins should be in the same cluster
+bool in_same_cluster(const nv_system& nv, const uint idx1, const uint idx2,
+                     const double min_coupling_strength,
+                     const bool cluster_by_larmor_frequency);
+
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
+inline double coupling_strength(const nv_system& nv, const uint idx1, const uint idx2){
+  return coupling_strength(nv.nuclei.at(idx1), nv.nuclei.at(idx2));
+}
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength);
+vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength,
+                                    const bool cluster_by_larmor_frequency);
 
 // group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv);
@@ -105,9 +114,18 @@ vector<vector<uint>> group_clusters(const nv_system& nv);
 // get size of largest spin cluster
 uint largest_cluster_size(const vector<vector<uint>>& clusters);
 
-// find cluster coupling for which the largest cluster is >= cluster_size_target
+// largest internuclear coupling
+double largest_coupling(const nv_system& nv);
+
+// minimum allowable cluster size limit
+inline double min_cluster_size_target(const nv_system& nv){
+  return largest_cluster_size(cluster_nuclei(nv, DBL_MAX, true));
+}
+
+// find largest coupling for which the largest cluster size is barely <= cluster_size_target
 double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
-                            const uint cluster_size_target, const double dcc_cutoff);
+                            uint cluster_size_target,  const double cc_resolution,
+                            const bool cluster_by_larmor_frequency);
 
 uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
