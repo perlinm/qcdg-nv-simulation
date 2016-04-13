@@ -1,10 +1,6 @@
 implement T1 decay
 entanglement fidelity
 
-make 'protocol' object?
-- contains propagator, simulation time
-- multiplication between protocol objects: multiply propagators, add simulation time
-
 generate example systems for performing SWAP_NVST, tabulate fidelities and operation times
 - candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
 

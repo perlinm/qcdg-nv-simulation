@@ -21,7 +21,7 @@ const Vector3d xhat = hat(a1-a2);
 const Vector3d yhat = zhat.cross(xhat);
 
 // print vec in the {xhat,yhat,zhat} basis
-inline Vector3d in_crystal_basis(const Vector3d& vec){
+inline Vector3d in_basis(const Vector3d& vec){
   return (Vector3d() << dot(vec,xhat), dot(vec,yhat), dot(vec,zhat)).finished();
 }
 
@@ -281,3 +281,30 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
                         const double w_DD, const double f_DD, const axy_harmonic k_DD,
                         const control_fields& controls, const double simulation_time,
                         const double advance = 0);
+
+//--------------------------------------------------------------------------------------------
+// Protocol object
+//--------------------------------------------------------------------------------------------
+
+struct protocol{
+  MatrixXcd U;
+  double t;
+
+  protocol(){};
+  protocol(const MatrixXcd& U, const double t){
+    this->U = U;
+    this->t = t;
+  }
+
+  bool operator==(const protocol& p) const {
+    return (t == p.t) && (U == p.U);
+  }
+  bool operator!=(const protocol& p) const { return !(*this == p); }
+  protocol operator*(const protocol& p) const {
+    return protocol(U * p.U, t + p.t);
+  }
+
+  protocol adjoint() const {
+    return protocol(U.adjoint(), t);
+  }
+};

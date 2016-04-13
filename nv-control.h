@@ -38,47 +38,47 @@ inline MatrixXcd polarize(const VectorXcd psi){
 }
 
 // propagator U = exp(-i * phase * sigma_{axis}^{index})
-MatrixXcd U_ctl(const nv_system& nv, const uint target, const double phase,
-                const double target_azimuth, const bool adjust_AXY = true,
-                const double z_phase = 0);
+protocol U_ctl(const nv_system& nv, const uint target, const double phase,
+               const double target_azimuth, const bool adjust_AXY = true,
+               const double z_phase = 0);
 
 // compute and perform operationc necessary to act U on target nucleus
-MatrixXcd act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
-                     const bool exact = false, const bool adjust_AXY = true);
+protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
+                    const bool exact = false, const bool adjust_AXY = true);
 
 // perform given rotation on a target nucleus
-inline MatrixXcd rotate_target(const nv_system& nv, const uint target,
-                               const Vector3d& rotation, const bool exact = false,
-                               const bool adjust_AXY = true){
+inline protocol rotate_target(const nv_system& nv, const uint target,
+                              const Vector3d& rotation, const bool exact = false,
+                              const bool adjust_AXY = true){
   return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
 }
 
 // propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
-MatrixXcd U_int(const nv_system& nv, const uint target, const double phase,
-                const Vector3d& nv_axis, const double target_azimuth);
+protocol U_int(const nv_system& nv, const uint target, const double phase,
+               const Vector3d& nv_axis, const double target_azimuth);
 
 // perform given NV coupling operation on a target nucleus
-MatrixXcd couple_target(const nv_system& nv, const uint target, const double phase,
-                        const Vector3d& nv_axis, const Vector3d& target_axis,
-                        const bool exact = false, const bool adjust_AXY = true);
+protocol couple_target(const nv_system& nv, const uint target, const double phase,
+                       const Vector3d& nv_axis, const Vector3d& target_axis,
+                       const bool exact = false, const bool adjust_AXY = true);
 
 //--------------------------------------------------------------------------------------------
 // Specific operations
 //--------------------------------------------------------------------------------------------
 
 // iSWAP operation
-inline MatrixXcd iSWAP(const nv_system& nv, const uint index, const bool exact = false){
+inline protocol iSWAP(const nv_system& nv, const uint index, const bool exact = false){
   return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
           couple_target(nv, index, -pi/4, yhat, yhat, exact));
 }
 
 // SWAP operation
-inline MatrixXcd SWAP(const nv_system& nv, const uint index, const bool exact = false){
+inline protocol SWAP(const nv_system& nv, const uint index, const bool exact = false){
   return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
           couple_target(nv, index, -pi/4, yhat, yhat, exact) *
           couple_target(nv, index, -pi/4, zhat, zhat, exact));
 }
 
 // SWAP_NVST operation
-MatrixXcd SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
-                    const bool exact = false);
+protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
+                   const bool exact = false);
