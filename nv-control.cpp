@@ -90,8 +90,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to apply the control field
-  double control_time = -phase/w_phase; // control operation time
-  control_time -= floor(control_time/t_phase)*t_phase;
+  double control_time = fmod(-phase/w_phase, t_phase); // control operation time
   if(control_time > t_phase/2){
     g_B_ctl *= -1;
     control_time = t_phase - control_time;
@@ -134,8 +133,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
     }
   }
 
-  double flush_time = -control_time - z_phase/w_larmor;
-  flush_time -= floor(flush_time/t_larmor)*t_larmor;
+  const double flush_time = fmod(-control_time - z_phase/w_larmor, t_larmor);
   const MatrixXcd U_flush =
     simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
   return protocol(U_flush * U_rotate, control_time + flush_time);
@@ -226,8 +224,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to interact
-  double interaction_time = nv.ms*phase/w_phase;
-  interaction_time -= floor(interaction_time/(t_phase/2))*(t_phase/2);
+  double interaction_time = fmod(nv.ms*phase/w_phase, t_phase/2);
   if(interaction_time > t_phase/4){
     f_DD *= -1;
     interaction_time = t_phase/2 - interaction_time;
@@ -254,22 +251,12 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const MatrixXcd U_coupling = nv_axis_rotation.adjoint() * U_AXY * nv_axis_rotation;
 
   // correct for larmor precession of the nucleus
-  double z_phase = interaction_time*w_larmor;
-  z_phase -= floor(z_phase/(2*pi))*2*pi;
-  Vector3d z_phase_axis = zhat;
-
-  if(z_phase > pi){
-    z_phase = 2*pi - z_phase;
-    z_phase_axis *= -1;
-  }
+  const double z_phase = fmod(interaction_time*w_larmor, 2*pi);
   const double w_ctl = nv.nuclei.at(target).g*B_ctl/2;
-  double xy_phase = interaction_time*w_ctl;
-  xy_phase -= floor(xy_phase/(2*pi))*2*pi;
-
+  const double xy_phase = fmod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
-
   const protocol flush_target =
-    act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,z_phase_axis));
+    act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,zhat));
 
   return flush_target * protocol(U_coupling, interaction_time);
 }

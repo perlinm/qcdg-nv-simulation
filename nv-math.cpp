@@ -294,7 +294,7 @@ vector<double> axy_pulse_times(const double f, const axy_harmonic k){
 }
 
 vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance){
-  const double normed_advance = advance - floor(advance);
+  const double normed_advance = fmod(advance, 1);
   if(normed_advance == 0) return pulse_times;
 
   // number of pulses
@@ -315,7 +315,7 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
 int F_AXY(const double x, const vector<double> pulses){
-  const double normed_x = x - floor(x);
+  const double normed_x = fmod(x, 1);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
     if(pulses.at(i) < normed_x) pulse_count++;
@@ -562,7 +562,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
-    double t_AXY = t - floor(t/t_DD)*t_DD; // time into this AXY sequence
+    double t_AXY = fmod(t, t_DD); // time into this AXY sequence
     for(uint p = 1; p < pulses.size()-1; p++){
       if(pulses.at(p)*t_DD < t_AXY + dt){
         if(pulses.at(p)*t_DD >= t_AXY){
