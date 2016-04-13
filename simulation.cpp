@@ -406,7 +406,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   //   we want to group together clusters sharing nuclei with similar larmor frequencies.
   const bool group_larmor_pairs = !coherence_scan && !testing;
   if(group_larmor_pairs){
-    nv.clusters = cluster_nuclei(nv.nuclei, DBL_MAX);
+    nv.clusters = cluster_nuclei(nv, DBL_MAX);
     nv.clusters = group_clusters(nv);
     const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
@@ -419,18 +419,18 @@ int main(const int arg_num, const char *arg_vec[]) {
     assert(cluster_size_target > 0);
 
     // get cluster_coupling for which the largest cluster size is >= cluster_size_target
-    nv.cluster_coupling = find_target_coupling(nv.nuclei, cluster_coupling_guess,
+    nv.cluster_coupling = find_target_coupling(nv, cluster_coupling_guess,
                                                cluster_size_target, dcc_cutoff);
-    nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
+    nv.clusters = cluster_nuclei(nv, nv.cluster_coupling);
     // if (largest cluster size > cluster_size_target),
     //   which can occur when (largest cluster size == cluster_size_target) is impossible,
     //   find largest cluster_coupling for which (largest cluster size < cluster_size_target)
     while(largest_cluster_size(nv.clusters) > cluster_size_target){
       const uint temp_cluster_size_target
-        = largest_cluster_size(cluster_nuclei(nv.nuclei, nv.cluster_coupling + dcc_cutoff));
-      nv.cluster_coupling = find_target_coupling(nv.nuclei, nv.cluster_coupling,
+        = largest_cluster_size(cluster_nuclei(nv, nv.cluster_coupling + dcc_cutoff));
+      nv.cluster_coupling = find_target_coupling(nv, nv.cluster_coupling,
                                                  temp_cluster_size_target, dcc_cutoff);
-      nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
+      nv.clusters = cluster_nuclei(nv, nv.cluster_coupling);
     }
 
     // if we are going to perform an actual simulation instead of just a coherence scan,

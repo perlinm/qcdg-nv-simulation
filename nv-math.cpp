@@ -83,14 +83,13 @@ inline double coupling_strength(const spin& s1, const spin& s2){
 }
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
-                                    const double min_coupling_strength){
+vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength){
 
   vector<vector<uint>> clusters; // all clusters
   vector<uint> clustered; // indices of nuclei we have already clustered
 
   // loop over indices of all nuclei
-  for(uint i = 0; i < nuclei.size(); i++){
+  for(uint i = 0; i < nv.nuclei.size(); i++){
     if(!in_vector(i,clustered)){
 
       // initialize current cluster
@@ -103,12 +102,12 @@ vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
       for(uint ci = 0; ci < cluster.size(); ci++) {
 
         // loop over all nuclei indices greater than cluster(ci)
-        for(uint k = cluster.at(ci)+1; k < nuclei.size(); k++){
+        for(uint k = cluster.at(ci)+1; k < nv.nuclei.size(); k++){
 
           // if cluster(ci) and nuclei(k) are interacting, add k to this cluster
           if(!in_vector(k,clustered) &&
-             coupling_strength(nuclei.at(cluster.at(ci)),
-                               nuclei.at(k)) >= min_coupling_strength){
+             coupling_strength(nv.nuclei.at(cluster.at(ci)),
+                               nv.nuclei.at(k)) >= min_coupling_strength){
             cluster.push_back(k);
             clustered.push_back(k);
           }
@@ -164,16 +163,16 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters){
 }
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
+double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
                             const uint cluster_size_target,  const double dcc_cutoff){
   assert(dcc_cutoff > 0);
 
   // special case for "clusters" of 1 nucleus
   if(cluster_size_target == 1){
     double max_coupling = 0;
-    for(uint i = 0; i < nuclei.size(); i++){
-      for(uint j = i+1; j < nuclei.size(); j++){
-        double c_ij = coupling_strength(nuclei.at(i), nuclei.at(j));
+    for(uint i = 0; i < nv.nuclei.size(); i++){
+      for(uint j = i+1; j < nv.nuclei.size(); j++){
+        double c_ij = coupling_strength(nv.nuclei.at(i), nv.nuclei.at(j));
         if(c_ij > max_coupling) max_coupling = c_ij;
       }
     }
@@ -183,7 +182,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
   double cluster_coupling = initial_cluster_coupling;
   double dcc = cluster_coupling/4;
 
-  vector<vector<uint>> clusters = cluster_nuclei(nuclei, cluster_coupling);
+  vector<vector<uint>> clusters = cluster_nuclei(nv, cluster_coupling);
   bool coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
   bool last_coupling_too_small;
   bool crossed_correct_coupling = false;
@@ -193,7 +192,7 @@ double find_target_coupling(const vector<spin>& nuclei, const double initial_clu
     last_coupling_too_small = coupling_too_small;
 
     cluster_coupling += coupling_too_small ? dcc : -dcc;
-    clusters = cluster_nuclei(nuclei,cluster_coupling);
+    clusters = cluster_nuclei(nv, cluster_coupling);
     coupling_too_small = largest_cluster_size(clusters) >= cluster_size_target;
 
     if(coupling_too_small != last_coupling_too_small) crossed_correct_coupling = true;

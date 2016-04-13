@@ -97,8 +97,7 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
 double coupling_strength(const spin& s1, const spin& s2);
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
-                                    const double min_coupling_strength);
+vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength);
 
 // group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv);
@@ -107,7 +106,7 @@ vector<vector<uint>> group_clusters(const nv_system& nv);
 uint largest_cluster_size(const vector<vector<uint>>& clusters);
 
 // find cluster coupling for which the largest cluster is >= cluster_size_target
-double find_target_coupling(const vector<spin>& nuclei, const double initial_cluster_coupling,
+double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
                             const uint cluster_size_target, const double dcc_cutoff);
 
 uint get_cluster_containing_target(const nv_system& nv, const uint index);
