@@ -194,16 +194,11 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast){
 }
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
-double gate_fidelity(MatrixXcd U, MatrixXcd G){
+double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G){
   assert(U.size() == G.size());
 
-  for(uint i = 0; i < U.size(); i++){
-    if(abs(U(i)) > 0.5){
-      G *= conj(G(i))/abs(G(i));
-      U *= conj(U(i))/abs(U(i));
-      break;
-    }
-  }
+  const MatrixXcd Uc = remove_phase(U);
+  const MatrixXcd Gc = remove_phase(G);
 
   const uint D = U.rows();
   const uint N = log2(D);
@@ -211,7 +206,7 @@ double gate_fidelity(MatrixXcd U, MatrixXcd G){
 
   for(uint i = 0; i < D*D; i++){
     const MatrixXcd B_i = U_basis_element(i,N);
-    fidelity += real(trace(U*B_i.adjoint()*U.adjoint()*G*B_i*G.adjoint()));
+    fidelity += real(trace(Uc*B_i.adjoint()*Uc.adjoint()*Gc*B_i*Gc.adjoint()));
   }
   fidelity /= D*D*(D+1);
 
