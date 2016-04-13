@@ -79,7 +79,7 @@ struct nv_system{
   const bool no_nn;
 
   vector<spin> nuclei;
-  double cluster_coupling;
+  double cluster_coupling = 0;
   vector<vector<uint>> clusters;
 
   nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
@@ -100,7 +100,7 @@ double coupling_strength(const spin& s1, const spin& s2);
 vector<vector<uint>> cluster_nuclei(const vector<spin>& nuclei,
                                     const double min_coupling_strength);
 
-// group together clusters sharing larmor pairs
+// group together clusters sharing nuclei with |w_i - w_j| < cluster_coupling
 vector<vector<uint>> group_clusters(const nv_system& nv);
 
 // get size of largest spin cluster
