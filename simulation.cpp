@@ -404,8 +404,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // if we are going to perform an actual simulation instead of just a coherence scan,
   //   we want to group together clusters sharing nuclei with similar larmor frequencies.
-  const bool group_by_larmor_frequencies = !coherence_scan && !testing;
-  if(group_by_larmor_frequencies){
+  const bool group_larmor_pairs = !coherence_scan && !testing;
+  if(group_larmor_pairs){
     nv.clusters = cluster_nuclei(nv.nuclei, DBL_MAX);
     nv.clusters = group_clusters(nv);
     const uint min_cluster_size_cap = largest_cluster_size(nv.clusters);
@@ -432,7 +432,10 @@ int main(const int arg_num, const char *arg_vec[]) {
                                                  temp_cluster_size_target, dcc_cutoff);
       nv.clusters = cluster_nuclei(nv.nuclei, nv.cluster_coupling);
     }
-    if(group_by_larmor_frequencies) nv.clusters = group_clusters(nv);
+
+    // if we are going to perform an actual simulation instead of just a coherence scan,
+    //   we want to group together clusters sharing nuclei with similar larmor frequencies.
+    if(group_larmor_pairs) nv.clusters = group_clusters(nv);
 
     // grouping together clusters might create a cluster greater than max_cluster_size,
     //   so we check to make sure that we do not go over the limit
