@@ -10,10 +10,10 @@ using namespace Eigen;
 //--------------------------------------------------------------------------------------------
 
 // diamond lattice vectors, scaled to the lattice parameter (i.e. the unit cell side length)
-const Vector3d ao = (Vector3d() << 1,1,1).finished()/4;
-const Vector3d a1 = (Vector3d() << 0,1,1).finished()/2;
-const Vector3d a2 = (Vector3d() << 1,0,1).finished()/2;
-const Vector3d a3 = (Vector3d() << 1,1,0).finished()/2;
+const Vector3d ao = (Vector3d() << 1,1,1).finished()/2;
+const Vector3d a1 = (Vector3d() << 0,1,1).finished();
+const Vector3d a2 = (Vector3d() << 1,0,1).finished();
+const Vector3d a3 = (Vector3d() << 1,1,0).finished();
 
 // unit vectors along bonding axes
 const Vector3d zhat = hat(ao); // direction from V to N
@@ -21,8 +21,17 @@ const Vector3d xhat = hat(a1-a2);
 const Vector3d yhat = zhat.cross(xhat);
 
 // print vec in the {xhat,yhat,zhat} basis
-inline Vector3d in_basis(const Vector3d& vec){
+inline Vector3d in_crystal_basis(const Vector3d& vec){
   return (Vector3d() << dot(vec,xhat), dot(vec,yhat), dot(vec,zhat)).finished();
+}
+
+// return "integerized" components of a position vector on z axis or in x-y plane
+// these vectors allow for comparing positions without worrying about numerical error
+inline Vector3i z_int_pos(const Vector3d& pos){
+  return (3./2*dot(pos,zhat)*zhat).cast<int>();
+}
+inline Vector3i xy_int_pos(const Vector3d& pos){
+  return (3*(pos-dot(pos,zhat)*zhat)).cast<int>();
 }
 
 //--------------------------------------------------------------------------------------------
@@ -93,11 +102,6 @@ struct nv_system{
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
 
-// determine whether two spins should be in the same cluster
-bool in_same_cluster(const nv_system& nv, const uint idx1, const uint idx2,
-                     const double min_coupling_strength,
-                     const bool cluster_by_larmor_frequency);
-
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
 inline double coupling_strength(const nv_system& nv, const uint idx1, const uint idx2){
@@ -141,7 +145,7 @@ inline uint get_index_in_cluster(const nv_system& nv, const uint index){
 // hyperfine field experienced by target nucleus
 inline Vector3d hyperfine(const nv_system& nv, const spin& s){
   const Vector3d r = s.pos - nv.e.pos;
-  return nv.e.g*s.g/(4*pi*pow(r.norm()*a0,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
+  return nv.e.g*s.g/(4*pi*pow(r.norm()*a0/2,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
 }
 inline Vector3d hyperfine(const nv_system& nv, const uint index){
   return hyperfine(nv,nv.nuclei.at(index));
@@ -168,7 +172,7 @@ double larmor_resolution(const nv_system& nv, const uint index);
 // return maximum allowable value of f_k for the AXY sequence
 inline double axy_f_max(const axy_harmonic k){
   if(k == first) return (8*cos(pi/9) - 4) / pi;
-  else return 4/pi;
+  else return 4/pi; // if k == third
 }
 
 // pulse times for harmonic h and fourier component f
@@ -325,3 +329,11 @@ struct protocol{
     return protocol(U.adjoint(), t);
   }
 };
+
+// compute fidelity of a protocol
+inline double gate_fidelity(const protocol& U, const protocol& G){
+  return gate_fidelity(U.U, G.U);
+}
+inline double gate_fidelity(const protocol& U, const protocol& G, const vector<uint>& nuclei){
+  return gate_fidelity(U.U, G.U, nuclei);
+}

@@ -47,9 +47,23 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
 // check whether a nucleus is addressable
 bool can_address(const nv_system& nv, const uint target){
   const Vector3d r = nv.nuclei.at(target).pos - nv.e.pos;
-  const bool in_xy_plane = (round(4*dot(r,ao)) == 0);
-  const bool on_z_axis = (round(6*(r-dot(r,zhat)*zhat).squaredNorm()) == 0);
-  return !in_xy_plane && !on_z_axis;
+  const Vector3i r_xy = xy_int_pos(r);
+  const Vector3i r_z = z_int_pos(r);
+
+  if(r_xy.norm() == 0 || r_z.norm() == 0) return false; // target is on z axis or in x-y plane
+
+  for(uint i = 0; i < nv.nuclei.size(); i++){
+    if(i == target) continue;
+    const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
+    const Vector3i s_xy = xy_int_pos(s);
+    const Vector3i s_z = z_int_pos(s);
+    if(s_z.norm() == r_z.norm() && (s_xy == r_xy || s_xy == -r_xy)){
+      // target has a larmor pair with same x-y component of the hyperfine field (up to sign)
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // propagator U = exp(-i * phase * sigma_{axis}^{target})
@@ -90,7 +104,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to apply the control field
-  double control_time = fmod(-phase/w_phase, t_phase); // control operation time
+  double control_time = mod(-phase/w_phase, t_phase); // control operation time
   if(control_time > t_phase/2){
     g_B_ctl *= -1;
     control_time = t_phase - control_time;
@@ -104,7 +118,6 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   if(!adjust_AXY){
     U_rotate = simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else{ // if(adjust_AXY)
-    assert(w_DD != w_larmor);
 
     const double freq_ratio = [&]() -> double {
       if(w_DD < w_larmor){
@@ -120,20 +133,19 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
     const uint cycles = int(control_time/cycle_time);
 
     const double leading_time = control_time - cycles*cycle_time;
+    const double trailing_time = [&]() -> double {
+      if(cycles == 0) return 0;
+      else return cycle_time - leading_time;
+    }();
+
     const MatrixXcd U_leading = simulate_AXY8(nv, cluster, w_DD_adjusted, f_DD, k_DD,
                                               controls, leading_time);
-    if(cycles > 0){
-      const double trailing_time = cycle_time - leading_time;
-      const MatrixXcd U_trailing = simulate_AXY8(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                                 controls, trailing_time, leading_time);
-      U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
-
-    } else{
-      U_rotate = U_leading;
-    }
+    const MatrixXcd U_trailing = simulate_AXY8(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                               controls, trailing_time, leading_time);
+    U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
   }
 
-  const double flush_time = fmod(-control_time - z_phase/w_larmor, t_larmor);
+  const double flush_time = mod(-control_time - z_phase/w_larmor, t_larmor);
   const MatrixXcd U_flush =
     simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
   return protocol(U_flush * U_rotate, control_time + flush_time);
@@ -206,7 +218,6 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       const Vector3d A_perp_alt = hyperfine_perp(nv,index);
       B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
       axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
-
       controls.add(B_ctl*axis_ctl, w_larmor);
     }
   }
@@ -224,7 +235,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const double t_phase = 2*pi/w_phase;
 
   // time for which to interact
-  double interaction_time = fmod(nv.ms*phase/w_phase, t_phase/2);
+  double interaction_time = mod(nv.ms*phase/w_phase, t_phase/2);
   if(interaction_time > t_phase/4){
     f_DD *= -1;
     interaction_time = t_phase/2 - interaction_time;
@@ -251,9 +262,9 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const MatrixXcd U_coupling = nv_axis_rotation.adjoint() * U_AXY * nv_axis_rotation;
 
   // correct for larmor precession of the nucleus
-  const double z_phase = fmod(interaction_time*w_larmor, 2*pi);
+  const double z_phase = mod(interaction_time*w_larmor, 2*pi);
   const double w_ctl = nv.nuclei.at(target).g*B_ctl/2;
-  const double xy_phase = fmod(interaction_time*w_ctl, 2*pi);
+  const double xy_phase = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =
     act_target(nv, target, rotate(xy_phase,xy_axis)*rotate(z_phase,zhat));

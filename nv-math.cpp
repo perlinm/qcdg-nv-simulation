@@ -66,33 +66,15 @@ nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
   const Vector3d r1 = nv.nuclei.at(idx1).pos - nv.e.pos;
   const Vector3d r2 = nv.nuclei.at(idx2).pos - nv.e.pos;
-
-  const int par_1 = round(16*abs(dot(r1,ao)));
-  const int par_2 = round(16*abs(dot(r2,ao)));
-
-  const int perp_1 = round(12*(r1-dot(r1,zhat)*zhat).squaredNorm());
-  const int perp_2 = round(12*(r2-dot(r2,zhat)*zhat).squaredNorm());
-
-  return par_1 == par_2 && perp_1 == perp_2;
-}
-
-// determine whether two spins should be in the same cluster
-bool in_same_cluster(const nv_system& nv, const uint idx1, const uint idx2,
-                     const double min_coupling_strength,
-                     const bool cluster_by_larmor_frequency){
-  if(coupling_strength(nv,idx1,idx2) > min_coupling_strength) return true;
-  if(cluster_by_larmor_frequency){
-    if(is_larmor_pair(nv,idx1,idx2)) return true;
-    // if(abs(effective_larmor(nv,idx1).norm() - effective_larmor(nv,idx2).norm())
-       // < min_coupling_strength) return true;
-  }
-  return false;
+  return
+    z_int_pos(r1).norm() == z_int_pos(r2).norm() &&
+    xy_int_pos(r1).norm() == xy_int_pos(r2).norm();
 }
 
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
-  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0,3)) * (1 - 3*dot(hat(r),zhat)*dot(hat(r),zhat)));
+  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0/2,3)) * (1-3*dot(hat(r),zhat)*dot(hat(r),zhat)));
 }
 
 // group nuclei into clusters with intercoupling strengths >= coupling_strength
@@ -114,15 +96,15 @@ vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupli
 
       // loop over all indices of cluster
       for(uint ci = 0; ci < cluster.size(); ci++) {
-        const uint s_cluster = cluster.at(ci);
+        const uint s_old = cluster.at(ci);
 
         // loop over all nuclei indices greater than s_cluster
         for(uint s_new = cluster.at(ci)+1; s_new < nv.nuclei.size(); s_new++){
 
-          // if s_cluster and s_new are interacting, add s_new to this cluster
-          if(!in_vector(s_new,clustered) &&
-             in_same_cluster(nv, s_cluster, s_new, min_coupling_strength,
-                             cluster_by_larmor_frequency)){
+          // if s_cluster and s_new are interacting or are a larmor pair, add s_new to cluster
+          if(((coupling_strength(nv,s_old,s_new) > min_coupling_strength) ||
+              (cluster_by_larmor_frequency && is_larmor_pair(nv,s_old,s_new))) &&
+             !in_vector(s_new,clustered)){
             cluster.push_back(s_new);
             clustered.push_back(s_new);
           }
@@ -317,7 +299,7 @@ vector<double> axy_pulse_times(const double f, const axy_harmonic k){
 }
 
 vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance){
-  const double normed_advance = fmod(advance, 1);
+  const double normed_advance = mod(advance, 1);
   if(normed_advance == 0) return pulse_times;
 
   // number of pulses
@@ -338,7 +320,7 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times, const doub
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
 int F_AXY(const double x, const vector<double> pulses){
-  const double normed_x = fmod(x, 1);
+  const double normed_x = mod(x, 1);
   uint pulse_count = 0;
   for(uint i = 1; i < pulses.size()-1; i++){
     if(pulses.at(i) < normed_x) pulse_count++;
@@ -350,7 +332,7 @@ int F_AXY(const double x, const vector<double> pulses){
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
-  return s1.g*s2.g/(4*pi*pow(r.norm()*a0,3))
+  return s1.g*s2.g/(4*pi*pow(r.norm()*a0/2,3))
     * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), dot(s2.S,hat(r))));
 }
 
@@ -585,7 +567,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
 
     // determine whether to apply an NV pi-pulse
     uint pulse = 0;
-    double t_AXY = fmod(t, t_DD); // time into this AXY sequence
+    double t_AXY = mod(t, t_DD); // time into this AXY sequence
     for(uint p = 1; p < pulses.size()-1; p++){
       if(pulses.at(p)*t_DD < t_AXY + dt){
         if(pulses.at(p)*t_DD >= t_AXY){

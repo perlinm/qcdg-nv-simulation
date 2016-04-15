@@ -5,6 +5,11 @@
 #include <eigen3/unsupported/Eigen/MatrixFunctions> // provides matrix functions
 using namespace Eigen;
 
+// floating-point modulus
+inline double mod(const double number, const double modulus){
+  return number - floor(number/modulus)*modulus;
+}
+
 // check whether value val is in vector vec
 inline bool in_vector(const auto val, const vector<auto>& vec){
   return (find(vec.begin(), vec.end(), val) != vec.end());
