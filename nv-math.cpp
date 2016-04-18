@@ -67,8 +67,8 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
   const Vector3d r1 = nv.nuclei.at(idx1).pos - nv.e.pos;
   const Vector3d r2 = nv.nuclei.at(idx2).pos - nv.e.pos;
   return
-    z_int_pos(r1).norm() == z_int_pos(r2).norm() &&
-    xy_int_pos(r1).norm() == xy_int_pos(r2).norm();
+    z_int_pos(r1).squaredNorm() == z_int_pos(r2).squaredNorm() &&
+    xy_int_pos(r1).squaredNorm() == xy_int_pos(r2).squaredNorm();
 }
 
 // coupling strength between two spins; assumes strong magnetic field in zhat

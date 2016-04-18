@@ -28,10 +28,12 @@ inline Vector3d in_crystal_basis(const Vector3d& vec){
 // return "integerized" components of a position vector on z axis or in x-y plane
 // these vectors allow for comparing positions without worrying about numerical error
 inline Vector3i z_int_pos(const Vector3d& pos){
-  return (3./2*dot(pos,zhat)*zhat).cast<int>();
+  Vector3d p = 6*dot(pos,zhat)*zhat;
+  return (Vector3i() << round(p(0)), round(p(1)), round(p(2))).finished();
 }
 inline Vector3i xy_int_pos(const Vector3d& pos){
-  return (3*(pos-dot(pos,zhat)*zhat)).cast<int>();
+  const Vector3d p = 3*(pos-dot(pos,zhat)*zhat);
+  return (Vector3i() << round(p(0)), round(p(1)), round(p(2))).finished();
 }
 
 //--------------------------------------------------------------------------------------------

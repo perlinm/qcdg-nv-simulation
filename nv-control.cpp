@@ -50,14 +50,17 @@ bool can_address(const nv_system& nv, const uint target){
   const Vector3i r_xy = xy_int_pos(r);
   const Vector3i r_z = z_int_pos(r);
 
-  if(r_xy.norm() == 0 || r_z.norm() == 0) return false; // target is on z axis or in x-y plane
+  if(r_xy.squaredNorm() == 0 || r_z.squaredNorm() == 0){
+    // target is on z axis or in x-y plane
+    return false;
+  }
 
   for(uint i = 0; i < nv.nuclei.size(); i++){
     if(i == target) continue;
     const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
     const Vector3i s_xy = xy_int_pos(s);
     const Vector3i s_z = z_int_pos(s);
-    if(s_z.norm() == r_z.norm() && (s_xy == r_xy || s_xy == -r_xy)){
+    if(s_z.squaredNorm() == r_z.squaredNorm() && (s_xy == r_xy || s_xy == -r_xy)){
       // target has a larmor pair with same x-y component of the hyperfine field (up to sign)
       return false;
     }
