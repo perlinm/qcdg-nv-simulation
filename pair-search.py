@@ -15,7 +15,7 @@ except:
 random.seed(str(samples)+hyperfine_cutoff)
 unsigned_long_long_max = 2**64-1
 
-with open(os.devnull, 'w') as null:
+with open(os.devnull,'w') as null:
     subprocess.call(["fac"],stdout=null)
 
     found = 0
@@ -25,7 +25,7 @@ with open(os.devnull, 'w') as null:
                     "--hyperfine_cutoff",hyperfine_cutoff,
                     "--seed",str(random.randint(0,unsigned_long_long_max))]
         if len(sys.argv) == 4:
-            commands += ["--c13_abundance", sys.argv[3]]
+            commands += ["--c13_abundance",sys.argv[3]]
         pairs = subprocess.call(commands,stdout=null)
         found += 1 if pairs > 0 else 0
 

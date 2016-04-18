@@ -17,7 +17,7 @@ if not start < end:
     print("cutoff start must be less than end")
     exit(2)
 
-fname = "./data/pair-test-{}-{}-{}.txt".format(start,end,log10_samples)
+fname = "./data/pairs-{}-{}-{}.txt".format(start,end,log10_samples)
 
 if os.path.exists(fname):
     cutoffs, predicted, actual = np.loadtxt(fname, unpack=True)
