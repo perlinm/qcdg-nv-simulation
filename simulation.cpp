@@ -303,7 +303,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     if(!set_target_nuclei){
       for(uint n = 0; n < nv.nuclei.size(); n++){
-        if(can_address(nv,n)){
+        if(!in_vector(n,unaddressable_targets)){
           target_nuclei.push_back(n);
         }
       }
@@ -375,10 +375,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   vector<vector<uint>> larmor_pairs(0);
-  for(uint i = 0; i < nv.nuclei.size(); i++){
-    for(uint j = i+1; j < nv.nuclei.size(); j++){
-      if(is_larmor_pair(nv,i,j)){
-        larmor_pairs.push_back({i,j});
+  for(uint i = 0; i < target_nuclei.size(); i++){
+    const uint n_i = target_nuclei.at(i);
+    for(uint j = i+1; j < target_nuclei.size(); j++){
+      const uint n_j = target_nuclei.at(j);
+      if(is_larmor_pair(nv,n_i,n_j)){
+        larmor_pairs.push_back({n_i,n_j});
       }
     }
   }
@@ -594,10 +596,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     if(larmor_pairs.size() == 0){
       cout << "There are no larmor pairs in this system\n";
       return -1;
-    }
-    if(set_target_nuclei){
-      assert(target_nuclei.size() == 2);
-      larmor_pairs = {{target_nuclei.at(0), target_nuclei.at(1)}};
     }
     for(vector<uint> idxs: larmor_pairs){
       const uint idx1 = idxs.at(0);
