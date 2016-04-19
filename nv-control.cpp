@@ -133,7 +133,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
     const double t_DD_adjusted = 2*pi/w_DD_adjusted;
 
     const double cycle_time = max(t_DD_adjusted, t_larmor);
-    const uint cycles = int(control_time/cycle_time);
+    const unsigned long int cycles = (unsigned long int)(control_time/cycle_time);
 
     const double leading_time = control_time - cycles*cycle_time;
     const double trailing_time = [&]() -> double {
@@ -244,7 +244,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
     interaction_time = t_phase/2 - interaction_time;
   }
 
-  const uint cycles = int(interaction_time/t_DD);
+  const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
   const double phase_advance = (interaction_angle - target_azimuth)/w_larmor;
 
