@@ -32,8 +32,10 @@ with open(fname,'w') as output:
         seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
         output.write(' '.join(commands + seed) + "\n\n")
         output.flush()
-        process = subprocess.Popen(commands + seed, stdout=subprocess.PIPE)
+        process = subprocess.Popen(commands + seed,
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
-        output.write(out.decode("utf-8") + "\n")
+        if process.returncode == 0:
+            output.write(out.decode("utf-8") + "\n")
 
 
