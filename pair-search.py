@@ -11,22 +11,24 @@ try:
     samples = int(sys.argv[2])
 except:
     samples = 100
+try:
+    c13_abundance = float(sys.argv[3])
+except:
+    c13_abundance = 1.07
 
-random.seed(str(samples)+hyperfine_cutoff)
+random.seed(hyperfine_cutoff + str(samples) + str(c13_abundance))
 unsigned_long_long_max = 2**64-1
 
 with open(os.devnull,'w') as null:
-    subprocess.call(["fac"],stdout=null)
+    subprocess.call(["fac"], stdout=null)
 
+    commands = ["./simulate", "--no_output", "--pair",
+                "--hyperfine_cutoff", str(hyperfine_cutoff),
+                "--c13_abundance", str(c13_abundance)]
     found = 0
     for s in range(samples):
-        commands = ["./simulate",
-                    "--pair",
-                    "--hyperfine_cutoff",hyperfine_cutoff,
-                    "--seed",str(random.randint(0,unsigned_long_long_max))]
-        if len(sys.argv) == 4:
-            commands += ["--c13_abundance",sys.argv[3]]
-        pairs = subprocess.call(commands,stdout=null)
+        seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
+        pairs = subprocess.call(commands + seed, stdout=null)
         found += 1 if pairs > 0 else 0
 
 print(found/samples)
