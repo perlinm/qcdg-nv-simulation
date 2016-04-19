@@ -81,37 +81,33 @@ double coupling_strength(const spin& s1, const spin& s2){
 vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength,
                                     const bool cluster_by_larmor_frequency){
 
-  vector<vector<uint>> clusters; // all clusters
-  vector<uint> clustered; // indices of nuclei we have already clustered
+  vector<vector<uint>> clusters(0); // all clusters
+  vector<uint> clustered(0); // indices of nuclei we have already clustered
 
-  // loop over indices of all nuclei
-  for(uint i = 0; i < nv.nuclei.size(); i++){
-    if(!in_vector(i,clustered)){
+  for(uint n_seed = 0; n_seed < nv.nuclei.size(); n_seed++){
+    if(in_vector(n_seed,clustered)) continue;
 
-      // initialize current cluster
-      vector<uint> cluster;
+    // initialize current cluster, and add the current nucleus
+    vector<uint> cluster;
+    cluster.push_back(n_seed);
+    clustered.push_back(n_seed);
 
-      cluster.push_back(i);
-      clustered.push_back(i);
+    // loop over all nuclei in cluster
+    for(uint i = 0; i < cluster.size(); i++){
+      const uint n_old = cluster.at(i);
+      // loop over all nuclei, checking whether to add them to the cluster
+      for(uint n_new = 0; n_new < nv.nuclei.size(); n_new++){
+        if(in_vector(n_new,clustered)) continue;
 
-      // loop over all indices of cluster
-      for(uint ci = 0; ci < cluster.size(); ci++) {
-        const uint s_old = cluster.at(ci);
-
-        // loop over all nuclei indices greater than s_cluster
-        for(uint s_new = cluster.at(ci)+1; s_new < nv.nuclei.size(); s_new++){
-
-          // if s_cluster and s_new are interacting or are a larmor pair, add s_new to cluster
-          if(((coupling_strength(nv,s_old,s_new) > min_coupling_strength) ||
-              (cluster_by_larmor_frequency && is_larmor_pair(nv,s_old,s_new))) &&
-             !in_vector(s_new,clustered)){
-            cluster.push_back(s_new);
-            clustered.push_back(s_new);
-          }
+        // if n_old and n_new are interacting or are a larmor pair, add n_new to this cluster
+        if((coupling_strength(nv,n_old,n_new) > min_coupling_strength) ||
+           (cluster_by_larmor_frequency && is_larmor_pair(nv,n_old,n_new))){
+          cluster.push_back(n_new);
+          clustered.push_back(n_new);
         }
       }
-      clusters.push_back(cluster);
     }
+    clusters.push_back(cluster);
   }
   return clusters;
 }
