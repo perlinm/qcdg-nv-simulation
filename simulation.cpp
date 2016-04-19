@@ -522,7 +522,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    cout << "target: fidelity\n";
+    cout << "target fidelity\n";
     for(uint target: target_nuclei){
       const Vector3d rotation = 2*phase * axis(target_polar,target_azimuth);
       vector<protocol> P(2);
@@ -530,7 +530,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         P.at(exact) = rotate_target(nv, target, rotation, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
-      cout << target << ": "
+      cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
@@ -541,7 +541,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
-    cout << "target: fidelity\n";
+    cout << "target fidelity\n";
     const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
     for(uint target: target_nuclei){
       const Vector3d target_axis = axis(target_polar, target_azimuth);
@@ -550,7 +550,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         P.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
-      cout << target << ": "
+      cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
@@ -561,14 +561,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(iswap_fidelities){
-    cout << "target: fidelity\n";
+    cout << "target fidelity\n";
     for(uint target: target_nuclei){
       vector<protocol> P(2);
       for(bool exact : {true,false}){
         P.at(exact) = iSWAP(nv, target, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
-      cout << target << ": "
+      cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
@@ -579,14 +579,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(swap_fidelities){
-    cout << "target: fidelity\n";
+    cout << "target fidelity\n";
     for(uint target: target_nuclei){
       vector<protocol> P(2);
       for(bool exact : {true,false}){
         P.at(exact) = SWAP(nv, target, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
-      cout << target << ": "
+      cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
@@ -601,7 +601,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << "There are no larmor pairs in this system\n";
       return -1;
     }
-    cout << "idx1 idx2: fidelity time\n";
+    cout << "idx1 idx2 fidelity time\n";
     for(vector<uint> idxs: larmor_pairs){
       const uint idx1 = idxs.at(0);
       const uint idx2 = idxs.at(1);
@@ -611,7 +611,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
       const uint idx2_in_cluster = get_index_in_cluster(nv,idx2);
-      cout << idx1 << " " << idx2 << ": "
+      cout << idx1 << " " << idx2 << " "
            << gate_fidelity(P.at(0), P.at(1), {idx1_in_cluster, idx2_in_cluster}) << " "
            << P.at(false).t << endl;
     }
