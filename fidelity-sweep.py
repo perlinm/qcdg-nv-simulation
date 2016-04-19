@@ -23,9 +23,8 @@ random.seed(fname + seed_text)
 unsigned_long_long_max = 2**64-1
 
 samples = int(10**log10_samples)
+sp.call(["fac"])
 with open(fname,'w') as output:
-    sp.call(["fac"])
-
     commands = ["./simulate", "--no_output", "--" + sim_type,
                 "--static_Bz", str(static_Bz),
                 "--c13_abundance", str(c13_abundance),
