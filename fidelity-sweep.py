@@ -33,9 +33,10 @@ with open(fname,'w') as output:
     for s in range(samples):
         print("{} / {}".format(s,samples))
         seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
+        output.write(' '.join(commands + seed) + "\n\n")
+        output.flush()
         process = sp.Popen(commands + seed, stdout=sp.PIPE)
         out, err = process.communicate()
-        output.write(' '.join(commands + seed) + "\n\n")
         output.write(out.decode("utf-8") + "\n")
 
 
