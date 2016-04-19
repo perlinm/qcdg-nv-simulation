@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys, itertools
 import numpy as np
 

@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
 import sys, os
 import subprocess as sp
 import numpy as np

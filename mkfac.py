@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 
 error_flags = '-Wall -Werror '

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import os, sys, subprocess, random
 
 if len(sys.argv) not in [2,3,4]:
