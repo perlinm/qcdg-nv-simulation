@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-import sys, os, random
-import subprocess as sp
-import numpy as np
-import matplotlib.pyplot as plt
+import os, sys, subprocess, random
 
 if len(sys.argv) < 6:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
@@ -19,11 +16,12 @@ seed_text = ' '.join(sys.argv[5:])
 fname = "./data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
                                                       max_cluster_size, log10_samples)
 
+subprocess.call(["fac"])
+
 random.seed(fname + seed_text)
 unsigned_long_long_max = 2**64-1
 
 samples = int(10**log10_samples)
-sp.call(["fac"])
 with open(fname,'w') as output:
     commands = ["./simulate", "--no_output", "--" + sim_type,
                 "--static_Bz", str(static_Bz),
@@ -34,7 +32,7 @@ with open(fname,'w') as output:
         seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
         output.write(' '.join(commands + seed) + "\n\n")
         output.flush()
-        process = sp.Popen(commands + seed, stdout=sp.PIPE)
+        process = subprocess.Popen(commands + seed, stdout=subprocess.PIPE)
         out, err = process.communicate()
         output.write(out.decode("utf-8") + "\n")
 
