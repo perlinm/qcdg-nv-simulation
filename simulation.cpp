@@ -287,7 +287,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
     if(nv.nuclei.size() == 0) return 0;
 
-    vector<uint> unaddressable_targets(0);
+    vector<uint> unaddressable_targets;
     for(uint n = 0; n < nv.nuclei.size(); n++){
       if(!can_address(nv,n)){
         unaddressable_targets.push_back(n);
@@ -308,7 +308,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         }
       }
     } else{ // if(set_target_nuclei)
-      vector<uint> invalid_targets(0);
+      vector<uint> invalid_targets;
       for(uint n = 0; n < target_nuclei.size(); n++){
         if(!can_address(nv,target_nuclei.at(n))){
           invalid_targets.push_back(target_nuclei.at(n));
@@ -374,7 +374,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Identify larmor pairs
   // -----------------------------------------------------------------------------------------
 
-  vector<vector<uint>> larmor_pairs(0);
+  vector<vector<uint>> larmor_pairs;
   for(uint i = 0; i < target_nuclei.size(); i++){
     const uint n_i = target_nuclei.at(i);
     for(uint j = i+1; j < target_nuclei.size(); j++){
@@ -401,9 +401,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Cluster C-13 nuclei
   // -----------------------------------------------------------------------------------------
 
-  const double initial_cluster_coupling_guess = 100; // this value doesn't actually matter
-  const double cc_resolution = 1e-5; // cutoff for tuning of cluster_coupling
-
   // unless we are performing a coherence scan, we will be grouping together clusters by
   //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
   //  for the given min_cluster_size_cap
@@ -415,31 +412,13 @@ int main(const int arg_num, const char *arg_vec[]) {
     if(!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
   }
 
-  // start with all nuclei in one cluster
-  nv.clusters.push_back({});
-  for(uint i = 0; i < nv.nuclei.size(); i++){
-    nv.clusters.at(0).push_back(i);
-  }
-
-  while(largest_cluster_size(nv.clusters) > max_cluster_size){
-    const vector<vector<uint>> cluster =
-      cluster_nuclei(nv, nv.cluster_coupling + cc_resolution, cluster_by_larmor_frequency);
-    const uint cluster_size_target = min(max_cluster_size, largest_cluster_size(cluster));
-    nv.cluster_coupling = find_target_coupling(nv, initial_cluster_coupling_guess,
-                                               cluster_size_target, cc_resolution,
-                                               cluster_by_larmor_frequency);
-    // take care of possible clipping issues
-    if(max_cluster_size <= min_cluster_size_cap) nv.cluster_coupling += cc_resolution;
-
-    nv.clusters = cluster_nuclei(nv, nv.cluster_coupling, cluster_by_larmor_frequency);
-  }
+  cluster_nuclei(nv, max_cluster_size, cluster_by_larmor_frequency);
 
   cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
        << " with a coupling factor of "  << nv.cluster_coupling << " Hz\n";
 
   // collect and print histogram of cluster sizes
-  max_cluster_size = largest_cluster_size(nv.clusters);
-  vector<uint> size_hist(max_cluster_size);
+  vector<uint> size_hist(largest_cluster_size(nv.clusters));
   for(uint i = 0; i < nv.clusters.size(); i++){
     size_hist.at(nv.clusters.at(i).size()-1) += 1;
   }

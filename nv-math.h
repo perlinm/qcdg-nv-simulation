@@ -111,8 +111,9 @@ inline double coupling_strength(const nv_system& nv, const uint idx1, const uint
 }
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
-vector<vector<uint>> cluster_nuclei(const nv_system& nv, const double min_coupling_strength,
-                                    const bool cluster_by_larmor_frequency);
+vector<vector<uint>> cluster_with_coupling(const nv_system& nv,
+                                           const double min_coupling_strength,
+                                           const bool cluster_by_larmor_frequency);
 
 // group together clusters sharing larmor pairs
 vector<vector<uint>> group_clusters(const nv_system& nv);
@@ -125,13 +126,14 @@ double largest_coupling(const nv_system& nv);
 
 // minimum allowable cluster size limit
 inline double min_cluster_size_target(const nv_system& nv){
-  return largest_cluster_size(cluster_nuclei(nv, DBL_MAX, true));
+  return largest_cluster_size(cluster_with_coupling(nv, DBL_MAX, true));
 }
 
-// find largest coupling for which the largest cluster size is barely <= cluster_size_target
-double find_target_coupling(const nv_system& nv, const double initial_cluster_coupling,
-                            uint cluster_size_target,  const double cc_resolution,
-                            const bool cluster_by_larmor_frequency);
+// cluster nuclei and set cluster_coupling for a given maximum cluster size
+void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
+                    const bool cluster_by_larmor_frequency,
+                    const double initial_cluster_coupling = 100,
+                    const double cc_resolution = 1e-5);
 
 uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
