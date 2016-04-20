@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, subprocess, random
+import sys, subprocess, random
 
 if len(sys.argv) != 4:
     print("usage: {} hyperfine_cutoff_in_kHz samples c13_abundance".format(sys.argv[0]))

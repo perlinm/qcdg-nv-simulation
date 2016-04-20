@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, subprocess, random
+import sys, subprocess, random
 
 if len(sys.argv) < 6:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
