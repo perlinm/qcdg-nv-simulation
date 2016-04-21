@@ -20,8 +20,9 @@ fac_text = ""
 all_libraries = []
 all_headers = []
 
-def fac_rule(libraries, headers, out_file, in_files):
-    text = "| g++ {} {} {} -g -flto -c ".format(std, debug_info, optimization)
+def fac_rule(libraries, headers, out_file, in_files, link=False):
+    text = "| g++ {} {} {} -flto ".format(std, debug_info, optimization)
+    if not link: text += "-c "
     if not testing_mode: text += error_flags + " "
     text += " ".join(libraries)
     text += " -o {} ".format(out_file)
@@ -55,7 +56,7 @@ for sim_file in sim_files:
 
 
 out_files = [ sim_file.replace(".cpp",".o") for sim_file in sim_files ]
-fac_text += fac_rule(all_libraries, all_headers, executable, out_files)
+fac_text += fac_rule(all_libraries, all_headers, executable, out_files, link=True)
 
 with open(".{}.fac".format(executable),"w") as f:
     f.write(fac_text)
