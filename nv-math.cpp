@@ -173,10 +173,18 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
                     const bool cluster_by_larmor_frequency,
                     const double initial_cluster_coupling, const double cc_resolution){
   assert(cc_resolution > 0);
-  uint cluster_size_target = min(max_cluster_size, uint(nv.nuclei.size()));
+  uint cluster_size_target = max_cluster_size;
 
-  // special case for small clusters
-  const uint min_cluster_size_cap = min_cluster_size_target(nv);
+  // special cases for small clusters
+  if(cluster_size_target >= nv.nuclei.size()){
+    nv.cluster_coupling = largest_coupling(nv);
+    nv.clusters.push_back({});
+    for(uint n = 0; n < nv.nuclei.size(); n++){
+      nv.clusters.at(0).push_back(n);
+    }
+    return;
+  }
+  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv);
   if(cluster_size_target < min_cluster_size_cap){
     nv.cluster_coupling = largest_coupling(nv);
     for(uint n = 0; n < nv.nuclei.size(); n++){

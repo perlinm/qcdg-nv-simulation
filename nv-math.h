@@ -125,7 +125,7 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters);
 double largest_coupling(const nv_system& nv);
 
 // minimum allowable cluster size limit
-inline double min_cluster_size_target(const nv_system& nv){
+inline double smallest_possible_cluster_size(const nv_system& nv){
   return largest_cluster_size(cluster_with_coupling(nv, DBL_MAX, true));
 }
 

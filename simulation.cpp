@@ -404,7 +404,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // unless we are performing a coherence scan, we will be grouping together clusters by
   //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
   //  for the given min_cluster_size_cap
-  const uint min_cluster_size_cap = min_cluster_size_target(nv);
+  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv);
   const bool cluster_by_larmor_frequency =
     !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
   if(!coherence_scan){
