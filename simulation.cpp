@@ -501,7 +501,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_control){
-    cout << "target fidelity\n";
+    cout << "target fidelity time\n";
     for(uint target: target_nuclei){
       const Vector3d rotation = 2*phase * axis(target_polar,target_azimuth);
       vector<protocol> P(2);
@@ -520,7 +520,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(single_coupling){
-    cout << "target fidelity\n";
+    cout << "target fidelity time\n";
     const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
     for(uint target: target_nuclei){
       const Vector3d target_axis = axis(target_polar, target_azimuth);
@@ -540,7 +540,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(iswap_fidelities){
-    cout << "target fidelity\n";
+    cout << "target fidelity time\n";
     for(uint target: target_nuclei){
       vector<protocol> P(2);
       for(bool exact : {true,false}){
@@ -558,7 +558,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -----------------------------------------------------------------------------------------
 
   if(swap_fidelities){
-    cout << "target fidelity\n";
+    cout << "target fidelity time\n";
     for(uint target: target_nuclei){
       vector<protocol> P(2);
       for(bool exact : {true,false}){
