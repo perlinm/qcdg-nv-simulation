@@ -1,5 +1,5 @@
 *\~
-*.tum
+*.fac*
 *.o
 simulate
 data
