@@ -1,35 +1,61 @@
 #!/usr/bin/env python3
-import sys
+import sys, glob, re
 
-error_flags = '-Wall -Werror '
-if len(sys.argv) > 1:
-    error_flags = ''
+std = "-std=c++14"
+debug_info = "-g"
+optimization = "-O3"
 
-fac_text = '''| g++ {0}-O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o qp-math.o qp-math.cpp
-< qp-math.h
-< qp-math.cpp
-> qp-math.o
+error_flags = "-Wall -Werror"
+testing_mode = (len(sys.argv) > 1)
 
-| g++ {0}-O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o nv-math.o nv-math.cpp
-< nv-math.h
-< nv-math.cpp
-> nv-math.o
 
-| g++ {0}-O3 -std=c++14 -I /usr/include/eigen3/ -g -flto -c -o nv-control.o nv-control.cpp
-< nv-control.h
-< nv-control.cpp
-> nv-control.o
+lib_flags = {"eigen3" : "-I /usr/include/eigen3/",
+             "boost/filesystem" : "-lboost_system -lboost_filesystem",
+             "boost/program_options" : "-lboost_program_options"}
 
-| g++ {0}-O3 -std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -I /usr/include/eigen3/ -g -flto -c -o simulation.o simulation.cpp
-< simulation.cpp
-> simulation.o
+executable = "simulate"
+sim_files = sorted(glob.glob("*.cpp"))
 
-| g++ {0}-std=c++14 -lboost_program_options -lboost_system -lboost_filesystem -flto -o simulate qp-math.o nv-math.o nv-control.o simulation.o
-< qp-math.o
-< nv-math.o
-< simulation.o
-> simulate
-'''
+fac_text = ""
+all_libraries = []
+all_headers = []
 
-with open('./.simulation.fac','w') as f:
-    f.write(fac_text.format(error_flags))
+def fac_rule(libraries, headers, out_file, in_files):
+    text = "| g++ {} {} {} -g -flto -c ".format(std, debug_info, optimization)
+    if not testing_mode: text += error_flags + " "
+    text += " ".join(libraries)
+    text += " -o {} ".format(out_file)
+    text += " ".join(in_files)+"\n"
+    for dependency in headers + in_files:
+        text += "< {}\n".format(dependency)
+    text += "> {}\n\n".format(out_file)
+    return text
+
+for sim_file in sim_files:
+    out_file = sim_file.replace(".cpp",".o")
+    libraries = []
+    headers = []
+    with open(sim_file,'r') as f:
+        for line in f:
+            if "#include" in line:
+                for flag in lib_flags.keys():
+                    if flag in line and lib_flags[flag] not in libraries:
+                        libraries += [lib_flags[flag]]
+                if re.search('"*.h"',line):
+                    headers += [line.split('"')[-2]]
+
+
+    fac_text += fac_rule(libraries, headers, out_file, [sim_file])
+    for library in libraries:
+        if library not in all_libraries:
+            all_libraries += [library]
+    for header in headers:
+        if header not in all_headers:
+            all_headers += [header]
+
+
+out_files = [ sim_file.replace(".cpp",".o") for sim_file in sim_files ]
+fac_text += fac_rule(all_libraries, all_headers, executable, out_files)
+
+with open(".{}.fac".format(executable),"w") as f:
+    f.write(fac_text)
