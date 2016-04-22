@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import sys, matplotlib, numpy
-import matplotlib.pyplot as plt
+import sys, matplotlib
 import numpy as np
+import matplotlib.pyplot as plt
 
 if len(sys.argv) not in [2,3]:
     print('useage: %s file [show]' % sys.argv[0])

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import sys, os
-import subprocess as sp
-import numpy as np
+import sys, os, subprocess, numpy
 import matplotlib.pyplot as plt
 
 if len(sys.argv) != 4:
@@ -16,23 +14,25 @@ if not start < end:
     print("cutoff start must be less than end")
     exit(2)
 
-fname = "./data/pairs-{}-{}-{}.txt".format(start,end,log10_samples)
+work_dir = os.path.dirname(os.path.realpath(__file__))
+out_name = "data/pairs-{}-{}-{}.txt".format(start,end,log10_samples)
+out_file = work_dir + "/" + out_name
 
-if os.path.exists(fname):
-    cutoffs, predicted, actual = np.loadtxt(fname, unpack=True)
+if os.path.exists(out_file):
+    cutoffs, predicted, actual = numpy.loadtxt(out_file, unpack=True)
 
 else:
     cutoffs = range(start,end+1)
 
-    predicted = np.zeros(len(cutoffs))
-    actual = np.zeros(len(cutoffs))
+    predicted = numpy.zeros(len(cutoffs))
+    actual = numpy.zeros(len(cutoffs))
     for i in range(len(cutoffs)):
         print("starting cutoff: {} kHz".format(cutoffs[i]))
-        predicted[i] = sp.check_output(["./pair-compute.py",str(cutoffs[i])])
-        actual[i] = sp.check_output(["./pair-search.py",str(cutoffs[i]),
-                                     str(10**log10_samples)])
+        predicted[i] = subprocess.check_output(["./pair-compute.py",str(cutoffs[i])])
+        actual[i] = subprocess.check_output(["./pair-search.py",str(cutoffs[i]),
+                                             str(10**log10_samples)])
 
-    with open(fname,'w') as f:
+    with open(out_file,'w') as f:
         f.write("# log10_samples: {}\n".format(log10_samples))
         f.write("# hyperfine_cutoff predicted actual\n")
         for i in range(len(cutoffs)):
@@ -45,4 +45,4 @@ plt.xlabel("Hyperfine cutoff [kHz]")
 plt.ylabel("Proportion")
 plt.ylim(0,1)
 plt.legend(loc="best")
-plt.savefig(fname.replace(".txt",".pdf"))
+plt.savefig(out_file.replace(".txt",".pdf"))

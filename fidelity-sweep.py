@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, subprocess, random
+import sys, os, subprocess, random
 
 if len(sys.argv) < 6:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
@@ -13,17 +13,22 @@ max_cluster_size = int(sys.argv[4])
 log10_samples = int(sys.argv[5])
 seed_text = ' '.join(sys.argv[5:])
 
-fname = "./data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
-                                                      max_cluster_size, log10_samples)
+work_dir = os.path.dirname(os.path.realpath(__file__))
+out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
+                                                       max_cluster_size, log10_samples)
+sim_name = "simulate"
+
+out_file = work_dir + "/" + out_name
+sim_file = work_dir + "/" + sim_name
 
 subprocess.call(["fac"])
 
-random.seed(fname + seed_text)
+random.seed(out_name + seed_text)
 unsigned_long_long_max = 2**64-1
 
 samples = int(10**log10_samples)
-with open(fname,'w') as output:
-    commands = ["./simulate", "--no_output", "--" + sim_type,
+with open(out_file,'w') as output:
+    commands = [sim_file, "--no_output", "--" + sim_type,
                 "--static_Bz", str(static_Bz),
                 "--c13_abundance", str(c13_abundance),
                 "--max_cluster_size", str(max_cluster_size)]
