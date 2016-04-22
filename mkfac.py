@@ -4,7 +4,6 @@ import sys, os, glob, re
 std = "-std=c++11"
 debug_info = "-g"
 optimization = "-O3"
-
 error_flags = "-Wall -Werror"
 testing_mode = (len(sys.argv) > 1)
 
@@ -24,9 +23,12 @@ all_libraries = []
 all_headers = []
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
-    text = "| g++ {} {} {} -flto ".format(std, debug_info, optimization)
+    text = "| g++ {} -flto ".format(std)
     if not link: text += "-c "
-    if not testing_mode: text += error_flags + " "
+    if testing_mode:
+        text += debug_info + " "
+    else:
+        text += "{} {} ".format(optimization,error_flags)
     text += " ".join(libraries)
     text += " -o {} ".format(out_file)
     text += " ".join(in_files)+"\n"
