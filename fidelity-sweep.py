@@ -21,8 +21,6 @@ sim_name = "simulate"
 out_file = work_dir + "/" + out_name
 sim_file = work_dir + "/" + sim_name
 
-subprocess.call(["fac"])
-
 random.seed(out_name + seed_text)
 unsigned_long_long_max = 2**64-1
 

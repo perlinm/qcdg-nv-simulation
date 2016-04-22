@@ -13,8 +13,6 @@ work_dir = os.path.dirname(os.path.realpath(__file__))
 sim_name = "simulate"
 sim_file = work_dir + "/" + sim_name
 
-subprocess.call(["fac"])
-
 random.seed(hyperfine_cutoff + str(samples) + str(c13_abundance))
 unsigned_long_long_max = 2**64-1
 
