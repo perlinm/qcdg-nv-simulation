@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sys, glob, re
+import sys, os, glob, re
 
 std = "-std=c++11"
 debug_info = "-g"
@@ -8,8 +8,11 @@ optimization = "-O3"
 error_flags = "-Wall -Werror"
 testing_mode = (len(sys.argv) > 1)
 
+eigen_dirs = "-I /usr/include/eigen3/"
+if not os.path.isdir(eigen_dirs.split()[-1]):
+    eigen_dirs = "-I ~/.local/include -I ~/.local/include/eigen3"
 
-lib_flags = {"eigen3" : "-I /usr/include/eigen3/",
+lib_flags = {"eigen3" : eigen_dirs,
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
