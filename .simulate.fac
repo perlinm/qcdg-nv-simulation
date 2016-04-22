@@ -1,4 +1,4 @@
-| g++ -std=c++14 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o nv-control.o nv-control.cpp
+| g++ -std=c++11 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o nv-control.o nv-control.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
@@ -7,20 +7,20 @@
 < nv-control.cpp
 > nv-control.o
 
-| g++ -std=c++14 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o nv-math.o nv-math.cpp
+| g++ -std=c++11 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o nv-math.o nv-math.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
 < nv-math.cpp
 > nv-math.o
 
-| g++ -std=c++14 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o qp-math.o qp-math.cpp
+| g++ -std=c++11 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -o qp-math.o qp-math.cpp
 < constants.h
 < qp-math.h
 < qp-math.cpp
 > qp-math.o
 
-| g++ -std=c++14 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulation.o simulation.cpp
+| g++ -std=c++11 -g -O3 -flto -c -Wall -Werror -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulation.o simulation.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
@@ -29,7 +29,7 @@
 < simulation.cpp
 > simulation.o
 
-| g++ -std=c++14 -g -O3 -flto -Wall -Werror -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
+| g++ -std=c++11 -g -O3 -flto -Wall -Werror -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
 < constants.h
 < qp-math.h
 < nv-math.h

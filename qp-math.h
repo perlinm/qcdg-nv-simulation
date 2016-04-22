@@ -10,8 +10,8 @@ inline double mod(const double number, const double modulus){
   return number - floor(number/modulus)*modulus;
 }
 
-// check whether value val is in vector vec
-inline bool in_vector(const auto val, const vector<auto>& vec){
+// check whether val is in vec
+inline bool in_vector(const uint val, const vector<uint>& vec){
   return (find(vec.begin(), vec.end(), val) != vec.end());
 }
 
@@ -41,7 +41,7 @@ inline complex<double> trace(const MatrixXcd& M){ return M.trace(); }
 inline MatrixXcd log(const MatrixXcd& M){ return M.log(); }
 inline MatrixXcd exp(const MatrixXcd& M){ return M.exp(); }
 inline MatrixXcd sqrt(const MatrixXcd& M){ return M.sqrt(); }
-inline MatrixXcd pow(const MatrixXcd& M, auto x){ return M.pow(x); }
+inline MatrixXcd pow(const MatrixXcd& M, const double x){ return M.pow(x); }
 
 // tensor product of two matrices
 inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){ return kroneckerProduct(A,B); }

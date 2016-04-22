@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys, glob, re
 
-std = "-std=c++14"
+std = "-std=c++11"
 debug_info = "-g"
 optimization = "-O3"
 
