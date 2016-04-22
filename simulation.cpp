@@ -89,7 +89,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
-  int cell_radius; // determined by hyperfine_cutoff
+  int cell_radius = 0; // requires a default value which will be overwritten later
   int ms;
   uint k_DD_int;
   axy_harmonic k_DD;
