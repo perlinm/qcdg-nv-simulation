@@ -2,12 +2,12 @@
 import sys, os, glob, re
 
 testing_mode = False
-hide_warnings = False
+alert_warnings = False
 for flag in sys.argv[1:]:
     if flag.lower() == "test":
         testing_mode = True
-    elif flag.lower() == "whide":
-        hide_warnings = True
+    elif flag.lower() == "alert":
+        alert_warnings = True
     else:
         print('useage: {} [test] [whide]'.format(sys.argv[0]))
         exit(1)
@@ -38,7 +38,7 @@ all_headers = []
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
     text = "| g++ {} {} -flto ".format(std, debug_info if testing_mode else optimization)
-    if not hide_warnings: text += warning_flags + " "
+    if alert_warnings: text += warning_flags + " "
     text += " ".join(libraries) + " "
     if not link: text += "-c "
     text += "-o {} ".format(out_file)
