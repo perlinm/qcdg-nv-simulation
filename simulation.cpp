@@ -3,6 +3,7 @@
 #include <iomanip> // some nice printing functions
 using namespace std;
 
+#define EIGEN_USE_MKL_ALL
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 

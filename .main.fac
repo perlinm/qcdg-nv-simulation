@@ -1,0 +1,2 @@
+| sh set-mklroot.sh > .mklroot
+| python make-sim-facfile.py > .simulate.fac

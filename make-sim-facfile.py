@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
 import sys, os, glob, re
 
+executable = "simulate"
+sim_files = sorted(glob.glob("*.cpp"))
+
 std = "-std=c++11"
 debug_info = "-g"
 optimization = "-O3"
 error_flags = "-Wall -Werror"
 testing_mode = (len(sys.argv) > 1)
 
-eigen_dirs = "-I /usr/include/eigen3/"
-if not os.path.isdir(eigen_dirs.split()[-1]):
-    eigen_dirs = "-I ~/.local/include -I ~/.local/include/eigen3"
+with open(".mklroot","r") as f:
+    mkl_root = f.readline().split()[0]
+mkl_flags = ("-Wl,--no-as-needed,-rpath={0}/lib/intel64/ -L{0}/lib/intel64/" + \
+             " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm" + \
+             " -ldl -fopenmp -m64 -I{0}/include/").format(mkl_root)
 
-lib_flags = {"eigen3" : eigen_dirs,
+global_dependencies = [".mklroot"]
+
+eigen_lib = "-I/usr/include/eigen3/"
+if not os.path.isdir(eigen_lib[2:]):
+    eigen_lib = "-I~/.local/include/ -I~/.local/include/eigen3/"
+
+lib_flags = {"eigen3" : eigen_lib,
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
-executable = "simulate"
-sim_files = sorted(glob.glob("*.cpp"))
 
 fac_text = ""
 all_libraries = []
@@ -28,11 +37,11 @@ def fac_rule(libraries, headers, out_file, in_files, link=False):
     if testing_mode:
         text += debug_info + " "
     else:
-        text += "{} {} ".format(optimization,error_flags)
+        text += "{} {} {} ".format(optimization,error_flags,mkl_flags)
     text += " ".join(libraries)
     text += " -o {} ".format(out_file)
     text += " ".join(in_files)+"\n"
-    for dependency in headers + in_files:
+    for dependency in headers + in_files + global_dependencies:
         text += "< {}\n".format(dependency)
     text += "> {}\n\n".format(out_file)
     return text
