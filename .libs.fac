@@ -1,0 +1,2 @@
+| sh set-mkl-root.sh > .mkl-root
+| python set-eigen-libs.py > .eigen-libs

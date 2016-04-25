@@ -10,22 +10,18 @@ optimization = "-O3"
 error_flags = "-Wall -Werror"
 testing_mode = (len(sys.argv) > 1)
 
-with open(".mklroot","r") as f:
-    mkl_root = f.readline().split()[0]
-mkl_flags = ("-Wl,--no-as-needed,-rpath={0}/lib/intel64/ -L {0}/lib/intel64/" + \
-             " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm" + \
-             " -ldl -fopenmp -m64 -I {0}/include/").format(mkl_root)
+mkl_root = ".mkl-root"
+eigen_libs = ".eigen-libs"
 
-global_dependencies = [".mklroot"]
+mkl_flags = ("-Wl,--no-as-needed,-rpath=`cat {0}`/lib/intel64/ -L `cat {0}`/lib/intel64/" + \
+             " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp" + \
+             " -m64 -I `cat {0}`/include/").format(mkl_root)
 
-eigen_lib = "-I /usr/include/eigen3/"
-if not os.path.isdir(eigen_lib.split()[-1]):
-    eigen_lib = "-I ~/.local/include/ -I ~/.local/include/eigen3/"
-
-lib_flags = {"eigen3" : eigen_lib,
+lib_flags = {"eigen3" : "`cat {}`".format(eigen_libs),
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
+global_dependencies = [ mkl_root, eigen_libs ]
 
 fac_text = ""
 all_libraries = []

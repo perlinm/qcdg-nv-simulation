@@ -1,39 +1,43 @@
-| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -L /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/include/ -I /usr/include/eigen3/ -o nv-control.o nv-control.cpp
+| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=`cat .mkl-root`/lib/intel64/ -L `cat .mkl-root`/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I `cat .mkl-root`/include/ `cat .eigen-libs` -o nv-control.o nv-control.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
 < nv-gates.h
 < nv-control.h
 < nv-control.cpp
-< .mklroot
+< .mkl-root
+< .eigen-libs
 > nv-control.o
 
-| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -L /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/include/ -I /usr/include/eigen3/ -o nv-math.o nv-math.cpp
+| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=`cat .mkl-root`/lib/intel64/ -L `cat .mkl-root`/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I `cat .mkl-root`/include/ `cat .eigen-libs` -o nv-math.o nv-math.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
 < nv-math.cpp
-< .mklroot
+< .mkl-root
+< .eigen-libs
 > nv-math.o
 
-| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -L /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/include/ -I /usr/include/eigen3/ -o qp-math.o qp-math.cpp
+| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=`cat .mkl-root`/lib/intel64/ -L `cat .mkl-root`/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I `cat .mkl-root`/include/ `cat .eigen-libs` -o qp-math.o qp-math.cpp
 < constants.h
 < qp-math.h
 < qp-math.cpp
-< .mklroot
+< .mkl-root
+< .eigen-libs
 > qp-math.o
 
-| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -L /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/include/ -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulation.o simulation.cpp
+| g++ -std=c++11 -flto -c -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=`cat .mkl-root`/lib/intel64/ -L `cat .mkl-root`/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I `cat .mkl-root`/include/ `cat .eigen-libs` -lboost_system -lboost_filesystem -lboost_program_options -o simulation.o simulation.cpp
 < constants.h
 < qp-math.h
 < nv-math.h
 < nv-gates.h
 < nv-control.h
 < simulation.cpp
-< .mklroot
+< .mkl-root
+< .eigen-libs
 > simulation.o
 
-| g++ -std=c++11 -flto -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -L /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I /opt/intel/compilers_and_libraries_2016.2.181/linux/mkl/include/ -I /usr/include/eigen3/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
+| g++ -std=c++11 -flto -O3 -Wall -Werror -Wl,--no-as-needed,-rpath=`cat .mkl-root`/lib/intel64/ -L `cat .mkl-root`/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I `cat .mkl-root`/include/ `cat .eigen-libs` -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
 < constants.h
 < qp-math.h
 < nv-math.h
@@ -43,6 +47,7 @@
 < nv-math.o
 < qp-math.o
 < simulation.o
-< .mklroot
+< .mkl-root
+< .eigen-libs
 > simulate
 
