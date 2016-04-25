@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 import sys, os, glob, re
 
+testing_mode = False
+hide_warnings = False
+for flag in sys.argv[1:]:
+    if flag.lower() == "test":
+        testing_mode = True
+    elif flag.lower() == "whide":
+        hide_warnings = True
+    else:
+        print('useage: {} [test] [whide]'.format(sys.argv[0]))
+        exit(1)
+
 executable = "simulate"
 sim_files = sorted(glob.glob("*.cpp"))
 
@@ -8,9 +19,6 @@ std = "-std=c++11"
 optimization = "-O3"
 debug_info = "-g"
 warning_flags = "-Wall -Werror"
-
-testing_mode = "test" in sys.argv
-hide_warnings = "whide" in sys.argv
 
 eigen_dirs = ".eigen-dirs"
 mkl_root = ".mkl-root"
