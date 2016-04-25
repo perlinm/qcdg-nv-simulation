@@ -11,17 +11,17 @@ error_flags = "-Wall -Werror"
 testing_mode = (len(sys.argv) > 1)
 
 mkl_root = ".mkl-root"
-eigen_libs = ".eigen-libs"
+eigen_dirs = ".eigen-dirs"
 
 mkl_flags = ("-Wl,--no-as-needed,-rpath=`cat {0}`/lib/intel64/ -L `cat {0}`/lib/intel64/" + \
              " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp" + \
              " -m64 -I `cat {0}`/include/").format(mkl_root)
 
-lib_flags = {"eigen3" : "`cat {}`".format(eigen_libs),
+lib_flags = {"eigen3" : "`cat {}`".format(eigen_dirs),
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
-global_dependencies = [ mkl_root, eigen_libs ]
+global_dependencies = [ mkl_root, eigen_dirs ]
 
 fac_text = ""
 all_libraries = []

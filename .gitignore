@@ -5,4 +5,4 @@ simulate
 data
 *.pdf
 .mkl-root
-.eigen-libs
+.eigen-dirs
