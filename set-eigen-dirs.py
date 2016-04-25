@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import os
 
 eigen_dirs = "-I /usr/include/eigen3/"
