@@ -8,16 +8,16 @@ std = "-std=c++11"
 debug_info = "-g"
 optimization = "-O3"
 error_flags = "-Wall -Werror"
-testing_mode = (len(sys.argv) > 1)
 
-mkl_root = ".mkl-root"
+testing_mode =  "test" in sys.argv
+
 eigen_dirs = ".eigen-dirs"
-
+mkl_root = ".mkl-root"
 mkl_flags = ("-Wl,--no-as-needed,-rpath=$(cat {0})/lib/intel64/ -L $(cat {0})/lib/intel64/" + \
              " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp" + \
              " -m64 -I $(cat {0})/include/").format(mkl_root)
 
-lib_flags = {"eigen3" : "$(cat {})".format(eigen_dirs),
+lib_flags = {"eigen3" : "$(cat {}) ".format(eigen_dirs) + mkl_flags,
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
@@ -28,14 +28,11 @@ all_libraries = []
 all_headers = []
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
-    text = "| g++ {} -flto ".format(std)
+    text = "| g++ {} {} {} -flto ".format(std,debug_info,optimization)
+    if not testing_mode: text += error_flags + " "
+    text += " ".join(libraries)+" "
     if not link: text += "-c "
-    if testing_mode:
-        text += debug_info + " "
-    else:
-        text += "{} {} {} ".format(optimization,error_flags,mkl_flags)
-    text += " ".join(libraries)
-    text += " -o {} ".format(out_file)
+    text += "-o {} ".format(out_file)
     text += " ".join(in_files)+"\n"
     for dependency in headers + in_files + global_dependencies:
         text += "< {}\n".format(dependency)
