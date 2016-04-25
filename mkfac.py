@@ -5,11 +5,12 @@ executable = "simulate"
 sim_files = sorted(glob.glob("*.cpp"))
 
 std = "-std=c++11"
-debug_info = "-g"
 optimization = "-O3"
-error_flags = "-Wall -Werror"
+debug_info = "-g"
+warning_flags = "-Wall -Werror"
 
-testing_mode =  "test" in sys.argv
+testing_mode = "test" in sys.argv
+hide_warnings = "whide" in sys.argv
 
 eigen_dirs = ".eigen-dirs"
 mkl_root = ".mkl-root"
@@ -28,9 +29,9 @@ all_libraries = []
 all_headers = []
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
-    text = "| g++ {} {} {} -flto ".format(std,debug_info,optimization)
-    if not testing_mode: text += error_flags + " "
-    text += " ".join(libraries)+" "
+    text = "| g++ {} {} -flto ".format(std, debug_info if testing_mode else optimization)
+    if not hide_warnings: text += warning_flags + " "
+    text += " ".join(libraries) + " "
     if not link: text += "-c "
     text += "-o {} ".format(out_file)
     text += " ".join(in_files)+"\n"
