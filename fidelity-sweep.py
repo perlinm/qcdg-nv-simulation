@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-import sys, os, subprocess, random
+import sys, os, subprocess, random, threading, time
 
-if len(sys.argv) < 6:
+if len(sys.argv) < 7:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
-          " c13_abundance max_cluster_size log10_samples [seed]")
+          " c13_abundance max_cluster_size log10_samples threads [seed]")
     exit(1)
 
 sim_type = sys.argv[1]
@@ -11,7 +11,8 @@ static_Bz = int(sys.argv[2])
 c13_abundance = float(sys.argv[3])
 max_cluster_size = int(sys.argv[4])
 log10_samples = int(sys.argv[5])
-seed_text = ' '.join(sys.argv[6:])
+thread_cap = int(sys.argv[6])
+seed_text = ' '.join(sys.argv[7:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
@@ -38,12 +39,12 @@ def run_sample(s):
     output_text += out.decode("utf-8")+"\n"
     output_text += err.decode("utf-8")+"\n"
     output_text += "----------------------------------------------------------------------\n\n"
-    return output_text
+    with open (out_file,"a") as output:
+        output.write(output_text)
 
-with open(out_file,'w') as output:
-    for s in range(samples):
-        print("{} / {}".format(s,samples))
-        text = run_sample(s)
-        output.write(text)
-        output.flush()
-
+for s in range(samples):
+    print("{} / {}".format(s,samples))
+    t = threading.Thread(target=run_sample,args=[s])
+    while threading.active_count() >= thread_cap:
+        time.sleep(1)
+    t.start()
