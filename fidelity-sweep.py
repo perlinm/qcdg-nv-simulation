@@ -23,6 +23,11 @@ sim_file = work_dir + "/" + sim_name
 unsigned_long_long_max = 2**64-1
 samples = int(10**log10_samples)
 
+commands = [sim_file, "--no_output", "--" + sim_type,
+            "--static_Bz", str(static_Bz),
+            "--c13_abundance", str(c13_abundance),
+            "--max_cluster_size", str(max_cluster_size)]
+
 def run_sample(s):
     random.seed(out_name + seed_text + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
@@ -35,10 +40,6 @@ def run_sample(s):
     output_text += "----------------------------------------------------------------------\n\n"
     return output_text
 
-commands = [sim_file, "--no_output", "--" + sim_type,
-            "--static_Bz", str(static_Bz),
-            "--c13_abundance", str(c13_abundance),
-            "--max_cluster_size", str(max_cluster_size)]
 with open(out_file,'w') as output:
     for s in range(samples):
         print("{} / {}".format(s,samples))
