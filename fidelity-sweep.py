@@ -29,18 +29,20 @@ commands = [sim_file, "--no_output", "--" + sim_type,
             "--c13_abundance", str(c13_abundance),
             "--max_cluster_size", str(max_cluster_size)]
 
+lock = threading.Lock()
+
 def run_sample(s):
     random.seed(out_name + seed_text + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
     process = subprocess.Popen(commands + seed,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
-    output_text = ' '.join(commands + seed) + "\n\n"
-    output_text += out.decode("utf-8")+"\n"
-    output_text += err.decode("utf-8")+"\n"
-    output_text += "----------------------------------------------------------------------\n\n"
-    with open (out_file,"a") as output:
-        output.write(output_text)
+    with lock:
+        with open (out_file,"a") as f:
+            f.write(' '.join(commands + seed)+"\n\n")
+            f.write(out.decode("utf-8")+"\n")
+            f.write(err.decode("utf-8")+"\n")
+            f.write("-"*80 + "\n\n")
 
 for s in range(samples):
     print("{} / {}".format(s,samples))
