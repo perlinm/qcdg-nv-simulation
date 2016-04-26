@@ -3,6 +3,7 @@
 *.o
 *.exe
 data
+jobs
 *.pdf
 .mkl-root
 .eigen-dirs
