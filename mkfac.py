@@ -14,6 +14,7 @@ for flag in sys.argv[1:]:
 
 executable = "simulate"
 sim_files = sorted(glob.glob("*.cpp"))
+ignore_dirs = [ "~/.ccache/" ]
 
 std = "-std=c++11"
 optimization = "-O3"
@@ -45,6 +46,8 @@ def fac_rule(libraries, headers, out_file, in_files, link=False):
     text += " ".join(in_files)+"\n"
     for dependency in headers + in_files + global_dependencies:
         text += "< {}\n".format(dependency)
+    for ignore_dir in ignore_dirs:
+        text += "C {}\n".format(ignore_dir)
     text += "> {}\n\n".format(out_file)
     return text
 

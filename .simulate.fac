@@ -7,6 +7,7 @@
 < nv-control.cpp
 < .mkl-root
 < .eigen-dirs
+C ~/.ccache/
 > nv-control.o
 
 | g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o nv-math.o nv-math.cpp
@@ -16,6 +17,7 @@
 < nv-math.cpp
 < .mkl-root
 < .eigen-dirs
+C ~/.ccache/
 > nv-math.o
 
 | g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o qp-math.o qp-math.cpp
@@ -24,6 +26,7 @@
 < qp-math.cpp
 < .mkl-root
 < .eigen-dirs
+C ~/.ccache/
 > qp-math.o
 
 | g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -c -o simulation.o simulation.cpp
@@ -35,6 +38,7 @@
 < simulation.cpp
 < .mkl-root
 < .eigen-dirs
+C ~/.ccache/
 > simulation.o
 
 | g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
@@ -49,5 +53,6 @@
 < simulation.o
 < .mkl-root
 < .eigen-dirs
+C ~/.ccache/
 > simulate
 
