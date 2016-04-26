@@ -2,16 +2,13 @@
 import sys, itertools
 import numpy as np
 
-if len(sys.argv) not in [2,3]:
-    print("usage: {} hyperfine_cutoff_in_kHz [c13_abundance]".format(sys.argv[0]))
+if len(sys.argv) != 3:
+    print("usage: {} hyperfine_cutoff_in_kHz c13_abundance".format(sys.argv[0]))
     exit(1)
 
 # process inputs
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
-try:
-    c13_abundance = float(sys.argv[2])/100
-except:
-    c13_abundance = 0.0107 # natural abundance of C-13
+c13_abundance = float(sys.argv[2])/100
 
 # flatten a list of lists
 def flatten(list):

@@ -2,13 +2,19 @@
 import sys, os, subprocess, numpy
 import matplotlib.pyplot as plt
 
-if len(sys.argv) != 4:
-    print("usage: {} cutoff_start cutoff_end log10_samples".format(sys.argv[0]))
+if len(sys.argv) not in [5,6]:
+    print("usage: " + sys.argv[0] + " cutoff_start cutoff_end" + \
+          " log10_samples c13_abundance [thread_cap]")
     exit(1)
 
 start = int(sys.argv[1])
 end = int(sys.argv[2])
 log10_samples = int(sys.argv[3])
+try:
+    thread_cap = int(sys.argv[4])
+except:
+    thread_cap = 2
+assert thread_cap > 1
 
 if not start < end:
     print("cutoff start must be less than end")
@@ -30,7 +36,7 @@ else:
         print("starting cutoff: {} kHz".format(cutoffs[i]))
         predicted[i] = subprocess.check_output(["./pair-compute.py",str(cutoffs[i])])
         actual[i] = subprocess.check_output(["./pair-search.py",str(cutoffs[i]),
-                                             str(10**log10_samples)])
+                                             str(10**log10_samples),str(thread_count)])
 
     with open(out_file,'w') as f:
         f.write("# log10_samples: {}\n".format(log10_samples))
