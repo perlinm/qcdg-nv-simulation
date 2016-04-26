@@ -10,18 +10,18 @@ sim_type = sys.argv[1]
 static_Bz = int(sys.argv[2])
 c13_abundance = float(sys.argv[3])
 max_cluster_size = int(sys.argv[4])
-samples = int(10**float(sys.argv[5]))
+log10_samples = int(sys.argv[5])
 seed_text = ' '.join(sys.argv[6:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
                                                        max_cluster_size, log10_samples)
 sim_name = "simulate.exe"
-
 out_file = work_dir + "/" + out_name
 sim_file = work_dir + "/" + sim_name
 
 unsigned_long_long_max = 2**64-1
+samples = int(10**log10_samples)
 
 def run_sample(s):
     random.seed(out_name + seed_text + str(s))
