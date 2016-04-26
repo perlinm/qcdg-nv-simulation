@@ -10,9 +10,6 @@ script = os.path.abspath("fidelity-sweep.py")
 args = sys.argv[1:]
 
 job_dir = "jobs"
-if not os.path.isdir(job_dir):
-    os.mkdir(job_dir)
-
 basename = "-".join(args)
 out_file = job_dir+"/"+basename+".o"
 err_file = job_dir+"/"+basename+".e"
