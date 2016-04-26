@@ -1,7 +1,7 @@
 *\~
 *.tum
 *.o
-simulate
+*.exe
 data
 *.pdf
 .mkl-root

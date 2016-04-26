@@ -12,8 +12,7 @@ for flag in sys.argv[1:]:
         print('useage: {} [test] [whide]'.format(sys.argv[0]))
         exit(1)
 
-executable = "simulate"
-sim_files = sorted(glob.glob("*.cpp"))
+executable = "simulate.exe"
 ignore_dirs = [ "~/.ccache/" ]
 
 std = "-std=c++11"
@@ -34,8 +33,9 @@ lib_flags = {"eigen3" : "$(cat {}) ".format(eigen_dirs) + mkl_flags,
 global_dependencies = [ mkl_root, eigen_dirs ]
 
 fac_text = ""
-all_libraries = []
-all_headers = []
+used_libraries = []
+used_headers = []
+sim_files = sorted(glob.glob("*.cpp"))
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
     text = "| g++ {} {} -flto ".format(std, debug_info if testing_mode else optimization)
@@ -67,15 +67,15 @@ for sim_file in sim_files:
 
     fac_text += fac_rule(libraries, headers, out_file, [sim_file])
     for library in libraries:
-        if library not in all_libraries:
-            all_libraries += [library]
+        if library not in used_libraries:
+            used_libraries += [library]
     for header in headers:
-        if header not in all_headers:
-            all_headers += [header]
+        if header not in used_headers:
+            used_headers += [header]
 
 
 out_files = [ sim_file.replace(".cpp",".o") for sim_file in sim_files ]
-fac_text += fac_rule(all_libraries, all_headers, executable, out_files, link=True)
+fac_text += fac_rule(used_libraries, used_headers, executable, out_files, link=True)
 
-with open(".{}.fac".format(executable),"w") as f:
+with open(".{}".format(executable.replace(".exe",".fac")),"w") as f:
     f.write(fac_text)

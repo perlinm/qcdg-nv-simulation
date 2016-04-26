@@ -41,7 +41,7 @@ C ~/.ccache/
 C ~/.ccache/
 > simulation.o
 
-| g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate nv-control.o nv-math.o qp-math.o simulation.o
+| g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate.exe nv-control.o nv-math.o qp-math.o simulation.o
 < constants.h
 < qp-math.h
 < nv-math.h
@@ -54,5 +54,5 @@ C ~/.ccache/
 < .mkl-root
 < .eigen-dirs
 C ~/.ccache/
-> simulate
+> simulate.exe
 

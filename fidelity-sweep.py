@@ -16,7 +16,7 @@ seed_text = ' '.join(sys.argv[5:])
 work_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_abundance,
                                                        max_cluster_size, log10_samples)
-sim_name = "simulate"
+sim_name = "simulate.exe"
 
 out_file = work_dir + "/" + out_name
 sim_file = work_dir + "/" + sim_name

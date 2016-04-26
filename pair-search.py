@@ -10,7 +10,7 @@ samples = int(sys.argv[2])
 c13_abundance = float(sys.argv[3])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
-sim_name = "simulate"
+sim_name = "simulate.exe"
 sim_file = work_dir + "/" + sim_name
 
 random.seed(hyperfine_cutoff + str(samples) + str(c13_abundance))
