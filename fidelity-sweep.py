@@ -3,7 +3,7 @@ import sys, os, subprocess, random, threading, time
 
 if len(sys.argv) < 7:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
-          " c13_abundance max_cluster_size log10_samples threads [seed]")
+          " c13_abundance max_cluster_size log10_samples thread_cap [seed]")
     exit(1)
 
 sim_type = sys.argv[1]
@@ -12,6 +12,7 @@ c13_abundance = float(sys.argv[3])
 max_cluster_size = int(sys.argv[4])
 log10_samples = int(sys.argv[5])
 thread_cap = int(sys.argv[6])
+assert thread_cap > 1
 seed_text = ' '.join(sys.argv[7:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
@@ -29,10 +30,10 @@ commands = [sim_file, "--no_output", "--" + sim_type,
             "--c13_abundance", str(c13_abundance),
             "--max_cluster_size", str(max_cluster_size)]
 
-lock = threading.Lock()
+lock = threading.RLock()
 
 def run_sample(s):
-    random.seed(out_name + seed_text + str(s))
+    random.seed("".join(sys.argv[1:-1]) + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
     process = subprocess.Popen(commands + seed,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
