@@ -5,11 +5,11 @@ using namespace std;
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Diamond lattice parameters
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
-// diamond lattice vectors, scaled to the lattice parameter (i.e. the unit cell side length)
+// diamond lattice vectors in units of the lattice parameter at 300 K
 const Vector3d ao = (Vector3d() << 1,1,1).finished()/2;
 const Vector3d a1 = (Vector3d() << 0,1,1).finished();
 const Vector3d a2 = (Vector3d() << 1,0,1).finished();
@@ -36,9 +36,9 @@ inline Vector3i xy_int_pos(const Vector3d& pos){
   return (Vector3i() << round(p(0)), round(p(1)), round(p(2))).finished();
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Spin vectors and structs
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // spin vector for a spin-1/2 particle
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
@@ -54,7 +54,8 @@ inline Matrix2cd rotate(const double angle, const Vector3d& axis){
 
 // rotate into one axis from another
 inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start){
-  return rotate(acos(dot(hat(axis_start),hat(axis_end))), hat(axis_start.cross(axis_end)));
+  return rotate(acos(dot(hat(axis_start),hat(axis_end))),
+                hat(axis_start.cross(axis_end)));
 }
 
 // rotate into one basis from another
@@ -97,9 +98,9 @@ struct nv_system{
             const double scale_factor, const double integration_factor, const bool no_nn);
 };
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Spin clustering methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
@@ -139,12 +140,13 @@ uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
 uint get_index_in_cluster(const uint index, const vector<uint> cluster);
 inline uint get_index_in_cluster(const nv_system& nv, const uint index){
-  return get_index_in_cluster(index, nv.clusters.at(get_cluster_containing_target(nv,index)));
+  return get_index_in_cluster(index,
+                              nv.clusters.at(get_cluster_containing_target(nv,index)));
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // AXY scanning methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // hyperfine field experienced by target nucleus
 inline Vector3d hyperfine(const nv_system& nv, const spin& s){
@@ -183,7 +185,8 @@ inline double axy_f_max(const axy_harmonic k){
 vector<double> axy_pulse_times(const double f, const axy_harmonic k);
 
 // advance pulses by a given (normalized) time
-vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance);
+vector<double> advanced_pulse_times(const vector<double> pulse_times,
+                                    const double advance);
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
 int F_AXY(const double x, const vector<double> pulses);
@@ -220,16 +223,17 @@ inline MatrixXcd H_sys(const nv_system& nv, const uint cluster){
 
 // total control Hamiltonian for the entire system
 inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl){
-  return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl),{0},nv.clusters.at(cluster).size()+1);
+  return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl), {0},
+                                      nv.clusters.at(cluster).size()+1);
 }
 
 // perform NV coherence measurement with a static magnetic field
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time);
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Control fields and simulation
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 struct control_fields{
   vector<Vector3d> Bs;
@@ -307,9 +311,9 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
                         const control_fields& controls, const double simulation_time,
                         const double advance = 0);
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Protocol object
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 struct protocol{
   MatrixXcd U;
@@ -338,6 +342,7 @@ struct protocol{
 inline double gate_fidelity(const protocol& U, const protocol& G){
   return gate_fidelity(U.U, G.U);
 }
-inline double gate_fidelity(const protocol& U, const protocol& G, const vector<uint>& nuclei){
+inline double gate_fidelity(const protocol& U, const protocol& G,
+                            const vector<uint>& nuclei){
   return gate_fidelity(U.U, G.U, nuclei);
 }

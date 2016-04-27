@@ -5,9 +5,9 @@ using namespace std;
 #include <eigen3/Eigen/Dense> // linear algebra library
 using namespace Eigen;
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Coordinate systems
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // return "natural" basis of a nucleus
 vector<Vector3d> natural_basis(const nv_system& nv, const uint index);
@@ -25,9 +25,9 @@ inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
   return to_natural_frames(nv, nv.clusters.at(cluster));
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // General control methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // check whether a nucleus is addressable
 bool can_address(const nv_system& nv, const uint target);
@@ -62,9 +62,9 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
                        const Vector3d& nv_axis, const Vector3d& target_axis,
                        const bool exact = false, const bool adjust_AXY = true);
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Specific operations
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // iSWAP operation
 inline protocol iSWAP(const nv_system& nv, const uint index, const bool exact = false){

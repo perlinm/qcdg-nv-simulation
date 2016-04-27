@@ -11,9 +11,9 @@ using namespace Eigen;
 #include "nv-gates.h"
 #include "nv-control.h"
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Coordinate systems
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // return "natural" basis of a nucleus
 vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
@@ -41,9 +41,9 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
   return rotation;
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // General control methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // check whether a nucleus is addressable
 bool can_address(const nv_system& nv, const uint target){
@@ -62,7 +62,7 @@ bool can_address(const nv_system& nv, const uint target){
     const Vector3i s_xy = xy_int_pos(s);
     const Vector3i s_z = z_int_pos(s);
     if(s_z.squaredNorm() == r_z.squaredNorm() && (s_xy == r_xy || s_xy == -r_xy)){
-      // target has a larmor pair with same x-y component of the hyperfine field (up to sign)
+      // target has a larmor pair with a parallel x-y component of the hyperfine field
       return false;
     }
   }
@@ -292,8 +292,9 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
     const Matrix4cd U =
       exp(-j * phase * tp(dot(s_vec,hat(nv_axis)), dot(s_vec,hat(target_axis))));
 
-    const MatrixXcd G = act(target_to_natural_basis * U * target_to_natural_basis.adjoint(),
-                            {0, target_in_cluster+1}, spins);
+    const MatrixXcd G =
+      act(target_to_natural_basis * U * target_to_natural_basis.adjoint(),
+          {0, target_in_cluster+1}, spins);
     return protocol(G,0);
   }
 
@@ -308,11 +309,12 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
   return target_to_equator.adjoint() * coupling_xy * target_to_equator;
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Specific operations
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
-protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2, const bool exact){
+protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
+                   const bool exact){
   // assert that both target nuclei are larmor pairs in the same cluster
   assert(is_larmor_pair(nv,idx1,idx2));
   const vector<uint> cluster = nv.clusters.at(get_cluster_containing_target(nv,idx1));

@@ -33,9 +33,9 @@ inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& 
           sin(angle) * hat(axis).cross(vec));
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Matrix functions
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 inline complex<double> trace(const MatrixXcd& M){ return M.trace(); }
 inline MatrixXcd log(const MatrixXcd& M){ return M.log(); }
@@ -44,7 +44,9 @@ inline MatrixXcd sqrt(const MatrixXcd& M){ return M.sqrt(); }
 inline MatrixXcd pow(const MatrixXcd& M, const double x){ return M.pow(x); }
 
 // tensor product of two matrices
-inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){ return kroneckerProduct(A,B); }
+inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){
+  return kroneckerProduct(A,B);
+}
 
 // tensor product of many matrices
 MatrixXcd tp(const initializer_list<MatrixXcd>& list);
@@ -65,9 +67,9 @@ inline MatrixXcd clean(const MatrixXcd& M, double threshold = 1e-3){
   return remove_artifacts(remove_phase(M,threshold),threshold);
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Operator manipulation
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // get the n-th bit of an integer num
 inline bool int_bit(const uint num, const uint n){
@@ -76,7 +78,9 @@ inline bool int_bit(const uint num, const uint n){
 }
 
 // get state of qbit q (of N) from enumerated state s
-inline bool qbit_state(const uint q, const uint N, const uint s){ return int_bit(s,N-1-q); }
+inline bool qbit_state(const uint q, const uint N, const uint s){
+  return int_bit(s,N-1-q);
+}
 
 // get integer corresponding to an 'on' state of bit p (of N)
 inline uint bit_int(const uint q, const int N){ return pow(2,N-1-q); }
@@ -87,9 +91,9 @@ MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_n
 // perform a partial trace over qbits qs_trace
 MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Gate decomposition and fidelity
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // returns element p of a basis for operators acting on a system with N qubits
 MatrixXcd U_basis_element(const uint p, const uint N);
@@ -115,16 +119,16 @@ double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G);
 // compute mean fidelity of propagator acting on given nuclei
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei);
 
-// compute fidelity of state rho with respect to state sigma, i.e. how close rho is to sigma
+// compute fidelity of state rho with respect to state sigma
 inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma){
   const MatrixXcd sqrt_rho = sqrt(rho);
   const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
   return sqrt_F*sqrt_F;
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Matrix vectors
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 struct mvec{
   vector<MatrixXcd> v;
@@ -206,9 +210,9 @@ inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
 inline mvec operator*(const double s, mvec& v){ return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Common constant objects
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // identity matrices
 const Matrix<std::complex<double>,1,1> I1 = MatrixXcd::Identity(1,1);
@@ -230,9 +234,9 @@ const Matrix2cd sx = up*dn.adjoint() + dn*up.adjoint();
 const Matrix2cd sy = j*(-up*dn.adjoint() + dn*up.adjoint());
 const Matrix2cd sz = up*up.adjoint() - dn*dn.adjoint();
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Printing methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // print operator in human-readable form
 void U_print(const MatrixXcd& U, const double threshold = 1e-3);

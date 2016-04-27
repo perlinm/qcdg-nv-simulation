@@ -21,9 +21,9 @@ namespace po = boost::program_options;
 
 int main(const int arg_num, const char *arg_vec[]) {
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Parse and process input options
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   const uint help_text_length = 95;
 
@@ -68,9 +68,11 @@ int main(const int arg_num, const char *arg_vec[]) {
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
-    ("control", po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
+    ("control",
+     po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
      "control individual nucleus")
-    ("couple", po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
+    ("couple",
+     po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
      "couple individual nucleus to NV center")
     ("iswap",
      po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
@@ -154,7 +156,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target")
-    ("phase", po::value<double>(&phase_over_pi)->default_value(0.5,"0.5"), "operation phase")
+    ("phase", po::value<double>(&phase_over_pi)->default_value(0.5,"0.5"),
+     "operation phase")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5,"0.5"),
      "polar angle of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
@@ -242,7 +245,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     lattice_path = lattice_file;
 
     if(!set_output_suffix){
-      output_suffix = lattice_path.stem().string() + "-" + output_suffix_with_input_lattice;
+      output_suffix =
+        lattice_path.stem().string() + "-" + output_suffix_with_input_lattice;
     }
 
   } else{ // if !using_input_lattice
@@ -254,17 +258,18 @@ int main(const int arg_num, const char *arg_vec[]) {
     lattice_path = output_dir/fs::path(lattice_file);
   }
 
-  uniform_real_distribution<double> rnd(0.0,1.0); // uniform distribution on the range [0,1)
+  uniform_real_distribution<double> rnd(0.0,1.0); // uniform distribution on [0,1)
   mt19937_64 generator(seed); // use and seed the 64-bit Mersenne Twister 19937 generator
 
   fs::create_directory(output_dir); // create data directory
 
   // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD, scale_factor, integration_factor, no_nn);
+  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD,
+               scale_factor,integration_factor, no_nn);
 
-  // -----------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Construct lattice of nuclei
-  // -----------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
 
   if(!using_input_lattice){ // place nuclei at lattice sites
     // set positions of nuclei at lattice sites
@@ -272,8 +277,8 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
         for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
           for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
-            if(rnd(generator) < c13_abundance){ // pass a check for C-13 isotopic abundance
-              if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV lattice site
+            if(rnd(generator) < c13_abundance){ // check for C-13 isotopic abundance
+              if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV sites
                 const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
                 if(hyperfine(nv,nucleus).norm() > hyperfine_cutoff){
@@ -365,15 +370,16 @@ int main(const int arg_num, const char *arg_vec[]) {
     // assert that no C-13 nuclei lie at the NV lattice sites
     for(uint i = 0; i < nv.nuclei.size(); i++){
       if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
-        cout << "The input lattice places a C-13 nucleus at one of the NV lattice sites!\n";
+        cout << "The input lattice places a C-13 nucleus at one of the NV lattice sites!"
+             << endl;
         return -1;
       }
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Identify larmor pairs
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   vector<vector<uint>> larmor_pairs;
   for(uint i = 0; i < target_nuclei.size(); i++){
@@ -398,9 +404,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     return larmor_pairs.size();
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Cluster C-13 nuclei
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   // unless we are performing a coherence scan, we will be grouping together clusters by
   //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
@@ -436,9 +442,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD_int));
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Coherence scan
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(coherence_scan){
     // identify effictive larmor frequencies and NV coupling strengths
@@ -497,9 +503,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Individual addressing -- control
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(single_control){
     cout << "target fidelity time\n";
@@ -516,9 +522,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Individual addressing -- NV coupling
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(single_coupling){
     cout << "target fidelity time\n";
@@ -536,9 +542,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // NV/nucleus iSWAP fidelity
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(iswap_fidelities){
     cout << "target fidelity time\n";
@@ -554,9 +560,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // NV/nucleus SWAP fidelity
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(swap_fidelities){
     cout << "target fidelity time\n";
@@ -572,9 +578,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // NV/ST SWAP operation fidelity
-  // -----------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(swap_nvst_fidelity){
     if(larmor_pairs.size() == 0){

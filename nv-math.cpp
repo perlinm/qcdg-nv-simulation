@@ -9,9 +9,9 @@ using namespace Eigen;
 #include "qp-math.h"
 #include "nv-math.h"
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Spin vectors and structs
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // rotate into one basis from another
 Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start){
@@ -59,9 +59,9 @@ nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_
   scale_factor(scale_factor), integration_factor(integration_factor), no_nn(no_nn)
 {};
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Spin clustering methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
@@ -75,7 +75,8 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2){
   const Vector3d r = s2.pos - s1.pos;
-  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0/2,3)) * (1-3*dot(hat(r),zhat)*dot(hat(r),zhat)));
+  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0/2,3)) *
+             (1-3*dot(hat(r),zhat)*dot(hat(r),zhat)));
 }
 
 // group nuclei into clusters with intercoupling strengths >= coupling_strength
@@ -101,7 +102,8 @@ vector<vector<uint>> cluster_with_coupling(const nv_system& nv,
       for(uint n_new = 0; n_new < nv.nuclei.size(); n_new++){
         if(in_vector(n_new,clustered)) continue;
 
-        // if n_old and n_new are interacting or are a larmor pair, add n_new to this cluster
+        // if n_old and n_new are interacting or are a larmor pair,
+        //   add n_new to this cluster
         if((coupling_strength(nv,n_old,n_new) > min_coupling_strength) ||
            (cluster_by_larmor_frequency && is_larmor_pair(nv,n_old,n_new))){
           cluster.push_back(n_new);
@@ -213,7 +215,8 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
     last_coupling_too_small = coupling_too_small;
 
     nv.cluster_coupling += coupling_too_small ? dcc : -dcc;
-    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling, cluster_by_larmor_frequency);
+    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling,
+                                        cluster_by_larmor_frequency);
 
     coupling_too_small = (largest_cluster_size(nv.clusters) > cluster_size_target);
     if(!crossed_correct_coupling && (coupling_too_small != last_coupling_too_small)){
@@ -223,7 +226,8 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
 
   while(largest_cluster_size(nv.clusters) > cluster_size_target){
     nv.cluster_coupling += dcc;
-    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling, cluster_by_larmor_frequency);
+    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling,
+                                        cluster_by_larmor_frequency);
   }
 }
 
@@ -249,9 +253,9 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster){
   return 0;
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // AXY scanning methods
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // component of hyperfine field perpendicular to the larmor axis
 Vector3d hyperfine_perp(const nv_system&nv, const spin& s){
@@ -313,7 +317,8 @@ vector<double> axy_pulse_times(const double f, const axy_harmonic k){
   return pulse_times;
 }
 
-vector<double> advanced_pulse_times(const vector<double> pulse_times, const double advance){
+vector<double> advanced_pulse_times(const vector<double> pulse_times,
+                                    const double advance){
   const double normed_advance = mod(advance, 1);
   if(normed_advance == 0) return pulse_times;
 
@@ -434,9 +439,9 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
   return coherence;
 }
 
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 // Control fields and simulation
-//--------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------
 
 // return control field for decoupling a single nucleus from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
