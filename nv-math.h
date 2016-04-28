@@ -99,8 +99,11 @@ struct nv_system{
 };
 
 // ---------------------------------------------------------------------------------------
-// Spin clustering methods
+// Spin placement and clustering methods
 // ---------------------------------------------------------------------------------------
+
+// check whether a nucleus is addressable
+bool can_address(const nv_system& nv, const uint target);
 
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);

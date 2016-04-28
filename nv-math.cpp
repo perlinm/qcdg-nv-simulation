@@ -60,8 +60,33 @@ nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_
 {};
 
 // ---------------------------------------------------------------------------------------
-// Spin clustering methods
+// Spin placement and clustering methods
 // ---------------------------------------------------------------------------------------
+
+// check whether a nucleus is addressable
+bool can_address(const nv_system& nv, const uint target){
+  const Vector3d r = nv.nuclei.at(target).pos - nv.e.pos;
+  const Vector3i r_xy = xy_int_pos(r);
+  const Vector3i r_z = z_int_pos(r);
+
+  if(r_xy.squaredNorm() == 0 || r_z.squaredNorm() == 0){
+    // target is on z axis or in x-y plane
+    return false;
+  }
+
+  for(uint i = 0; i < nv.nuclei.size(); i++){
+    if(i == target) continue;
+    const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
+    const Vector3i s_xy = xy_int_pos(s);
+    const Vector3i s_z = z_int_pos(s);
+    if(s_z.squaredNorm() == r_z.squaredNorm() && (s_xy == r_xy || s_xy == -r_xy)){
+      // target has a larmor pair with a parallel x-y component of the hyperfine field
+      return false;
+    }
+  }
+
+  return true;
+}
 
 // determine whether two spins are a larmor pair
 bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2){
