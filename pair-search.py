@@ -3,12 +3,12 @@ import sys, os, subprocess, random, threading
 
 if len(sys.argv) != 5:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz" + \
-          " samples c13_abundance thread_cap")
+          " samples c13_percentage thread_cap")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
 samples = int(sys.argv[2])
-c13_abundance = float(sys.argv[3])
+c13_percentage = float(sys.argv[3])
 thread_cap = int(sys.argv[4])
 assert thread_cap > 1
 
@@ -20,7 +20,7 @@ unsigned_long_long_max = 2**64-1
 
 commands = [sim_file, "--no_output", "--pair",
             "--hyperfine_cutoff", str(hyperfine_cutoff),
-            "--c13_abundance", str(c13_abundance)]
+            "--c13_percentage", str(c13_percentage)]
 
 lock = threading.RLock()
 
@@ -36,7 +36,6 @@ def run_sample(s):
         found += 1 if pairs > 0 else 0
 
 for s in range(samples):
-    print("{} / {}".format(s,samples))
     t = threading.Thread(target=run_sample,args=[s])
     while threading.active_count() >= thread_cap: None
     t.start()

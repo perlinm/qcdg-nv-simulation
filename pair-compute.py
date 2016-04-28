@@ -3,7 +3,7 @@ import sys, itertools
 import numpy as np
 
 if len(sys.argv) != 3:
-    print("usage: {} hyperfine_cutoff_in_kHz c13_abundance".format(sys.argv[0]))
+    print("usage: {} hyperfine_cutoff_in_kHz c13_percentage".format(sys.argv[0]))
     exit(1)
 
 # process inputs

@@ -4,20 +4,21 @@ import matplotlib.pyplot as plt
 
 if len(sys.argv) not in [5,6]:
     print("usage: " + sys.argv[0] + " cutoff_start cutoff_end" + \
-          " log10_samples c13_abundance [thread_cap]")
+          " log10_samples c13_percentage [thread_cap]")
     exit(1)
 
 start = int(sys.argv[1])
 end = int(sys.argv[2])
 log10_samples = int(sys.argv[3])
+c13_percentage = float(sys.argv[4])
 try:
-    thread_cap = int(sys.argv[4])
+    thread_cap = int(sys.argv[5])
 except:
     thread_cap = 2
 assert thread_cap > 1
 
 if not start < end:
-    print("cutoff start must be less than end")
+    print("cutoff_start must be less than cutoff_end")
     exit(2)
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
@@ -34,9 +35,11 @@ else:
     actual = numpy.zeros(len(cutoffs))
     for i in range(len(cutoffs)):
         print("starting cutoff: {} kHz".format(cutoffs[i]))
-        predicted[i] = subprocess.check_output(["./pair-compute.py",str(cutoffs[i])])
-        actual[i] = subprocess.check_output(["./pair-search.py",str(cutoffs[i]),
-                                             str(10**log10_samples),str(thread_count)])
+        compute_cmds = ["./pair-compute.py",str(cutoffs[i]),str(c13_percentage)]
+        search_cmds = ["./pair-search.py",str(cutoffs[i]),str(10**log10_samples),
+                       str(c13_percentage),str(thread_cap)]
+        predicted[i] = subprocess.check_output(compute_cmds)
+        actual[i] = subprocess.check_output(search_cmds)
 
     with open(out_file,'w') as f:
         f.write("# log10_samples: {}\n".format(log10_samples))
