@@ -104,7 +104,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
     ("c13_abundance", po::value<double>(&c13_percentage)->default_value(1.07,"1.07"),
-     "relative isotopic abundance of C-13 (percentage)")
+     "unweigheted isotopic abundance of C-13 (percentage)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
