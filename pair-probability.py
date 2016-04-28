@@ -3,7 +3,7 @@ import sys, os, subprocess, numpy
 
 if len(sys.argv) not in [5,6,7]:
     print("usage: " + sys.argv[0] + " cutoff_start cutoff_end" + \
-          " log10_samples c13_percentage [thread_cap] [plot]")
+          " log10_samples c13_percentage [task_num] [plot]")
     exit(1)
 
 make_plot = "plot" in sys.argv
@@ -16,10 +16,10 @@ end = int(sys.argv[2])
 log10_samples = int(sys.argv[3])
 c13_percentage = float(sys.argv[4])
 try:
-    thread_cap = int(sys.argv[5])
+    task_num = int(sys.argv[5])
 except:
-    thread_cap = 2
-assert thread_cap > 1
+    task_num = 2
+assert task_num > 1
 
 if not start < end:
     print("cutoff_start must be less than cutoff_end")
@@ -41,7 +41,7 @@ else:
         print("starting cutoff: {} kHz".format(cutoffs[i]))
         compute_cmds = ["./pair-compute.py",str(cutoffs[i]),str(c13_percentage)]
         search_cmds = ["./pair-search.py",str(cutoffs[i]),str(10**log10_samples),
-                       str(c13_percentage),str(thread_cap)]
+                       str(c13_percentage),str(task_num)]
         predicted[i] = subprocess.check_output(compute_cmds)
         actual[i] = subprocess.check_output(search_cmds)
 

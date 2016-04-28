@@ -3,7 +3,7 @@ import sys, os, subprocess, random, threading, time
 
 if len(sys.argv) < 7:
     print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
-          " c13_percentage max_cluster_size log10_samples thread_cap [seed]")
+          " c13_percentage max_cluster_size log10_samples task_num [seed]")
     exit(1)
 
 sim_type = sys.argv[1]
@@ -11,8 +11,8 @@ static_Bz = int(sys.argv[2])
 c13_percentage = float(sys.argv[3])
 max_cluster_size = int(sys.argv[4])
 log10_samples = int(sys.argv[5])
-thread_cap = int(sys.argv[6])
-assert thread_cap > 1
+task_num = int(sys.argv[6])
+assert task_num > 1
 seed_text = ' '.join(sys.argv[7:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
@@ -48,6 +48,6 @@ def run_sample(s):
 for s in range(samples):
     print("{} / {}".format(s,samples))
     t = threading.Thread(target=run_sample,args=[s])
-    while threading.active_count() >= thread_cap:
+    while threading.active_count() >= task_num:
         time.sleep(1)
     t.start()

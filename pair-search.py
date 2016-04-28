@@ -3,14 +3,14 @@ import sys, os, subprocess, random, threading
 
 if len(sys.argv) != 5:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz" + \
-          " samples c13_percentage thread_cap")
+          " samples c13_percentage task_num")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
 samples = int(sys.argv[2])
 c13_percentage = float(sys.argv[3])
-thread_cap = int(sys.argv[4])
-assert thread_cap > 1
+task_num = int(sys.argv[4])
+assert task_num > 1
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
 sim_name = "simulate.exe"
@@ -37,7 +37,7 @@ def run_sample(s):
 
 for s in range(samples):
     t = threading.Thread(target=run_sample,args=[s])
-    while threading.active_count() >= thread_cap: None
+    while threading.active_count() >= task_num: None
     t.start()
 
 print(found/samples)
