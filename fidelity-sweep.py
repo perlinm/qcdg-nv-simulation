@@ -43,7 +43,7 @@ def run_sample(s):
             f.write(' '.join(commands + seed)+"\n\n")
             f.write(out.decode("utf-8")+"\n")
             f.write(err.decode("utf-8")+"\n")
-            f.write("-"*80 + "\n\n")
+            f.write("-"*90 + "\n\n")
 
 for s in range(samples):
     print("{} / {}".format(s,samples))

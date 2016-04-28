@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, glob, re
+import sys, os, glob, re, subprocess
 
 testing_mode = False
 hide_warnings = False
@@ -22,9 +22,10 @@ warning_flags = "-Wall -Werror"
 
 eigen_dirs = ".eigen-dirs"
 mkl_root = ".mkl-root"
-mkl_flags = ("-Wl,--no-as-needed,-rpath=$(cat {0})/lib/intel64/ -L $(cat {0})/lib/intel64/" + \
-             " -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp" + \
-             " -m64 -I $(cat {0})/include/").format(mkl_root)
+mkl_flags = ("-Wl,--no-as-needed,-rpath=$(cat {0})/lib/intel64/" + \
+             " -L $(cat {0})/lib/intel64/ -lmkl_intel_lp64 -lmkl_core" + \
+             " -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64" + \
+             " -I $(cat {0})/include/").format(mkl_root)
 
 lib_flags = {"eigen3" : "$(cat {}) ".format(eigen_dirs) + mkl_flags,
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
@@ -76,6 +77,9 @@ for sim_file in sim_files:
 
 out_files = [ sim_file.replace(".cpp",".o") for sim_file in sim_files ]
 fac_text += fac_rule(used_libraries, used_headers, executable, out_files, link=True)
+fac_text += "| etags *.cpp *.h\n< {}\n> TAGS\n".format(executable)
 
 with open(".{}".format(executable.replace(".exe",".fac")),"w") as f:
     f.write(fac_text)
+
+subprocess.call(["fac"])

@@ -56,3 +56,6 @@ C ~/.ccache/
 C ~/.ccache/
 > simulate.exe
 
+| etags *.cpp *.h
+< simulate.exe
+> TAGS

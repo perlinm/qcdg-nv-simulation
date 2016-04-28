@@ -7,3 +7,4 @@ jobs
 *.pdf
 .mkl-root
 .eigen-dirs
+TAGS

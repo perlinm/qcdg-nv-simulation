@@ -267,9 +267,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD,
                scale_factor,integration_factor, no_nn);
 
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
   // Construct lattice of nuclei
-  // ---------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
 
   if(!using_input_lattice){ // place nuclei at lattice sites
     // set positions of nuclei at lattice sites
@@ -293,15 +293,15 @@ int main(const int arg_num, const char *arg_vec[]) {
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
     if(nv.nuclei.size() == 0) return 0;
 
-    vector<uint> unaddressable_targets;
+    vector<uint> unaddressable_nuclei;
     for(uint n = 0; n < nv.nuclei.size(); n++){
       if(!can_address(nv,n)){
-        unaddressable_targets.push_back(n);
+        unaddressable_nuclei.push_back(n);
       }
     }
-    if(unaddressable_targets.size() > 0){
+    if(unaddressable_nuclei.size() > 0){
       cout << "The following nuclei cannot be addressed:";
-      for(uint n: unaddressable_targets){
+      for(uint n: unaddressable_nuclei){
         cout << " " << n;
       }
       cout << endl << endl;
@@ -309,22 +309,22 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     if(!set_target_nuclei){
       for(uint n = 0; n < nv.nuclei.size(); n++){
-        if(!in_vector(n,unaddressable_targets)){
+        if(!in_vector(n,unaddressable_nuclei)){
           target_nuclei.push_back(n);
         }
       }
     } else{ // if(set_target_nuclei)
-      vector<uint> invalid_targets;
+      vector<uint> unaddressable_targets;
       for(uint n = 0; n < target_nuclei.size(); n++){
         if(!can_address(nv,target_nuclei.at(n))){
-          invalid_targets.push_back(target_nuclei.at(n));
+          unaddressable_targets.push_back(target_nuclei.at(n));
           target_nuclei.erase(target_nuclei.begin()+n);
           n--;
         }
       }
-      if(invalid_targets.size() > 0){
+      if(unaddressable_targets.size() > 0){
         cout << "(WARNING) Ignoring following target nuclei:";
-        for(uint n: invalid_targets){
+        for(uint n: unaddressable_targets){
           cout << " " << n;
         }
         cout << endl << endl;
