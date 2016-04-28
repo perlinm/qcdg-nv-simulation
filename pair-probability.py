@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 import sys, os, subprocess, numpy
-import matplotlib.pyplot as plt
 
-if len(sys.argv) not in [5,6]:
+if len(sys.argv) not in [5,6,7]:
     print("usage: " + sys.argv[0] + " cutoff_start cutoff_end" + \
-          " log10_samples c13_percentage [thread_cap]")
+          " log10_samples c13_percentage [thread_cap] [plot]")
     exit(1)
+
+make_plot = "plot" in sys.argv
+if make_plot:
+    sys.argv.remove("plot")
+    import matplotlib.pyplot as plt
 
 start = int(sys.argv[1])
 end = int(sys.argv[2])
@@ -47,11 +51,13 @@ else:
         for i in range(len(cutoffs)):
             f.write("{} {} {}\n".format(cutoffs[i],predicted[i],actual[i]))
 
-plt.title("Larmor pair probability test with $10^{{{}}}$ samples".format(log10_samples))
-plt.plot(cutoffs,predicted,"k-",label="predicted")
-plt.plot(cutoffs,actual,"k.",label="found")
-plt.xlabel("Hyperfine cutoff [kHz]")
-plt.ylabel("Proportion")
-plt.ylim(0,1)
-plt.legend(loc="best")
-plt.savefig(out_file.replace(".txt",".pdf"))
+if make_plot:
+    plt.title("Larmor pair probability test with $10^{{{}}}$ samples".format(log10_samples))
+    plt.plot(cutoffs,predicted,"k-",label="predicted")
+    plt.plot(cutoffs,actual,"k.",label="found")
+    plt.xlabel("Hyperfine cutoff [kHz]")
+    plt.ylabel("Proportion")
+    plt.ylim(0,1)
+    plt.legend(loc="best")
+    plt.savefig(out_file.replace(".txt",".pdf"))
+    plt.show()
