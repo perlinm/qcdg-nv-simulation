@@ -69,19 +69,23 @@ bool can_address(const nv_system& nv, const uint target){
   const Vector3i r_xy = xy_int_pos(r);
   const Vector3i r_z = z_int_pos(r);
 
-  if(r_xy.squaredNorm() == 0 || r_z.squaredNorm() == 0){
-    // target is on z axis or in x-y plane
-    return false;
-  }
+  // exclude targets on the z axis or in the x-y plane
+  if(r_xy.squaredNorm() == 0 || r_z.squaredNorm() == 0) return false;
 
   for(uint i = 0; i < nv.nuclei.size(); i++){
     if(i == target) continue;
-    const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
-    const Vector3i s_xy = xy_int_pos(s);
-    const Vector3i s_z = z_int_pos(s);
-    if(s_z.squaredNorm() == r_z.squaredNorm() && (s_xy == r_xy || s_xy == -r_xy)){
-      // target has a larmor pair with a parallel x-y component of the hyperfine field
-      return false;
+
+    if(is_larmor_pair(nv,target,i)){
+      // exclude larmor pairs with parallel x-y components of the hyperfine field
+      const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
+      const Vector3i s_xy = xy_int_pos(s);
+      if(s_xy == r_xy || s_xy == -r_xy) return false;
+
+      // exclude larmor triplets
+      for(uint j = i+1; j < nv.nuclei.size(); j++){
+        if(j == target) continue;
+        if(is_larmor_pair(nv,i,j)) return false;
+      }
     }
   }
 
