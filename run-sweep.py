@@ -20,7 +20,7 @@ tasks_per_node = 16
 task_num = str(int(nodes)*tasks_per_node)
 resources = "nodes={}:ppn={},walltime={},pmem=10mb".format(nodes,tasks_per_node,walltime)
 
-temp_file = "".join(random.sample(string.lowercase,10))
+temp_file = "".join(random.sample(string.ascii_letters,10))
 with open(temp_file,"w") as f:
     f.write("python {} {} {}\n".format(script," ".join(sim_args),task_num))
 
