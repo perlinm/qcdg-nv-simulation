@@ -10,7 +10,6 @@ script = os.path.abspath("fidelity-sweep.py")
 sim_args = sys.argv[1:6]
 nodes = sys.argv[-2]
 walltime = sys.argv[-1]
-assert int(task_num) > 1
 
 job_dir = "jobs"
 basename = "-".join(sim_args)
