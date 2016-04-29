@@ -27,7 +27,6 @@ if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
     exit(1)
 job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "-".join(sys.argv[1:])
-print("job directory: " + job_dir)
 
 # move into job directory
 os.makedirs(job_dir)
