@@ -25,9 +25,9 @@ if not start < end:
     print("cutoff_start must be less than cutoff_end")
     exit(2)
 
-work_dir = os.path.dirname(os.path.realpath(__file__))
-out_name = "data/pairs-{}-{}-{}.txt".format(start,end,log10_samples)
-out_file = work_dir + "/" + out_name
+project_dir = os.path.dirname(os.path.realpath(__file__))
+out_name = "pairs-{}-{}-{}.txt".format(start,end,log10_samples)
+out_file = project_dir + "/data/" + out_name
 
 if os.path.exists(out_file):
     cutoffs, predicted, actual = numpy.loadtxt(out_file, unpack=True)

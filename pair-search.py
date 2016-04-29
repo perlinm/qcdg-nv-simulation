@@ -12,9 +12,7 @@ c13_percentage = float(sys.argv[3])
 task_num = int(sys.argv[4])
 assert task_num > 1
 
-work_dir = os.path.dirname(os.path.realpath(__file__))
-sim_name = "simulate.exe"
-sim_file = work_dir + "/" + sim_name
+sim_file = "{}/simulate.exe".format(os.path.dirname(os.path.realpath(__file__)))
 
 unsigned_long_long_max = 2**64-1
 

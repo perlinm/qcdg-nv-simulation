@@ -18,7 +18,7 @@ seed_text = " ".join(sys.argv[7:])
 
 
 # identify some directories and names
-work_dir = os.path.dirname(os.path.realpath(__file__))
+project_dir = os.path.dirname(os.path.realpath(__file__))
 sim_file = "simulate.exe"
 out_file = "data/fidelities-{}.txt".format("-".join([sim_type, static_Bz, c13_percentage,
                                                      max_cluster_size, log10_samples]))
@@ -30,7 +30,7 @@ job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "-".join(sys.a
 
 # move into job directory
 os.makedirs(job_dir)
-shutil.copy2(work_dir+"/"+sim_file, job_dir+"/"+sim_file)
+shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
 os.chdir(job_dir)
 
 # main code
@@ -65,6 +65,6 @@ for s in range(samples):
 
 # copy results back into the working directory
 for f in glob.glob("data/*"):
-    shutil.copy2(f, work_dir+"/"+f)
+    shutil.copy2(f, project_dir+"/"+f)
 
 print("----- done -----")
