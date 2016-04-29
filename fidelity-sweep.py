@@ -16,9 +16,9 @@ assert task_num > 1
 seed_text = ' '.join(sys.argv[7:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
-out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_percentage,
-                                                       max_cluster_size, log10_samples)
-out_file = work_dir + "/" + out_name
+out_name = "fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_percentage,
+                                                  max_cluster_size, log10_samples)
+out_file = work_dir + "/data/" + out_name
 if os.path.exists(out_file):
     print("file exists:",out_file)
     exit(1)
