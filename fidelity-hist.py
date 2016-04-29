@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import sys, os
-import matplotlib.pyplot as plt
 
-if len(sys.argv) != 2:
-    print("usage: {} fidelity_sweep_file".format(sys.argv[0]))
+if len(sys.argv) != 3:
+    print("usage: {} fidelity_sweep_file cutoff".format(sys.argv[0]))
     exit(1)
 
 fname = sys.argv[1]
+cutoff = float(sys.argv[2])
+
 if not os.path.isfile(fname):
     print("invalid file: {}".format(fname))
     exit(1)
@@ -32,12 +33,11 @@ with open(fname,'r') as f:
                 targets = int(line[0])
             else:
                 targets = [ int(target) for target in line[0:-2] ]
-            results += [(seed,targets,float(line[-2]),float(line[-1]))]
+            results += [(float(line[-2]),float(line[-1]),targets,seed)]
 
-results.sort(key = lambda x: x[2])
-for result in results:
+results.sort(key = lambda x: x[0])
+filtered_results = [ r for r in results if r[0] > cutoff ]
+
+for result in filtered_results:
     print(result)
-
-plt.hist([result[2] for result in results], color='gray')
-plt.xlim(0,1)
-plt.show()
+print(len(filtered_results)/len(results))
