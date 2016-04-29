@@ -1,18 +1,18 @@
 #!/usr/bin/env python
-import sys, os, tempfile, subprocess
+import sys, os, shutil, tempfile, subprocess
 
 if len(sys.argv) != 7:
     print("usage: " + sys.argv[0] + " sim_type static_Bz c13_abundance" + \
           " max_cluster_size log10_samples walltime_in_days")
     exit(1)
 
-script = os.path.abspath("fidelity-sweep.py")
 sim_args = sys.argv[1:6]
 walltime_in_days = sys.argv[-1]
 
-job_dir = "jobs"
+work_dir = os.path.dirname(os.path.realpath(__file__))
+script = work_dir + "/fidelity-sweep.py"
 basename = "-".join(sim_args)
-out_file = job_dir+"/"+basename+".o"
+out_file = "jobs/"+basename+".o"
 
 nodes = 1
 tasks_per_node = 16
