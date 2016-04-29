@@ -7,10 +7,10 @@ if len(sys.argv) < 7:
     exit(1)
 
 sim_type = sys.argv[1]
-static_Bz = int(sys.argv[2])
-c13_percentage = float(sys.argv[3])
-max_cluster_size = int(sys.argv[4])
-log10_samples = int(sys.argv[5])
+static_Bz = sys.argv[2]
+c13_percentage = sys.argv[3]
+max_cluster_size = sys.argv[4]
+log10_samples = sys.argv[5]
 task_num = int(sys.argv[6])
 assert task_num > 1
 seed_text = " ".join(sys.argv[7:])
@@ -27,12 +27,12 @@ sim_name = "simulate.exe"
 sim_path = work_dir + "/" + sim_name
 
 unsigned_long_long_max = 2**64-1
-samples = int(10**log10_samples)
+samples = int(10**float(log10_samples))
 
 commands = [sim_path, "--no_output", "--" + sim_type,
-            "--static_Bz", str(static_Bz),
-            "--c13_percentage", str(c13_percentage),
-            "--max_cluster_size", str(max_cluster_size)]
+            "--static_Bz", static_Bz,
+            "--c13_percentage", c13_percentage,
+            "--max_cluster_size", max_cluster_size]
 
 lock = threading.RLock()
 
