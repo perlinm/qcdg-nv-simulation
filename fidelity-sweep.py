@@ -63,6 +63,9 @@ for s in range(samples):
         time.sleep(1)
     t.start()
 
+while threading.active_count() > 1:
+    time.sleep(1)
+
 # copy results back into the working directory
 for f in glob.glob("data/*"):
     shutil.copy2(f, project_dir+"/"+f)
