@@ -13,7 +13,6 @@ walltime_in_days = sys.argv[-1]
 job_dir = "jobs"
 basename = "-".join(sim_args)
 out_file = job_dir+"/"+basename+".o"
-err_file = job_dir+"/"+basename+".e"
 
 nodes = 1
 tasks_per_node = 16
@@ -27,6 +26,6 @@ with open(temp_file,"w") as f:
     f.write("python {} {} {}\n".format(script," ".join(sim_args),task_num))
 
 subprocess.call(["msub", "-m", "e", "-N", basename,
-                 "-o", out_file, "-e", err_file,
+                 "-j", "oe", "-o", out_file,
                  "-l", resources, temp_file])
 os.remove(temp_file)
