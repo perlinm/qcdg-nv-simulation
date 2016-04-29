@@ -6,7 +6,7 @@
 const std::complex<double> j(0.0,1.0);
 const double pi = M_PI;
 
-// physical constants in SI
+// physical constants in SI units
 const double mu0_SI = 4*pi*1e-7; // magnetic constant (tesla meters / amp)
 const double c_SI = 299792458; // speed of light (meters / second)
 const double hbar_SI = 6.582119514e-16; // reduced Planck constant (eV / second)
@@ -15,7 +15,7 @@ const double ge_SI = -1.760859708e11; // gyromagnetic ratio of NV electron (Hz/t
 const double gC13_SI = 67.28284e6; // gyromagnetic ratio of C-13 (Hz/tesla)
 const double gN15_SI = -27.116e6; // gyromagnetic ratio of N-15 (Hz/tesla)
 
-// physical constants in natural units: e_0 = mu_0 = c = hbar = 1; basic units are s and Hz
+// physical constants in natural units: e_0 = mu_0 = c = hbar = 1
 const double alpha = 1/137.035999074; // fine structure constant
 const double qe = sqrt(4*pi*alpha); // unit electric charge
 const double me = 510998.928/hbar_SI; // mass of electron (Hz)
