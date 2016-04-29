@@ -13,23 +13,23 @@ max_cluster_size = int(sys.argv[4])
 log10_samples = int(sys.argv[5])
 task_num = int(sys.argv[6])
 assert task_num > 1
-seed_text = ' '.join(sys.argv[7:])
+seed_text = " ".join(sys.argv[7:])
 
 work_dir = os.path.dirname(os.path.realpath(__file__))
-out_name = "fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_percentage,
-                                                  max_cluster_size, log10_samples)
-out_file = work_dir + "/data/" + out_name
-if os.path.exists(out_file):
-    print("file exists:",out_file)
+out_name = "fidelities-{}.txt".format("-".join([sim_type, static_Bz, c13_percentage,
+                                                max_cluster_size, log10_samples]))
+out_path = work_dir + "/data/" + out_name
+if os.path.exists(out_path):
+    print("file exists:",out_path)
     exit(1)
 
 sim_name = "simulate.exe"
-sim_file = work_dir + "/" + sim_name
+sim_path = work_dir + "/" + sim_name
 
 unsigned_long_long_max = 2**64-1
 samples = int(10**log10_samples)
 
-commands = [sim_file, "--no_output", "--" + sim_type,
+commands = [sim_path, "--no_output", "--" + sim_type,
             "--static_Bz", str(static_Bz),
             "--c13_percentage", str(c13_percentage),
             "--max_cluster_size", str(max_cluster_size)]
@@ -43,8 +43,8 @@ def run_sample(s):
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     with lock:
-        with open (out_file,"a") as f:
-            f.write(' '.join(commands + seed)+"\n\n")
+        with open(out_path,"a") as f:
+            f.write(" ".join(commands + seed)+"\n\n")
             f.write(out.decode("utf-8")+"\n")
             f.write(err.decode("utf-8")+"\n")
             f.write("-"*90 + "\n\n")
