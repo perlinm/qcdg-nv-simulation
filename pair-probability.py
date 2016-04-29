@@ -52,7 +52,8 @@ else:
             f.write("{} {} {}\n".format(cutoffs[i],predicted[i],actual[i]))
 
 if make_plot:
-    plt.title("Larmor pair probability test with $10^{{{}}}$ samples".format(log10_samples))
+    plt.title("Larmor pair probability test" + \
+              " with $10^{{{}}}$ samples".format(log10_samples))
     plt.plot(cutoffs,predicted,"k-",label="predicted")
     plt.plot(cutoffs,actual,"k.",label="found")
     plt.xlabel("Hyperfine cutoff [kHz]")
