@@ -26,7 +26,6 @@ _,temp_file = tempfile.mkstemp()
 with open(temp_file,"w") as f:
     f.write("python {} {} {}\n".format(script," ".join(sim_args),task_num))
 
-os.system("cat %s"%temp_file)
 subprocess.call(["msub", "-m", "e", "-N", basename,
                  "-o", out_file, "-e", err_file,
                  "-l", resources, temp_file])
