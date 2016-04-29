@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, random, string, subprocess
+import sys, os, tempfile, subprocess
 
 if len(sys.argv) != 7:
     print("usage: " + sys.argv[0] + " sim_type static_Bz c13_abundance" + \
@@ -22,10 +22,11 @@ resources = ",".join(["nodes={}:ppn={}".format(nodes,tasks_per_node),
                       "walltime={}:00:00:00".format(walltime_in_days),
                       "pmem=1mb"])
 
-temp_file = "".join(random.sample(string.ascii_letters,10))
+_,temp_file = tempfile.mkstemp()
 with open(temp_file,"w") as f:
     f.write("python {} {} {}\n".format(script," ".join(sim_args),task_num))
 
+os.system("cat %s"%temp_file)
 subprocess.call(["msub", "-m", "e", "-N", basename,
                  "-o", out_file, "-e", err_file,
                  "-l", resources, temp_file])
