@@ -18,12 +18,12 @@ seed_text = ' '.join(sys.argv[7:])
 work_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "data/fidelities-{}-{}-{}-{}-{}.txt".format(sim_type, static_Bz, c13_percentage,
                                                        max_cluster_size, log10_samples)
-if os.path.exists(out_name):
-    print("file exists:",out_name)
+out_file = work_dir + "/" + out_name
+if os.path.exists(out_file):
+    print("file exists:",out_file)
     exit(1)
 
 sim_name = "simulate.exe"
-out_file = work_dir + "/" + out_name
 sim_file = work_dir + "/" + sim_name
 
 unsigned_long_long_max = 2**64-1
