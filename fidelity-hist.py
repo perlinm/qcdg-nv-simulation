@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 import sys, os
 
-if len(sys.argv) != 3:
-    print("usage: {} fidelity_sweep_file cutoff".format(sys.argv[0]))
+if len(sys.argv) not in [2,3]:
+    print("usage: {} fidelity_sweep_file [cutoff]".format(sys.argv[0]))
     exit(1)
 
 fname = sys.argv[1]
-cutoff = float(sys.argv[2])
+if len(sys.argv) == 3:
+    cutoff = float(sys.argv[2])
+else:
+    cutoff = 0.9
 
 if not os.path.isfile(fname):
     print("invalid file: {}".format(fname))
