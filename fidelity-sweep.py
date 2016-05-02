@@ -34,15 +34,7 @@ os.makedirs(job_dir)
 shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
 os.chdir(job_dir)
 
-# main code
-commands = ["./"+sim_file, "--no_output", "--" + sim_type,
-            "--static_Bz", static_Bz,
-            "--c13_percentage", c13_percentage,
-            "--max_cluster_size", max_cluster_size]
-
-unsigned_long_long_max = 2**64-1
-lock = threading.RLock()
-
+# method to execute a single simulation
 def run_sample(s):
     random.seed("".join(sys.argv[1:-1]) + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
@@ -56,27 +48,41 @@ def run_sample(s):
             f.write(err.decode("utf-8")+"\n")
             f.write("-"*90 + "\n\n")
 
-# copy results back into the working directory
+# method to copy results back into the project directory
 def copy_results():
     for f in glob.glob("data/*"):
         shutil.copy2(f, project_dir+"/"+f)
 
+# define some variavles
+commands = ["./"+sim_file, "--no_output", "--" + sim_type,
+            "--static_Bz", static_Bz,
+            "--c13_percentage", c13_percentage,
+            "--max_cluster_size", max_cluster_size]
+
+unsigned_long_long_max = 2**64-1
 print_time = time.time()
 samples = int(10**float(log10_samples))
+lock = threading.RLock()
+
+# execute all simulations
 for s in range(samples):
 
-    if time.time() - print_time > print_period:
-        copy_results()
-        print_time = time.time()
-
+    # run each simulation in a new thread
     t = threading.Thread(target=run_sample,args=[s])
     while threading.active_count() >= task_num:
         time.sleep(1)
     t.start()
 
+    # periodically copy results back into project directory
+    if time.time() - print_time > print_period:
+        copy_results()
+        print_time = time.time()
+
+# wait for all threads to finish
 while threading.active_count() > 1:
     time.sleep(1)
 
+# copy final results into the project directory
 copy_results()
 
 print("----- done -----")
