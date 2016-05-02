@@ -24,7 +24,7 @@ task_num = str(int(nodes)*tasks_per_node)
 
 resources = ["nodes={}:ppn={}".format(nodes,tasks_per_node),
              "walltime={}:00:00:00".format(walltime_in_days),
-             "pmem=1mb"]
+             "pmem=50mb"]
 options = ["-N "+basename, "-m e", "-j oe", "-o "+out_file]
 for resource in resources:
     options += ["-l {}".format(resource)]

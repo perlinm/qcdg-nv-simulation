@@ -16,6 +16,7 @@ task_num = int(sys.argv[6])
 assert task_num > 1
 seed_text = " ".join(sys.argv[7:])
 
+print_period = 1800 # seconds
 
 # identify some directories and names
 project_dir = os.path.dirname(os.path.realpath(__file__))
@@ -55,9 +56,19 @@ def run_sample(s):
             f.write(err.decode("utf-8")+"\n")
             f.write("-"*90 + "\n\n")
 
+# copy results back into the working directory
+def copy_results():
+    for f in glob.glob("data/*"):
+        shutil.copy2(f, project_dir+"/"+f)
+
+print_time = time.time()
 samples = int(10**float(log10_samples))
 for s in range(samples):
-    print("{} / {}".format(s,samples))
+
+    if time.time() - print_time > print_period:
+        copy_results()
+        print_time = time.time()
+
     t = threading.Thread(target=run_sample,args=[s])
     while threading.active_count() >= task_num:
         time.sleep(1)
@@ -66,8 +77,6 @@ for s in range(samples):
 while threading.active_count() > 1:
     time.sleep(1)
 
-# copy results back into the working directory
-for f in glob.glob("data/*"):
-    shutil.copy2(f, project_dir+"/"+f)
+copy_results()
 
 print("----- done -----")
