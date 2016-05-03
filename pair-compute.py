@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, itertools
+import sys
 import numpy as np
 
 if len(sys.argv) != 3:
@@ -10,17 +10,15 @@ if len(sys.argv) != 3:
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
 c13_abundance = float(sys.argv[2])/100
 
-# flatten a list of lists
-def flatten(list):
-    out = []
-    for el in list: out += el
-    return out
-
 # return product of elements in a list
 def product(list):
     out = 1
     for el in list: out *= el
     return out
+
+# choose function (mutiplicative formula)
+def nCr(n,k):
+    return product([ (n+1-i)/i for i in range(1,k+1)])
 
 # physical constants in SI
 c_SI = 299792458 # speed of light (meters/second)
@@ -88,8 +86,7 @@ for N in np.arange(0,3*M+dN,dN):
 equivalence_class_sizes = [ len(equivalence_class)
                             for equivalence_class in equivalence_classes ]
 
-# probability of having at least one larmor pair
-probability = 1 - product([ (1-c13_abundance)**R * (1 + R*c13_abundance/(1-c13_abundance))
+# probability of having at least one larmor set with exactly two nuclei
+probability = 1 - product([ 1 - c13_abundance**2 * (1 - c13_abundance)**(R-2) * nCr(R,2)
                             for R in equivalence_class_sizes ])
-
 print(probability)
