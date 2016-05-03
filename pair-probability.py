@@ -8,6 +8,7 @@ if len(sys.argv) not in [5,6,7]:
 
 make_plot = True if "plot" == sys.argv[-1] else False
 if make_plot:
+    sys.argv.remove("plot")
     import matplotlib.pyplot as plt
 
 start = int(sys.argv[1])
