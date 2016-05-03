@@ -26,7 +26,7 @@ if not start < end:
     exit(2)
 
 project_dir = os.path.dirname(os.path.realpath(__file__))
-out_name = "pairs-{}-{}-{}.txt".format(start,end,log10_samples)
+out_name = "pairs-{}.txt".format("-".join(sys.argv[1:5]))
 out_file = project_dir + "/data/" + out_name
 
 if os.path.exists(out_file):
