@@ -3,12 +3,12 @@ import sys, os, subprocess, random, threading
 
 if len(sys.argv) != 5:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz" + \
-          " samples c13_percentage task_num")
+          " c13_percentage samples task_num")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
-samples = int(sys.argv[2])
-c13_percentage = float(sys.argv[3])
+c13_percentage = float(sys.argv[2])
+samples = int(sys.argv[3])
 task_num = int(sys.argv[4])
 assert task_num > 1
 
