@@ -223,8 +223,6 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
       nv.clusters.push_back({n});
     }
     return;
-  } else if(cluster_size_target == min_cluster_size_cap){
-    cluster_size_target += 1;
   }
 
   // find largest coupling for which the largest cluster size is <= cluster_size_target
