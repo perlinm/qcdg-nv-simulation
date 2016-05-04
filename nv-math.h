@@ -21,17 +21,17 @@ const Vector3d xhat = hat(a1-a2);
 const Vector3d yhat = zhat.cross(xhat);
 
 // print vec in the {xhat,yhat,zhat} basis
-inline Vector3d in_crystal_basis(const Vector3d& vec){
+inline Vector3d in_crystal_basis(const Vector3d& vec) {
   return (Vector3d() << dot(vec,xhat), dot(vec,yhat), dot(vec,zhat)).finished();
 }
 
 // return "integerized" components of a position vector on z axis or in x-y plane
 // these vectors allow for comparing positions without worrying about numerical error
-inline Vector3i z_int_pos(const Vector3d& pos){
+inline Vector3i z_int_pos(const Vector3d& pos) {
   Vector3d p = 6*dot(pos,zhat)*zhat;
   return (Vector3i() << round(p(0)), round(p(1)), round(p(2))).finished();
 }
-inline Vector3i xy_int_pos(const Vector3d& pos){
+inline Vector3i xy_int_pos(const Vector3d& pos) {
   const Vector3d p = 3*(pos-dot(pos,zhat)*zhat);
   return (Vector3i() << round(p(0)), round(p(1)), round(p(2))).finished();
 }
@@ -44,16 +44,16 @@ inline Vector3i xy_int_pos(const Vector3d& pos){
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
 
 // perform spin-1/2 rotation about arbitrary axis
-inline Matrix2cd rotate(const Vector3d& axis){
-  if(axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
+inline Matrix2cd rotate(const Vector3d& axis) {
+  if (axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
   else return I2;
 }
-inline Matrix2cd rotate(const double angle, const Vector3d& axis){
+inline Matrix2cd rotate(const double angle, const Vector3d& axis) {
   return rotate(angle*hat(axis));
 }
 
 // rotate into one axis from another
-inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start){
+inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start) {
   return rotate(acos(dot(hat(axis_start),hat(axis_end))),
                 hat(axis_start.cross(axis_end)));
 }
@@ -110,7 +110,7 @@ bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2);
 
 // coupling strength between two spins; assumes strong magnetic field in zhat
 double coupling_strength(const spin& s1, const spin& s2);
-inline double coupling_strength(const nv_system& nv, const uint idx1, const uint idx2){
+inline double coupling_strength(const nv_system& nv, const uint idx1, const uint idx2) {
   return coupling_strength(nv.nuclei.at(idx1), nv.nuclei.at(idx2));
 }
 
@@ -129,7 +129,7 @@ uint largest_cluster_size(const vector<vector<uint>>& clusters);
 double largest_coupling(const nv_system& nv);
 
 // minimum allowable cluster size limit
-inline double smallest_possible_cluster_size(const nv_system& nv){
+inline double smallest_possible_cluster_size(const nv_system& nv) {
   return largest_cluster_size(cluster_with_coupling(nv, DBL_MAX, true));
 }
 
@@ -142,7 +142,7 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
 uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
 uint get_index_in_cluster(const uint index, const vector<uint> cluster);
-inline uint get_index_in_cluster(const nv_system& nv, const uint index){
+inline uint get_index_in_cluster(const nv_system& nv, const uint index) {
   return get_index_in_cluster(index,
                               nv.clusters.at(get_cluster_containing_target(nv,index)));
 }
@@ -152,25 +152,25 @@ inline uint get_index_in_cluster(const nv_system& nv, const uint index){
 // ---------------------------------------------------------------------------------------
 
 // hyperfine field experienced by target nucleus
-inline Vector3d hyperfine(const nv_system& nv, const spin& s){
+inline Vector3d hyperfine(const nv_system& nv, const spin& s) {
   const Vector3d r = s.pos - nv.e.pos;
   return nv.e.g*s.g/(4*pi*pow(r.norm()*a0/2,3)) * (zhat - 3*dot(hat(r),zhat)*hat(r));
 }
-inline Vector3d hyperfine(const nv_system& nv, const uint index){
+inline Vector3d hyperfine(const nv_system& nv, const uint index) {
   return hyperfine(nv,nv.nuclei.at(index));
 }
 
 // component of hyperfine field perpendicular to the larmor axis
 Vector3d hyperfine_perp(const nv_system&nv, const spin& s);
-inline Vector3d hyperfine_perp(const nv_system&nv, const uint index){
+inline Vector3d hyperfine_perp(const nv_system&nv, const uint index) {
   return hyperfine_perp(nv,nv.nuclei.at(index));
 }
 
 // effective larmor frequency of target nucleus
-inline Vector3d effective_larmor(const nv_system& nv, const spin& s){
+inline Vector3d effective_larmor(const nv_system& nv, const spin& s) {
   return s.g*nv.static_Bz*zhat - nv.ms/2.*hyperfine(nv,s);
 }
-inline Vector3d effective_larmor(const nv_system& nv, const uint index){
+inline Vector3d effective_larmor(const nv_system& nv, const uint index) {
   return effective_larmor(nv,nv.nuclei.at(index));
 }
 
@@ -179,8 +179,8 @@ inline Vector3d effective_larmor(const nv_system& nv, const uint index){
 double larmor_resolution(const nv_system& nv, const uint index);
 
 // return maximum allowable value of f_k for the AXY sequence
-inline double axy_f_max(const axy_harmonic k){
-  if(k == first) return (8*cos(pi/9) - 4) / pi;
+inline double axy_f_max(const axy_harmonic k) {
+  if (k == first) return (8*cos(pi/9) - 4) / pi;
   else return 4/pi; // if k == third
 }
 
@@ -204,28 +204,28 @@ MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
 
 // NV Zeeman Hamiltonian
-inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& B){
+inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& B) {
   return -nv.e.g*dot(B,nv.e.S);
 }
 
 // NV zero-field splitting + static Zeeman Hamiltonian
-inline MatrixXcd H_NV_GS(const nv_system& nv){
+inline MatrixXcd H_NV_GS(const nv_system& nv) {
   return NV_ZFS*dot(nv.e.S,zhat)*dot(nv.e.S,zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
 }
 
 // net NV Hamiltonian
-inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& B){
+inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& B) {
   return H_NV_GS(nv) + H_NV_Z(nv,B);
 }
 
 // total internal system Hamiltonian
-inline MatrixXcd H_sys(const nv_system& nv, const uint cluster){
+inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
   return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 }
 
 // total control Hamiltonian for the entire system
-inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl){
+inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl) {
   return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl), {0},
                                       nv.clusters.at(cluster).size()+1);
 }
@@ -244,30 +244,30 @@ struct control_fields{
   vector<double> phases;
 
   control_fields(){};
-  control_fields(const Vector3d& B, const double freq = 0, const double phase = 0){
+  control_fields(const Vector3d& B, const double freq = 0, const double phase = 0) {
     this->add(B,freq,phase);
   }
   control_fields(const vector<Vector3d>& Bs, const vector<double>& freqs,
-                 const vector<double>& phases){
+                 const vector<double>& phases) {
     assert((Bs.size() == freqs.size()) && (Bs.size() == phases.size()));
     this->Bs = Bs;
     this->freqs = freqs;
     this->phases = phases;
   }
 
-  void add(const Vector3d& B, const double freq, const double phase = 0){
+  void add(const Vector3d& B, const double freq, const double phase = 0) {
     Bs.push_back(B);
     freqs.push_back(freq);
     phases.push_back(phase);
   }
-  void add(const control_fields& controls){
-    for(uint i = 0; i < controls.num(); i++){
+  void add(const control_fields& controls) {
+    for (uint i = 0; i < controls.num(); i++) {
       Bs.push_back(controls.Bs.at(i));
       freqs.push_back(controls.freqs.at(i));
       phases.push_back(controls.phases.at(i));
     }
   }
-  void remove(const uint i){
+  void remove(const uint i) {
     assert(i < Bs.size());
     Bs.erase(Bs.begin() + i);
     freqs.erase(freqs.begin() + i);
@@ -278,15 +278,15 @@ struct control_fields{
 
   Vector3d B(const double t) const {
     Vector3d net_B = Vector3d::Zero();
-    for(uint c = 0; c < num(); c++){
+    for (uint c = 0; c < num(); c++) {
       net_B += Bs.at(c) * cos(freqs.at(c)*t + phases.at(c));
     }
     return net_B;
   }
 
   bool all_fields_static() const{
-    for(uint c = 0; c < num(); c++){
-      if(freqs.at(c) > 0) return false;
+    for (uint c = 0; c < num(); c++) {
+      if (freqs.at(c) > 0) return false;
     }
     return true;
   }
@@ -323,7 +323,7 @@ struct protocol{
   double t;
 
   protocol(){};
-  protocol(const MatrixXcd& U, const double t){
+  protocol(const MatrixXcd& U, const double t) {
     this->U = U;
     this->t = t;
   }
@@ -342,10 +342,10 @@ struct protocol{
 };
 
 // compute fidelity of a protocol
-inline double gate_fidelity(const protocol& U, const protocol& G){
+inline double gate_fidelity(const protocol& U, const protocol& G) {
   return gate_fidelity(U.U, G.U);
 }
 inline double gate_fidelity(const protocol& U, const protocol& G,
-                            const vector<uint>& nuclei){
+                            const vector<uint>& nuclei) {
   return gate_fidelity(U.U, G.U, nuclei);
 }

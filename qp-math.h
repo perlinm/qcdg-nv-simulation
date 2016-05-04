@@ -6,28 +6,28 @@
 using namespace Eigen;
 
 // floating-point modulus
-inline double mod(const double number, const double modulus){
+inline double mod(const double number, const double modulus) {
   return number - floor(number/modulus)*modulus;
 }
 
 // check whether val is in vec
-inline bool in_vector(const uint val, const vector<uint>& vec){
+inline bool in_vector(const uint val, const vector<uint>& vec) {
   return (find(vec.begin(), vec.end(), val) != vec.end());
 }
 
 // dot product between vectors
-inline double dot(const Vector3d& v, const Vector3d& w){ return v.dot(w); }
+inline double dot(const Vector3d& v, const Vector3d& w) { return v.dot(w); }
 
 // return unit vector in direction of vec
-inline Vector3d hat(const Vector3d& vec){ return vec.normalized(); }
+inline Vector3d hat(const Vector3d& vec) { return vec.normalized(); }
 
 // project vec onto plane orthogonal to axis
-inline Vector3d project(const Vector3d& vec, const Vector3d& axis){
+inline Vector3d project(const Vector3d& vec, const Vector3d& axis) {
   return vec - vec.dot(hat(axis))*hat(axis);
 }
 
 // return a vector rotated by a given angle about a given axis
-inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& axis){
+inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& axis) {
   return (vec.dot(hat(axis))*hat(axis) +
           cos(angle) * project(vec,axis) +
           sin(angle) * hat(axis).cross(vec));
@@ -37,14 +37,14 @@ inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& 
 // Matrix functions
 // ---------------------------------------------------------------------------------------
 
-inline complex<double> trace(const MatrixXcd& M){ return M.trace(); }
-inline MatrixXcd log(const MatrixXcd& M){ return M.log(); }
-inline MatrixXcd exp(const MatrixXcd& M){ return M.exp(); }
-inline MatrixXcd sqrt(const MatrixXcd& M){ return M.sqrt(); }
-inline MatrixXcd pow(const MatrixXcd& M, const double x){ return M.pow(x); }
+inline complex<double> trace(const MatrixXcd& M) { return M.trace(); }
+inline MatrixXcd log(const MatrixXcd& M) { return M.log(); }
+inline MatrixXcd exp(const MatrixXcd& M) { return M.exp(); }
+inline MatrixXcd sqrt(const MatrixXcd& M) { return M.sqrt(); }
+inline MatrixXcd pow(const MatrixXcd& M, const double x) { return M.pow(x); }
 
 // tensor product of two matrices
-inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B){
+inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B) {
   return kroneckerProduct(A,B);
 }
 
@@ -58,12 +58,12 @@ MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold = 1e-12);
 complex<double> get_phase(const MatrixXcd& A, const double threshold = 1e-12);
 
 // remove global phase from matrix
-inline MatrixXcd remove_phase(const MatrixXcd& A, const double threshold = 1e-12){
+inline MatrixXcd remove_phase(const MatrixXcd& A, const double threshold = 1e-12) {
   return A*conj(get_phase(A, threshold));
 }
 
 // clean up matrix for human readability
-inline MatrixXcd clean(const MatrixXcd& M, double threshold = 1e-3){
+inline MatrixXcd clean(const MatrixXcd& M, double threshold = 1e-3) {
   return remove_artifacts(remove_phase(M,threshold),threshold);
 }
 
@@ -72,18 +72,18 @@ inline MatrixXcd clean(const MatrixXcd& M, double threshold = 1e-3){
 // ---------------------------------------------------------------------------------------
 
 // get the n-th bit of an integer num
-inline bool int_bit(const uint num, const uint n){
-  if(pow(2,n) > num) return 0;
+inline bool int_bit(const uint num, const uint n) {
+  if (pow(2,n) > num) return 0;
   else return (num >> n) & 1;
 }
 
 // get state of qbit q (of N) from enumerated state s
-inline bool qbit_state(const uint q, const uint N, const uint s){
+inline bool qbit_state(const uint q, const uint N, const uint s) {
   return int_bit(s,N-1-q);
 }
 
 // get integer corresponding to an 'on' state of bit p (of N)
-inline uint bit_int(const uint q, const int N){ return pow(2,N-1-q); }
+inline uint bit_int(const uint q, const int N) { return pow(2,N-1-q); }
 
 // generate matrix B to act A on qbits qs_act out of qbits_new
 MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_new);
@@ -102,7 +102,7 @@ MatrixXcd U_basis_element(const uint p, const uint N);
 string U_basis_element_text(const uint p, const uint N);
 
 // flatten matrix into a 1-D vector
-inline MatrixXcd flatten(MatrixXcd M){
+inline MatrixXcd flatten(MatrixXcd M) {
   M.resize(M.size(),1);
   return M;
 }
@@ -120,7 +120,7 @@ double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G);
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei);
 
 // compute fidelity of state rho with respect to state sigma
-inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma){
+inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma) {
   const MatrixXcd sqrt_rho = sqrt(rho);
   const double sqrt_F = abs(trace(sqrt(sqrt_rho*sigma*sqrt_rho)));
   return sqrt_F*sqrt_F;
@@ -134,9 +134,9 @@ struct mvec{
   vector<MatrixXcd> v;
 
   mvec(){};
-  mvec(const vector<MatrixXcd>& v){ this->v = v; };
-  mvec(const MatrixXcd& v_mat, const Vector3d& v_vec){
-    for(uint i = 0; i < v_vec.size(); i++){
+  mvec(const vector<MatrixXcd>& v) { this->v = v; };
+  mvec(const MatrixXcd& v_mat, const Vector3d& v_vec) {
+    for (uint i = 0; i < v_vec.size(); i++) {
       v.push_back(v_mat*v_vec(i));
     }
   }
@@ -147,8 +147,8 @@ struct mvec{
   // comparison operators
   bool operator==(const mvec& w) const {
     assert(v.size() == w.size());
-    for(uint i = 0; i < v.size(); i++){
-      if(v.at(i) != w.at(i)) return false;
+    for (uint i = 0; i < v.size(); i++) {
+      if (v.at(i) != w.at(i)) return false;
     }
     return true;
   }
@@ -158,7 +158,7 @@ struct mvec{
   mvec operator+(const mvec& w) const {
     assert(v.size() == w.size());
     vector<MatrixXcd> out;
-    for(uint i = 0; i < v.size(); i++){
+    for (uint i = 0; i < v.size(); i++) {
       out.push_back(v.at(i)+w.at(i));
     }
     return out;
@@ -166,14 +166,14 @@ struct mvec{
   mvec operator-(const mvec& w) const {
     assert(v.size() == w.size());
     vector<MatrixXcd> out;
-    for(uint i = 0; i < v.size(); i++){
+    for (uint i = 0; i < v.size(); i++) {
       out.push_back(v.at(i)-w.at(i));
     }
     return out;
   }
   mvec operator*(const double s) const {
     vector<MatrixXcd> out;
-    for(uint i = 0; i < v.size(); i++){
+    for (uint i = 0; i < v.size(); i++) {
       out.push_back(v.at(i)*s);
     }
     return out;
@@ -182,7 +182,7 @@ struct mvec{
   mvec operator/(const int s) const { return *this * (1/double(s)); }
   mvec operator*(const MatrixXcd& G) const {
     vector<MatrixXcd> out;
-    for(uint i = 0; i < v.size(); i++){
+    for (uint i = 0; i < v.size(); i++) {
       out.push_back(v.at(i)*G);
     }
     return out;
@@ -196,18 +196,18 @@ struct mvec{
   MatrixXcd dot(const mvec& w) const {
     assert(v.size() == w.size());
     MatrixXcd out = tp(v.at(0),w.at(0));
-    for(uint i = 1; i < v.size(); i++){
+    for (uint i = 1; i < v.size(); i++) {
       out += tp(v.at(i),w.at(i));
     }
     return out;
   }
 };
 
-inline MatrixXcd dot(const mvec& v, const mvec& w){ return v.dot(w); }
-inline MatrixXcd dot(const mvec& v, const Vector3d& r){ return v.dot(r); }
-inline MatrixXcd dot(const Vector3d& r, const mvec& v){ return v.dot(r); }
+inline MatrixXcd dot(const mvec& v, const mvec& w) { return v.dot(w); }
+inline MatrixXcd dot(const mvec& v, const Vector3d& r) { return v.dot(r); }
+inline MatrixXcd dot(const Vector3d& r, const mvec& v) { return v.dot(r); }
 
-inline mvec operator*(const double s, mvec& v){ return v*s; }
+inline mvec operator*(const double s, mvec& v) { return v*s; }
 mvec operator*(const MatrixXcd& G, const mvec& v);
 
 // ---------------------------------------------------------------------------------------

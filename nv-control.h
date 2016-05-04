@@ -14,14 +14,14 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index);
 
 // return axis with given azimuth and polar angles in a given basis
 inline Vector3d axis(const double polar, const double azimuth,
-                     const vector<Vector3d> basis = {xhat, yhat, zhat}){
+                     const vector<Vector3d> basis = {xhat, yhat, zhat}) {
   return cos(polar) * basis.at(2) + sin(polar) * ( cos(azimuth) * basis.at(0) +
                                                    sin(azimuth) * basis.at(1) );
 }
 
 // rotate into the natural frames of all nuclei in the cluster
 MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster);
-inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
+inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster) {
   return to_natural_frames(nv, nv.clusters.at(cluster));
 }
 
@@ -30,7 +30,7 @@ inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster){
 // ---------------------------------------------------------------------------------------
 
 // polarize an arbitrary state into the pure state psi; warning: not a unitary operation
-inline MatrixXcd polarize(const VectorXcd psi){
+inline MatrixXcd polarize(const VectorXcd psi) {
   return psi*VectorXcd::Ones(psi.size()).adjoint();
 }
 
@@ -46,7 +46,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 // perform given rotation on a target nucleus
 inline protocol rotate_target(const nv_system& nv, const uint target,
                               const Vector3d& rotation, const bool exact = false,
-                              const bool adjust_AXY = true){
+                              const bool adjust_AXY = true) {
   return act_target(nv, target, rotate(rotation), exact, adjust_AXY);
 }
 
@@ -64,13 +64,13 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // ---------------------------------------------------------------------------------------
 
 // iSWAP operation
-inline protocol iSWAP(const nv_system& nv, const uint index, const bool exact = false){
+inline protocol iSWAP(const nv_system& nv, const uint index, const bool exact = false) {
   return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
           couple_target(nv, index, -pi/4, yhat, yhat, exact));
 }
 
 // SWAP operation
-inline protocol SWAP(const nv_system& nv, const uint index, const bool exact = false){
+inline protocol SWAP(const nv_system& nv, const uint index, const bool exact = false) {
   return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
           couple_target(nv, index, -pi/4, yhat, yhat, exact) *
           couple_target(nv, index, -pi/4, zhat, zhat, exact));

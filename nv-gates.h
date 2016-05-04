@@ -66,51 +66,51 @@ struct nv_gates{
   const MatrixXcd SWAP_NVST = cNOT_NVST * cNOT_STNV * cNOT_NVST;
 
   // spin propagators; Ua corresponds to a Hamiltonian H = h s_a
-  MatrixXcd Ux(const double ht){ return cos(ht)*I2 - j*sin(ht)*sx; }
-  MatrixXcd Uy(const double ht){ return cos(ht)*I2 - j*sin(ht)*sy; }
-  MatrixXcd Uz(const double ht){ return cos(ht)*I2 - j*sin(ht)*sz; }
+  MatrixXcd Ux(const double ht) { return cos(ht)*I2 - j*sin(ht)*sx; }
+  MatrixXcd Uy(const double ht) { return cos(ht)*I2 - j*sin(ht)*sy; }
+  MatrixXcd Uz(const double ht) { return cos(ht)*I2 - j*sin(ht)*sz; }
 
   // rotation operators
-  MatrixXcd Rx(const double phi){ return Ux(phi/2); }
-  MatrixXcd Ry(const double phi){ return Uy(phi/2); }
-  MatrixXcd Rz(const double phi){ return Uz(phi/2); }
+  MatrixXcd Rx(const double phi) { return Ux(phi/2); }
+  MatrixXcd Ry(const double phi) { return Uy(phi/2); }
+  MatrixXcd Rz(const double phi) { return Uz(phi/2); }
 
   // spin coupling propagators; Uab corresponds to a Hamiltonian H = h s_a^0 s_b^1
-  MatrixXcd Uxx(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sx,sx); }
-  MatrixXcd Uxy(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sx,sy); }
-  MatrixXcd Uxz(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sx,sz); }
-  MatrixXcd Uyx(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sy,sx); }
-  MatrixXcd Uyy(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sy,sy); }
-  MatrixXcd Uyz(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sy,sz); }
-  MatrixXcd Uzx(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sz,sx); }
-  MatrixXcd Uzy(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sz,sy); }
-  MatrixXcd Uzz(double ht){ return cos(ht)*I4 - j*sin(ht)*tp(sz,sz); }
+  MatrixXcd Uxx(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sx); }
+  MatrixXcd Uxy(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sy); }
+  MatrixXcd Uxz(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sz); }
+  MatrixXcd Uyx(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sx); }
+  MatrixXcd Uyy(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sy); }
+  MatrixXcd Uyz(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sz); }
+  MatrixXcd Uzx(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sx); }
+  MatrixXcd Uzy(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sy); }
+  MatrixXcd Uzz(double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sz); }
 
   // controlled phase rotations
-  MatrixXcd cRuu(double phi){
+  MatrixXcd cRuu(double phi) {
     return (Matrix4cd() << exp(j*phi),0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1).finished();
   }
-  MatrixXcd cRud(double phi){
+  MatrixXcd cRud(double phi) {
     return (Matrix4cd() << 1,0,0,0, 0,exp(j*phi),0,0, 0,0,1,0, 0,0,0,1).finished();
   }
-  MatrixXcd cRdu(double phi){
+  MatrixXcd cRdu(double phi) {
     return (Matrix4cd() << 1,0,0,0, 0,1,0,0, 0,0,exp(j*phi),0, 0,0,0,1).finished();
   }
-  MatrixXcd cRdd(double phi){
+  MatrixXcd cRdd(double phi) {
     return (Matrix4cd() << 1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,exp(j*phi)).finished();
   }
-  MatrixXcd cR(double phi){ return cRdd(phi); }
+  MatrixXcd cR(double phi) { return cRdd(phi); }
 
   // rotation operators
-  MatrixXcd Rx_ST(double phi){
+  MatrixXcd Rx_ST(double phi) {
     return (cos(phi/2.)*(S*S.adjoint()+T*T.adjoint())
             - j*sin(phi/2.)*(S*T.adjoint()+T*S.adjoint()) + unused_ST_I);
   }
-  MatrixXcd Ry_ST(double phi){
+  MatrixXcd Ry_ST(double phi) {
     return (cos(phi/2)*(S*S.adjoint()+T*T.adjoint())
             + sin(phi/2)*(-S*T.adjoint()+T*S.adjoint()) + unused_ST_I);
   }
-  MatrixXcd Rz_ST(double phi){
+  MatrixXcd Rz_ST(double phi) {
     return (exp(-j*phi/2.)*S*S.adjoint() +
             exp( j*phi/2.)*T*T.adjoint() + unused_ST_I);
   }

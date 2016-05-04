@@ -16,7 +16,7 @@ using namespace Eigen;
 // ---------------------------------------------------------------------------------------
 
 // return "natural" basis of a nucleus
-vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
+vector<Vector3d> natural_basis(const nv_system& nv, const uint index) {
   const Vector3d target_zhat = hat(effective_larmor(nv,index));
   const Vector3d target_xhat = hat(hyperfine_perp(nv,index));
   const Vector3d target_yhat = target_zhat.cross(target_xhat);
@@ -24,15 +24,15 @@ vector<Vector3d> natural_basis(const nv_system& nv, const uint index){
 }
 
 // rotate into the natural frames of all nuclei in the cluster
-MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
+MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster) {
   const uint spins = cluster.size()+1;
   MatrixXcd rotation = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
-  for(uint index: cluster){
+  for (uint index: cluster) {
     const uint index_in_cluster = get_index_in_cluster(index, cluster);
     const Matrix2cd index_rotation = [&]() -> Matrix2cd {
-      if(can_address(nv,index)){
+      if (can_address(nv,index)) {
         return rotate(natural_basis(nv,index), {xhat,yhat,zhat});
-      } else{
+      } else {
         return I2;
       }
     }();
@@ -47,7 +47,7 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster){
 
 // propagator U = exp(-i * phase * sigma_{axis}^{target})
 protocol U_ctl(const nv_system& nv, const uint target, const double phase,
-               const double target_azimuth, const bool adjust_AXY, const double z_phase){
+               const double target_azimuth, const bool adjust_AXY, const double z_phase) {
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_target(nv,target);
 
@@ -59,14 +59,14 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   const double sA = nv.scale_factor * hyperfine(nv,target).norm();
   const double w_DD = [&]() -> double {
     const double w_DD_large = (w_larmor+sA)/3.;
-    if(w_larmor < sA){
+    if (w_larmor < sA) {
       return w_DD_large;
-    } else{
+    } else {
       const uint k_m = 2*int(0.5 * (w_larmor/sA-1) );
       const double w_DD_small = (w_larmor-sA)/k_m;
-      if(w_DD_small > sA && isfinite(w_DD_small)){
+      if (w_DD_small > sA && isfinite(w_DD_small)) {
         return w_DD_small;
-      } else{
+      } else {
         return w_DD_large;
       }
     }
@@ -84,7 +84,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
 
   // time for which to apply the control field
   double control_time = mod(-phase/w_phase, t_phase); // control operation time
-  if(control_time > t_phase/2){
+  if (control_time > t_phase/2) {
     g_B_ctl *= -1;
     control_time = t_phase - control_time;
   }
@@ -94,14 +94,14 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
 
   MatrixXcd U_rotate;
-  if(!adjust_AXY){
+  if (!adjust_AXY) {
     U_rotate = simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
-  } else{ // if(adjust_AXY)
+  } else {
 
     const double freq_ratio = [&]() -> double {
-      if(w_DD < w_larmor){
+      if (w_DD < w_larmor) {
         return 2*round(0.5*w_larmor/w_DD);
-      } else{
+      } else {
         return 1/round(w_DD/w_larmor);
       }
     }();
@@ -113,7 +113,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
 
     const double leading_time = control_time - cycles*cycle_time;
     const double trailing_time = [&]() -> double {
-      if(cycles == 0) return 0;
+      if (cycles == 0) return 0;
       else return cycle_time - leading_time;
     }();
 
@@ -132,12 +132,12 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
 
 // compute and perform operationc necessary to act U on target nucleus
 protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
-                    const bool exact, const bool adjust_AXY){
+                    const bool exact, const bool adjust_AXY) {
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint target_in_cluster = get_index_in_cluster(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  if(exact){
+  if (exact) {
     const Matrix2cd to_natural_basis = rotate(natural_basis(nv,target), {xhat,yhat,zhat});
     const MatrixXcd G = act(to_natural_basis * U * to_natural_basis.adjoint(),
                             {target_in_cluster+1}, spins);
@@ -150,7 +150,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const double rz = real(H_vec(3))*2;
 
   const double phase = sqrt(rx*rx + ry*ry + rz*rz);
-  if(phase == 0) return protocol(MatrixXcd::Identity(pow(2,spins),pow(2,spins)), 0);
+  if (phase == 0) return protocol(MatrixXcd::Identity(pow(2,spins),pow(2,spins)), 0);
 
   const double azimuth = atan2(ry,rx);
   const double pitch = asin(rz/phase);
@@ -159,7 +159,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const double net_equatorial_rotation =
     2*abs(pitch) + (phase < pi ? phase : 2*pi - phase);
 
-  if(net_pole_rotation < net_equatorial_rotation){
+  if (net_pole_rotation < net_equatorial_rotation) {
     const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
     const double angle_to_pole = pi/2 - abs(pitch);
 
@@ -168,7 +168,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
     const protocol rotate_z = U_ctl(nv, target, 0, 0, adjust_AXY, pole*phase);
     return to_pole.adjoint() * rotate_z * to_pole;
 
-  } else{
+  } else {
     const protocol to_equator = U_ctl(nv, target, pitch/2, azimuth+pi/2, adjust_AXY);
     const protocol rotate_xy = U_ctl(nv, target, phase/2, azimuth, adjust_AXY);
     return to_equator.adjoint() * rotate_xy * to_equator;
@@ -177,7 +177,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 
 // propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 protocol U_int(const nv_system& nv, const uint target, const double phase,
-               const Vector3d& nv_axis, const double target_azimuth){
+               const Vector3d& nv_axis, const double target_azimuth) {
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
@@ -191,9 +191,9 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   Vector3d axis_ctl = hat(A_perp);
   double B_ctl = 0;
   control_fields controls;
-  for(uint index: nv.clusters.at(cluster)){
-    if(index == target) continue;
-    if(is_larmor_pair(nv,index,target)){
+  for (uint index: nv.clusters.at(cluster)) {
+    if (index == target) continue;
+    if (is_larmor_pair(nv,index,target)) {
       const Vector3d A_perp_alt = hyperfine_perp(nv,index);
       B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
       axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
@@ -215,7 +215,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   // time for which to interact
   double interaction_time = mod(nv.ms*phase/w_phase, t_phase/2);
-  if(interaction_time > t_phase/4){
+  if (interaction_time > t_phase/4) {
     f_DD *= -1;
     interaction_time = t_phase/2 - interaction_time;
   }
@@ -227,7 +227,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const MatrixXcd U_leading = simulate_AXY8(nv, cluster, w_DD, f_DD, nv.k_DD,
                                             controls, leading_time, phase_advance);
   const MatrixXcd U_AXY = [&]() -> MatrixXcd {
-    if(cycles > 0){
+    if (cycles > 0) {
       const double trailing_time = t_DD - leading_time;
       const MatrixXcd U_trailing = simulate_AXY8(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                  controls, trailing_time,
@@ -254,8 +254,8 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 // perform given NV coupling operation on a target nucleus
 protocol couple_target(const nv_system& nv, const uint target, const double phase,
                        const Vector3d& nv_axis, const Vector3d& target_axis,
-                       const bool exact, bool adjust_AXY){
-  if(exact){
+                       const bool exact, bool adjust_AXY) {
+  if (exact) {
     // identify cluster of target nucleus
     const uint cluster = get_cluster_containing_target(nv,target);
     const uint target_in_cluster = get_index_in_cluster(nv,target);
@@ -289,14 +289,14 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // ---------------------------------------------------------------------------------------
 
 protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
-                   const bool exact){
+                   const bool exact) {
   // assert that both target nuclei are larmor pairs in the same cluster
   assert(is_larmor_pair(nv,idx1,idx2));
   const vector<uint> cluster = nv.clusters.at(get_cluster_containing_target(nv,idx1));
   const uint spins = cluster.size()+1;
   assert(in_vector(idx2,cluster));
 
-  if(exact){
+  if (exact) {
     const uint cidx1 = get_index_in_cluster(idx1, cluster)+1;
     const uint cidx2 = get_index_in_cluster(idx2, cluster)+1;
     const MatrixXcd R = to_natural_frames(nv, cluster);

@@ -182,7 +182,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   po::notify(inputs);
 
   // if requested, print help text
-  if(inputs.count("help")){
+  if (inputs.count("help")) {
     cout << all;
     return 0;
   }
@@ -195,14 +195,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_target_nuclei = inputs.count("targets");
 
   // run a sanity check on inputs
-  if(!testing && (int(print_pairs)
+  if (!testing && (int(print_pairs)
                   + int(coherence_scan)
                   + int(single_control)
                   + int(single_coupling)
                   + int(iswap_fidelities)
                   + int(swap_fidelities)
                   + int(swap_nvst_fidelity)
-                  != 1)){
+                  != 1)) {
     cout << "Please choose one simulation to perform\n";
     return -1;
   }
@@ -218,7 +218,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   assert(scale_factor > 1);
   assert(integration_factor > 1);
 
-  if(coherence_scan){
+  if (coherence_scan) {
     assert(scan_bins > 0);
     assert(scan_time_in_ms > 0);
   }
@@ -237,19 +237,19 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // define path of lattice file defining system configuration
   fs::path lattice_path;
-  if(using_input_lattice){
-    if(!fs::exists(lattice_file)){
+  if (using_input_lattice) {
+    if (!fs::exists(lattice_file)) {
       cout << "File does not exist: " << lattice_file << endl;
       return -1;
     }
     lattice_path = lattice_file;
 
-    if(!set_output_suffix){
+    if (!set_output_suffix) {
       output_suffix =
         lattice_path.stem().string() + "-" + output_suffix_with_input_lattice;
     }
 
-  } else{ // if !using_input_lattice
+  } else { // if !using_input_lattice
     cell_radius = round(pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3));
     cout << "Setting cell radius to: " << cell_radius << endl;
 
@@ -271,17 +271,17 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Construct lattice of nuclei
   // -------------------------------------------------------------------------------------
 
-  if(!using_input_lattice){ // place nuclei at lattice sites
+  if (!using_input_lattice) { // place nuclei at lattice sites
     // set positions of nuclei at lattice sites
-    for(uint b: {0,1}){
-      for(int l = -2*cell_radius; l <= 2*cell_radius; l++){
-        for(int m = -2*cell_radius; m <= 2*cell_radius; m++){
-          for(int n = -2*cell_radius; n <= 2*cell_radius; n++){
-            if(rnd(generator) < c13_abundance){ // check for C-13 isotopic abundance
-              if(l != 0 || m != 0 || n != 0){ // don't place C-13 nucleus on NV sites
+    for (uint b: {0,1}) {
+      for (int l = -2*cell_radius; l <= 2*cell_radius; l++) {
+        for (int m = -2*cell_radius; m <= 2*cell_radius; m++) {
+          for (int n = -2*cell_radius; n <= 2*cell_radius; n++) {
+            if (rnd(generator) < c13_abundance) { // check for C-13 isotopic abundance
+              if (l != 0 || m != 0 || n != 0) { // don't place C-13 nucleus on NV sites
                 const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
-                if(hyperfine(nv,nucleus).norm() > hyperfine_cutoff){
+                if (hyperfine(nv,nucleus).norm() > hyperfine_cutoff) {
                   nv.nuclei.push_back(nucleus);
                 }
               }
@@ -291,13 +291,13 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
     }
     cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
-    if(nv.nuclei.size() == 0) return 0;
+    if (nv.nuclei.size() == 0) return 0;
 
     // write cell radius and nucleus positions to file
-    if(!no_output && !print_pairs){
+    if (!no_output && !print_pairs) {
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
-      for(uint i = 0; i < nv.nuclei.size(); i++){
+      for (uint i = 0; i < nv.nuclei.size(); i++) {
         lattice << nv.nuclei.at(i).pos(0) << ' '
                 << nv.nuclei.at(i).pos(1) << ' '
                 << nv.nuclei.at(i).pos(2) << endl;
@@ -319,7 +319,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     // get C-13 positions
     double x,y,z;
-    while(getline(lattice,line,' ')){
+    while (getline(lattice,line,' ')) {
       x = stod(line);
       getline(lattice,line,' ');
       y = stod(line);
@@ -330,8 +330,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     lattice.close();
 
     // assert that no C-13 nuclei lie at the NV lattice sites
-    for(uint i = 0; i < nv.nuclei.size(); i++){
-      if((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)){
+    for (uint i = 0; i < nv.nuclei.size(); i++) {
+      if ((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)) {
         cout << "The input lattice places a C-13 nucleus at one of the NV lattice sites!"
              << endl;
         return -1;
@@ -341,38 +341,38 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // identify nuclei which cannot be addressed
   vector<uint> unaddressable_nuclei;
-  for(uint n = 0; n < nv.nuclei.size(); n++){
-    if(!can_address(nv,n)){
+  for (uint n = 0; n < nv.nuclei.size(); n++) {
+    if (!can_address(nv,n)) {
       unaddressable_nuclei.push_back(n);
     }
   }
-  if(unaddressable_nuclei.size() > 0){
+  if (unaddressable_nuclei.size() > 0) {
     cout << "The following nuclei cannot be addressed:";
-    for(uint n: unaddressable_nuclei){
+    for (uint n: unaddressable_nuclei) {
       cout << " " << n;
     }
     cout << endl << endl;
   }
 
   // remove nuclei which cannot be addressed from the list of target nuclei
-  if(!set_target_nuclei){
-    for(uint n = 0; n < nv.nuclei.size(); n++){
-      if(!in_vector(n,unaddressable_nuclei)){
+  if (!set_target_nuclei) {
+    for (uint n = 0; n < nv.nuclei.size(); n++) {
+      if (!in_vector(n,unaddressable_nuclei)) {
         target_nuclei.push_back(n);
       }
     }
-  } else{ // if(set_target_nuclei)
+  } else { // if (set_target_nuclei)
     vector<uint> unaddressable_targets;
-    for(uint n = 0; n < target_nuclei.size(); n++){
-      if(!can_address(nv,target_nuclei.at(n))){
+    for (uint n = 0; n < target_nuclei.size(); n++) {
+      if (!can_address(nv,target_nuclei.at(n))) {
         unaddressable_targets.push_back(target_nuclei.at(n));
         target_nuclei.erase(target_nuclei.begin()+n);
         n--;
       }
     }
-    if(unaddressable_targets.size() > 0){
+    if (unaddressable_targets.size() > 0) {
       cout << "(WARNING) Ignoring following target nuclei:";
-      for(uint n: unaddressable_targets){
+      for (uint n: unaddressable_targets) {
         cout << " " << n;
       }
       cout << endl << endl;
@@ -384,23 +384,23 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -------------------------------------------------------------------------------------
 
   vector<vector<uint>> larmor_pairs;
-  for(uint i = 0; i < target_nuclei.size(); i++){
+  for (uint i = 0; i < target_nuclei.size(); i++) {
     const uint n_i = target_nuclei.at(i);
-    for(uint j = i+1; j < target_nuclei.size(); j++){
+    for (uint j = i+1; j < target_nuclei.size(); j++) {
       const uint n_j = target_nuclei.at(j);
-      if(is_larmor_pair(nv,n_i,n_j)){
+      if (is_larmor_pair(nv,n_i,n_j)) {
         larmor_pairs.push_back({n_i,n_j});
       }
     }
   }
 
-  if(print_pairs){
-    if(larmor_pairs.size() > 0){
+  if (print_pairs) {
+    if (larmor_pairs.size() > 0) {
       cout << "Larmor pairs:\n";
-      for(vector<uint> pair: larmor_pairs){
+      for (vector<uint> pair: larmor_pairs) {
         cout << " " << pair.at(0) << " " << pair.at(1) << endl;
       }
-    } else{
+    } else {
       cout << "No larmor pairs found\n";
     }
     return larmor_pairs.size();
@@ -416,9 +416,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   const uint min_cluster_size_cap = smallest_possible_cluster_size(nv);
   const bool cluster_by_larmor_frequency =
     !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
-  if(!coherence_scan){
+  if (!coherence_scan) {
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if(!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
+    if (!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
   }
 
   cluster_nuclei(nv, max_cluster_size, cluster_by_larmor_frequency);
@@ -428,11 +428,11 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // collect and print histogram of cluster sizes
   vector<uint> size_hist(largest_cluster_size(nv.clusters));
-  for(uint i = 0; i < nv.clusters.size(); i++){
+  for (uint i = 0; i < nv.clusters.size(); i++) {
     size_hist.at(nv.clusters.at(i).size()-1) += 1;
   }
   cout << "Cluster size histogram:\n";
-  for(uint i = 0; i < size_hist.size(); i++){
+  for (uint i = 0; i < size_hist.size(); i++) {
     cout << "  " << i+1 << ": " << size_hist.at(i) << endl;
   }
   cout << endl;
@@ -448,27 +448,27 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Coherence scan
   // -------------------------------------------------------------------------------------
 
-  if(coherence_scan){
+  if (coherence_scan) {
     // identify effictive larmor frequencies and NV coupling strengths
     vector<double> w_larmor(nv.nuclei.size());
     vector<double> A_perp(nv.nuclei.size());
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
-    for(uint i = 0; i < nv.nuclei.size(); i++){
+    for (uint i = 0; i < nv.nuclei.size(); i++) {
       const Vector3d A_i = hyperfine(nv,i);
       A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
       w_larmor.at(i) = effective_larmor(nv,i).norm();
 
-      if(w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
-      if(w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
+      if (w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
+      if (w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
     }
 
     // print effective larmor frequencies and NV couping strengths to output file
-    if(!no_output){
+    if (!no_output) {
       fs::path larmor_path = output_dir/fs::path("larmor-"+output_suffix);
       ofstream larmor_file(larmor_path.string());
       larmor_file << "# w_larmor A_perp\n";
-      for(uint i = 0; i < nv.nuclei.size(); i++){
+      for (uint i = 0; i < nv.nuclei.size(); i++) {
         larmor_file << w_larmor.at(i) << " " << A_perp.at(i) << endl;
       }
       larmor_file.close();
@@ -482,7 +482,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_range = w_max - w_min;
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
-    for(uint i = 0; i < scan_bins; i++){
+    for (uint i = 0; i < scan_bins; i++) {
       w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
       coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, scan_time);
       cout << "(" << i+1 << "/" << scan_bins << ") "
@@ -490,7 +490,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
 
     // print coherence scan results to output file
-    if(!no_output){
+    if (!no_output) {
       fs::path scan_path = output_dir/fs::path("scan-"+output_suffix);
       ofstream scan_file(scan_path.string());
       scan_file << "# cluster coupling factor (Hz): " << nv.cluster_coupling << endl;
@@ -498,7 +498,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       scan_file << "# scan time: " << scan_time << endl;
       scan_file << endl;
       scan_file << "# w_scan coherence\n";
-      for(uint i = 0; i < scan_bins; i++){
+      for (uint i = 0; i < scan_bins; i++) {
         scan_file << w_scan.at(i) << " " << coherence.at(i) << endl;
       }
       scan_file.close();
@@ -509,12 +509,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Individual addressing -- control
   // -------------------------------------------------------------------------------------
 
-  if(single_control){
+  if (single_control) {
     cout << "target fidelity time\n";
-    for(uint target: target_nuclei){
+    for (uint target: target_nuclei) {
       const Vector3d rotation = 2*phase * axis(target_polar,target_azimuth);
       vector<protocol> P(2);
-      for(bool exact : {true,false}){
+      for (bool exact : {true,false}) {
         P.at(exact) = rotate_target(nv, target, rotation, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
@@ -528,13 +528,13 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Individual addressing -- NV coupling
   // -------------------------------------------------------------------------------------
 
-  if(single_coupling){
+  if (single_coupling) {
     cout << "target fidelity time\n";
     const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
-    for(uint target: target_nuclei){
+    for (uint target: target_nuclei) {
       const Vector3d target_axis = axis(target_polar, target_azimuth);
       vector<protocol> P(2);
-      for(bool exact : {true,false}){
+      for (bool exact : {true,false}) {
         P.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
@@ -548,11 +548,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   // NV/nucleus iSWAP fidelity
   // -------------------------------------------------------------------------------------
 
-  if(iswap_fidelities){
+  if (iswap_fidelities) {
     cout << "target fidelity time\n";
-    for(uint target: target_nuclei){
+    for (uint target: target_nuclei) {
       vector<protocol> P(2);
-      for(bool exact : {true,false}){
+      for (bool exact : {true,false}) {
         P.at(exact) = iSWAP(nv, target, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
@@ -566,11 +566,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   // NV/nucleus SWAP fidelity
   // -------------------------------------------------------------------------------------
 
-  if(swap_fidelities){
+  if (swap_fidelities) {
     cout << "target fidelity time\n";
-    for(uint target: target_nuclei){
+    for (uint target: target_nuclei) {
       vector<protocol> P(2);
-      for(bool exact : {true,false}){
+      for (bool exact : {true,false}) {
         P.at(exact) = SWAP(nv, target, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
@@ -584,17 +584,17 @@ int main(const int arg_num, const char *arg_vec[]) {
   // NV/ST SWAP operation fidelity
   // -------------------------------------------------------------------------------------
 
-  if(swap_nvst_fidelity){
-    if(larmor_pairs.size() == 0){
+  if (swap_nvst_fidelity) {
+    if (larmor_pairs.size() == 0) {
       cout << "There are no larmor pairs in this system\n";
       return -1;
     }
     cout << "idx1 idx2 fidelity time\n";
-    for(vector<uint> idxs: larmor_pairs){
+    for (vector<uint> idxs: larmor_pairs) {
       const uint idx1 = idxs.at(0);
       const uint idx2 = idxs.at(1);
       vector<protocol> P(2);
-      for(bool exact : {true,false}){
+      for (bool exact : {true,false}) {
         P.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
       }
       const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
