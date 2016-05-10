@@ -54,7 +54,7 @@ def copy_results():
         shutil.copy2(f, project_dir+"/"+f)
 
 # define some variavles
-commands = ["./"+sim_file, "--no_output", "--" + sim_type,
+commands = ["./"+sim_file, "--no_output", "--"+sim_type,
             "--static_Bz", static_Bz,
             "--c13_percentage", c13_percentage,
             "--max_cluster_size", max_cluster_size]
@@ -84,5 +84,3 @@ while threading.active_count() > 1:
 
 # copy final results into the project directory
 copy_results()
-
-print("----- done -----")
