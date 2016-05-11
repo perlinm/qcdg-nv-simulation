@@ -2,8 +2,11 @@
 import sys, os
 
 if len(sys.argv) not in [2,3]:
-    print("usage: {} fidelity_sweep_file [cutoff]".format(sys.argv[0]))
+    print("usage: {} fidelity_sweep_file [cutoff] [print]".format(sys.argv[0]))
     exit(1)
+
+print_results = True if sys.argv[-1] == "print" else False
+if print_results: del sys.argv[-1]
 
 fname = sys.argv[1]
 if len(sys.argv) == 3:
@@ -41,6 +44,7 @@ with open(fname,'r') as f:
 results.sort(key = lambda x: x[0])
 filtered_results = [ r for r in results if r[0] > cutoff ]
 
-for result in filtered_results:
-    print(result)
+if print_results:
+    for result in filtered_results:
+        print(result)
 print(len(filtered_results)/len(results))
