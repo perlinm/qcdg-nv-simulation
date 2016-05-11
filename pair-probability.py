@@ -6,9 +6,9 @@ if len(sys.argv) not in [5,6,7]:
           " c13_percentage log10_samples [task_num] [plot]")
     exit(1)
 
-make_plot = True if "plot" == sys.argv[-1] else False
+make_plot = True if sys.argv[-1] == "plot" else False
 if make_plot:
-    sys.argv.remove("plot")
+    del sys.argv[-1]
     import matplotlib.pyplot as plt
 
 start = int(sys.argv[1])
