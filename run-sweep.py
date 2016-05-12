@@ -27,7 +27,7 @@ resources = ["nodes={}:ppn={}".format(nodes,tasks_per_node),
              "pmem=50mb"]
 options = ["-N "+basename, "-m e", "-j oe", "-o "+out_file]
 for resource in resources:
-    options += ["-l {}".format(resource)]
+    options += ["-l "+resource]
 
 job_text = "#!/usr/bin/env sh\n"
 for option in options:
