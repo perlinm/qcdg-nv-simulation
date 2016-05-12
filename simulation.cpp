@@ -1,17 +1,13 @@
+#define EIGEN_USE_MKL_ALL
+
 #include <iostream> // for standard output
 #include <fstream> // for file input
 #include <iomanip> // some nice printing functions
-using namespace std;
-
-#define EIGEN_USE_MKL_ALL
-#include <eigen3/Eigen/Dense> // linear algebra library
-using namespace Eigen;
-
+#include <random> // for randomness
 #include <boost/algorithm/string.hpp> // string manipulation library
 #include <boost/filesystem.hpp> // filesystem path manipulation library
 #include <boost/program_options.hpp> // options parsing library
-namespace fs = boost::filesystem;
-namespace po = boost::program_options;
+#include <eigen3/Eigen/Dense> // linear algebra library
 
 #include "constants.h"
 #include "qp-math.h"
@@ -19,13 +15,18 @@ namespace po = boost::program_options;
 #include "nv-gates.h"
 #include "nv-control.h"
 
+using namespace std;
+using namespace Eigen;
+namespace fs = boost::filesystem;
+namespace po = boost::program_options;
+
 int main(const int arg_num, const char *arg_vec[]) {
 
   // -------------------------------------------------------------------------------------
   // Parse and process input options
   // -------------------------------------------------------------------------------------
 
-  const uint help_text_length = 95;
+  const uint help_text_length = 90;
 
   unsigned long long int seed;
 

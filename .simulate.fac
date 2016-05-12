@@ -29,7 +29,7 @@ C ~/.ccache/
 C ~/.ccache/
 > qp-math.o
 
-| g++ -std=c++11 -O3 -flto -Wall -Werror $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -c -o simulation.o simulation.cpp
+| g++ -std=c++11 -O3 -flto -Wall -Werror -lboost_system -lboost_filesystem -lboost_program_options $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o simulation.o simulation.cpp
 < constants.h
 < qp-math.h
 < nv-math.h

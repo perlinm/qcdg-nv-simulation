@@ -1,13 +1,14 @@
-#include <iostream> // for standard output
-using namespace std;
-
 #define EIGEN_USE_MKL_ALL
+
+#include <iostream> // for standard output
 #include <eigen3/Eigen/Dense> // linear algebra library
-using namespace Eigen;
 
 #include "constants.h"
 #include "qp-math.h"
 #include "nv-math.h"
+
+using namespace std;
+using namespace Eigen;
 
 // ---------------------------------------------------------------------------------------
 // Spin vectors and structs

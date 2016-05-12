@@ -1,8 +1,9 @@
 #pragma once
-
-using namespace std;
+#define EIGEN_USE_MKL_ALL
 
 #include <eigen3/Eigen/Dense> // linear algebra library
+
+using namespace std;
 using namespace Eigen;
 
 // ---------------------------------------------------------------------------------------

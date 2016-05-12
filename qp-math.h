@@ -1,8 +1,12 @@
 #pragma once
+#define EIGEN_USE_MKL_ALL
 
+#include <vector> // vector objects
 #include <eigen3/Eigen/Dense> // linear algebra library
 #include <eigen3/unsupported/Eigen/KroneckerProduct> // provides tensor product
 #include <eigen3/unsupported/Eigen/MatrixFunctions> // provides matrix functions
+
+using namespace std;
 using namespace Eigen;
 
 // floating-point modulus

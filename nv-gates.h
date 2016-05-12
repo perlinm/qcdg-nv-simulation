@@ -1,9 +1,11 @@
 #pragma once
+#define EIGEN_USE_MKL_ALL
 
 #include <eigen3/Eigen/Dense> // linear algebra library
-using namespace Eigen;
 
 #include "qp-math.h"
+
+using namespace Eigen;
 
 struct nv_gates{
 
