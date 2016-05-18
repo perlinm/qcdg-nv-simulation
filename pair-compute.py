@@ -60,7 +60,7 @@ equivalence_classes = []
 
 # loop over each quarter-integer N <= 3*M
 dN = 0.25
-for N in np.arange(0,3*M+dN,dN):
+for N in np.arange(dN,3*M+dN,dN):
 
     # vector of integers (b,l,m,n) satisfying abs(l+m+n) == N
     sum_solutions = [ (b,l,m,n)
@@ -72,15 +72,19 @@ for N in np.arange(0,3*M+dN,dN):
                       if l != 0 or m != 0 or n != 0
                       if A(b,l,m,n) > hyperfine_cutoff ]
 
-    # if the above set is empty, skip ahead to the next value of N
+    # if sum_solutions is empty, skip ahead to the next value of N
     if(len(sum_solutions) == 0): continue
 
     # determine all equivalence classes of integers (b,l,m,n) for this value of N
-    lmn_square_sums = set([ l*l+m*m+n*n-1/3*(l+m+n)**2 for (b,l,m,n) in sum_solutions ])
+    lmn_square_sums = set([ 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) for (b,l,m,n) in sum_solutions ])
 
     for ss in lmn_square_sums:
+
+        # if this larmor set lies in the x-y plane don't count it
+        if ss == 0: continue
+
         equivalence_class = [ (b,l,m,n) for (b,l,m,n) in sum_solutions
-                              if l*l+m*m+n*n-1/3*(l+m+n)**2 == ss ]
+                              if 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) == ss ]
         equivalence_classes.append(equivalence_class)
 
 equivalence_class_sizes = [ len(equivalence_class)
