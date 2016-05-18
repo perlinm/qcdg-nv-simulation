@@ -10,16 +10,6 @@ if len(sys.argv) != 3:
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
 c13_abundance = float(sys.argv[2])/100
 
-# return product of elements in a list
-def product(list):
-    out = 1
-    for el in list: out *= el
-    return out
-
-# choose function (mutiplicative formula)
-def nCr(n,k):
-    return product([ (n+1-i)/i for i in range(1,k+1)])
-
 # physical constants in SI
 c_SI = 299792458 # speed of light (meters/second)
 hbar_SI = 6.582119514e-16 # reduced Planck constant (eV/second)
@@ -80,17 +70,51 @@ for N in np.arange(dN,3*M+dN,dN):
 
     for ss in lmn_square_sums:
 
-        # if this larmor set lies in the x-y plane don't count it
+        # if this larmor set lies on the z axis, don't count it
         if ss == 0: continue
 
         equivalence_class = [ (b,l,m,n) for (b,l,m,n) in sum_solutions
                               if 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) == ss ]
         equivalence_classes.append(equivalence_class)
 
-equivalence_class_sizes = [ len(equivalence_class)
-                            for equivalence_class in equivalence_classes ]
+# return a list of the sizes of the parallel subsets in a given equivalence class
+def parallel_subset_sizes(equivalence_class):
+    r_xy_vecs = [ np.array([-2*l+m+n,-2*m+n+l,-2*n+l+m]) for _,l,m,n in equivalence_class ]
 
-# probability of having at least one larmor set with exactly two nuclei
-probability = 1 - product([ 1 - c13_abundance**2 * (1 - c13_abundance)**(R-2) * nCr(R,2)
-                            for R in equivalence_class_sizes ])
+    parallel_sets = []
+    added_to_set = []
+    for i in range(len(r_xy_vecs)):
+        if i in added_to_set: continue
+        parallel_sets += [[i]]
+        added_to_set += [i]
+
+        r_xy = r_xy_vecs[i]
+        for j in range(i+1,len(r_xy_vecs)):
+            if j in added_to_set: continue
+
+            s_xy = r_xy_vecs[j]
+            if np.array_equal(r_xy,s_xy) or np.array_equal(r_xy,-s_xy):
+                parallel_sets[-1] += [j]
+                added_to_set += [j]
+    return [ len(parallel_set) for parallel_set in parallel_sets ]
+
+equivalence_class_info = [ (len(equivalence_class), parallel_subset_sizes(equivalence_class))
+                           for equivalence_class in equivalence_classes ]
+
+# return product of elements in a list
+def product(list):
+    out = 1
+    for el in list: out *= el
+    return out
+
+# choose function (mutiplicative formula)
+def nCr(n,r):
+    return product([ (n+1-i)/i for i in range(1,r+1)])
+
+# probability of having at least one larmor set with exactly two addressable nuclei
+probability = 1 - product([ 1 - c13_abundance**2 * (1-c13_abundance)**(R-2) *
+                            ( nCr(R,2) - sum([ nCr(Sp,2) for Sp in pss ]) )
+                            for eci in equivalence_class_info
+                            for R in [eci[0]]
+                            for pss in [eci[1]] ])
 print(probability)
