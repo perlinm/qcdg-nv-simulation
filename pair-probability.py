@@ -28,6 +28,8 @@ if not start < end:
 project_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "pairs-{}.txt".format("-".join(sys.argv[1:5]))
 out_file = project_dir + "/data/" + out_name
+compute_script = project_dir + "/pair-compute.py"
+search_script = project_dir + "/pair-search.py"
 
 if os.path.exists(out_file):
     cutoffs, predicted, actual = numpy.loadtxt(out_file, unpack=True)
@@ -39,8 +41,8 @@ else:
     actual = numpy.zeros(len(cutoffs))
     for i in range(len(cutoffs)):
         print("starting cutoff: {} kHz".format(cutoffs[i]))
-        compute_cmds = ["./pair-compute.py",str(cutoffs[i]),str(c13_percentage)]
-        search_cmds = ["./pair-search.py",str(cutoffs[i]),str(c13_percentage),
+        compute_cmds = [compute_script,str(cutoffs[i]),str(c13_percentage)]
+        search_cmds = [search_script,str(cutoffs[i]),str(c13_percentage),
                        str(10**log10_samples),str(task_num)]
         predicted[i] = subprocess.check_output(compute_cmds)
         actual[i] = subprocess.check_output(search_cmds)
