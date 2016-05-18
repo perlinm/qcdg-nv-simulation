@@ -41,16 +41,16 @@ a0 = 0.35668 * nm # diamond lattice parameter (unit cell side length) at 300 K
 zhat = np.array([1,1,1])/np.sqrt(3) # static magnetic field direction; NV axis
 
 # diamond lattice vectors
-ao = np.array([1,1,1])/4
-a1 = np.array([0,1,1])/2
-a2 = np.array([1,0,1])/2
-a3 = np.array([1,1,0])/2
+ao = np.array([1,1,1])/2
+a1 = np.array([0,1,1])
+a2 = np.array([1,0,1])
+a3 = np.array([1,1,0])
 
 norm = np.linalg.norm
 def hat(v): return v/norm(v)
 def A(b,l,m,n):
     r = b*ao+l*a1+m*a2+n*a3
-    return norm( ge*gC13/(4*np.pi*(norm(r)*a0)**3) * (zhat-3*np.dot(hat(r),zhat)*hat(r)) )
+    return norm( ge*gC13/(4*np.pi*(norm(r)*a0/2)**3) * (zhat-3*np.dot(hat(r),zhat)*hat(r)) )
 
 # maximum allowable magnitude of l, m, or n
 M = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1/3)+1/2)
