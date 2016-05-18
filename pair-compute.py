@@ -113,7 +113,7 @@ def product(list):
 
 # choose function (mutiplicative formula)
 def nCr(n,r):
-    return product([ float(n+1-i)/i for i in range(1,r+1)])
+    return product([ n+1-i for i in range(1,r+1)]) / product([ i for i in range(1,r+1)])
 
 # probability of having at least one larmor set with exactly two addressable nuclei
 probability = 1 - product([ 1 - c13_abundance**2 * (1-c13_abundance)**(R-2) *
