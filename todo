@@ -1,10 +1,9 @@
-implement T1 decay
-entanglement fidelity
+add protocol to perform SWAP_NVST with two spins which are not larmor pairs
 
-generate example systems for performing SWAP_NVST, tabulate fidelities and operation times
-- candidate larmor pair seeds: 10688 13481 15646 25272 40426 41142 49308 52619 62086 91296 93794 93944 99582
+try all simulations with different scale factors
 
-determine how likely we are to perform SWAP_NVST with high fidelity, as a function of:
+
+determine likeliness of performing SWAP_NVST with high fidelity, as a function of:
 - hyperfine_cutoff
 - dw_min
 - c13_abundance
