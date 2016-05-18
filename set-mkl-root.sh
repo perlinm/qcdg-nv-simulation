@@ -2,10 +2,8 @@
 
 mklroot_file=".mkl-root"
 
-rm $mklroot_file
-
 if [ -n "$(cat /etc/*-release | grep 'Arch Linux')" ]; then
-  MKLROOT=/opt/intel/compilers_and_libraries_2016.2.181/linux/mkl
+  MKLROOT=`find /opt -name mkl | grep linux | sort --reverse | head -n 1`
 fi
 
 if ! [[ $MKLROOT && ${MKLROOT-x} ]]; then
