@@ -11,7 +11,7 @@ hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strengt
 c13_abundance = float(sys.argv[2])/100
 
 # physical constants in SI
-c_SI = 299792458 # speed of light (meters/second)
+c_SI = 299792458. # speed of light (meters/second)
 hbar_SI = 6.582119514e-16 # reduced Planck constant (eV/second)
 ge_SI = -1.760859708e11 # gyromagnetic ratio of NV electron (Hz/tesla)
 gC13_SI = 67.28284e6 # gyromagnetic ratio of C-13 (Hz/tesla)
@@ -23,7 +23,7 @@ me = 510998.928/hbar_SI # mass of electron (Hz)
 ge = -qe/(2*me) * 2.0023193043617 # gyromagnetic ratio of electron
 gC13 = gC13_SI * ge/ge_SI # gyromagnetic ratio of C-13
 
-sec = 1 # one second in natural units (s)
+sec = 1. # one second in natural units (s)
 meter = sec / c_SI # one meter in natural units (s)
 nm = 1e-9*meter # one nanometer in natural units (s)
 
@@ -31,7 +31,7 @@ a0 = 0.35668 * nm # diamond lattice parameter (unit cell side length) at 300 K
 zhat = np.array([1,1,1])/np.sqrt(3) # static magnetic field direction; NV axis
 
 # diamond lattice vectors
-ao = np.array([1,1,1])/2
+ao = np.array([1,1,1])/2.
 a1 = np.array([0,1,1])
 a2 = np.array([1,0,1])
 a3 = np.array([1,1,0])
@@ -44,14 +44,14 @@ def A(b,l,m,n):
                  (zhat-3*np.dot(hat(r),zhat)*hat(r)) )
 
 # maximum allowable magnitude of l, m, or n
-M = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1/3)+1/2)
+M = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1./3)+1./2)
 
 # list of all equivalence classes of integers (b,l,m,n)
 equivalence_classes = []
 
-# loop over each quarter-integer N <= 3*M
+# loop over each quarter-integer N <= 3*M (N_4 = 4*N)
 dN = 0.25
-for N in np.arange(dN,3*M+dN,dN):
+for N in np.arange(dN,3*M+1,dN):
 
     # vector of integers (b,l,m,n) satisfying abs(l+m+n) == N
     sum_solutions = [ (b,l,m,n)
@@ -59,7 +59,7 @@ for N in np.arange(dN,3*M+dN,dN):
                       for l in range(-M,M+1)
                       for m in range(-M,M+1)
                       for n in range(-M,M+1)
-                      if abs(3/4*b + l+m+n) == N
+                      if abs(3./4*b + l+m+n) == N
                       if l != 0 or m != 0 or n != 0
                       if A(b,l,m,n) > hyperfine_cutoff ]
 
@@ -79,7 +79,7 @@ for N in np.arange(dN,3*M+dN,dN):
                               if 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) == ss ]
         equivalence_classes.append(equivalence_class)
 
-# return a the sizes of the parallel subsets in a given equivalence class
+# return a the sizes of the nontrivial parallel subsets in a given equivalence class
 def parallel_subset_sizes(equivalence_class):
     r_xy_vecs = [ np.array([-2*l+m+n,-2*m+n+l,-2*n+l+m])
                   for _,l,m,n in equivalence_class ]
@@ -99,11 +99,13 @@ def parallel_subset_sizes(equivalence_class):
             if np.array_equal(r_xy,s_xy) or np.array_equal(r_xy,-s_xy):
                 parallel_sets[-1] += [j]
                 added_to_set += [j]
-    return [ len(parallel_set) for parallel_set in parallel_sets ]
+    parallel_set_sizes = [ len(parallel_set) for parallel_set in parallel_sets ]
+    return [ size for size in parallel_set_sizes if size > 1 ]
 
 equivalence_class_info = [ (len(equivalence_class),
                             parallel_subset_sizes(equivalence_class))
                            for equivalence_class in equivalence_classes ]
+equivalence_class_info.sort()
 
 # return product of elements in a list
 def product(list):
