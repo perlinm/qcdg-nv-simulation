@@ -62,7 +62,7 @@ equivalence_classes = []
 dN = 0.25
 for N in np.arange(0,3*M+dN,dN):
 
-    # sets of integers {b,l,m,n} satisfying abs(l+m+n) == N
+    # vector of integers (b,l,m,n) satisfying abs(l+m+n) == N
     sum_solutions = [ (b,l,m,n)
                       for b in [0,1]
                       for l in range(-M,M+1)
