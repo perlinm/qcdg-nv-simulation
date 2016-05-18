@@ -50,8 +50,7 @@ M = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1./3)+1./2)
 equivalence_classes = []
 
 # loop over each quarter-integer N <= 3*M (N_4 = 4*N)
-dN = 0.25
-for N in np.arange(dN,3*M+1,dN):
+for N_times_4 in np.arange(1,12*M+1):
 
     # vector of integers (b,l,m,n) satisfying abs(l+m+n) == N
     sum_solutions = [ (b,l,m,n)
@@ -59,8 +58,7 @@ for N in np.arange(dN,3*M+1,dN):
                       for l in range(-M,M+1)
                       for m in range(-M,M+1)
                       for n in range(-M,M+1)
-                      if abs(3./4*b + l+m+n) == N
-                      if l != 0 or m != 0 or n != 0
+                      if abs(3*b + 4*(l+m+n)) == N_times_4
                       if A(b,l,m,n) > hyperfine_cutoff ]
 
     # if sum_solutions is empty, skip ahead to the next value of N
