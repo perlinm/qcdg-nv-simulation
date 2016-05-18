@@ -40,7 +40,8 @@ norm = np.linalg.norm
 def hat(v): return v/norm(v)
 def A(b,l,m,n):
     r = b*ao+l*a1+m*a2+n*a3
-    return norm( ge*gC13/(4*np.pi*(norm(r)*a0/2)**3) * (zhat-3*np.dot(hat(r),zhat)*hat(r)) )
+    return norm( ge*gC13/(4*np.pi*(norm(r)*a0/2)**3) *
+                 (zhat-3*np.dot(hat(r),zhat)*hat(r)) )
 
 # maximum allowable magnitude of l, m, or n
 M = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1/3)+1/2)
@@ -66,7 +67,8 @@ for N in np.arange(dN,3*M+dN,dN):
     if(len(sum_solutions) == 0): continue
 
     # determine all equivalence classes of integers (b,l,m,n) for this value of N
-    lmn_square_sums = set([ 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) for (b,l,m,n) in sum_solutions ])
+    lmn_square_sums = set([ 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n)
+                            for (b,l,m,n) in sum_solutions ])
 
     for ss in lmn_square_sums:
 
@@ -77,9 +79,10 @@ for N in np.arange(dN,3*M+dN,dN):
                               if 3*(l*l+m*m+n*n)-(l+m+n)*(l+m+n) == ss ]
         equivalence_classes.append(equivalence_class)
 
-# return a list of the sizes of the parallel subsets in a given equivalence class
+# return a the sizes of the parallel subsets in a given equivalence class
 def parallel_subset_sizes(equivalence_class):
-    r_xy_vecs = [ np.array([-2*l+m+n,-2*m+n+l,-2*n+l+m]) for _,l,m,n in equivalence_class ]
+    r_xy_vecs = [ np.array([-2*l+m+n,-2*m+n+l,-2*n+l+m])
+                  for _,l,m,n in equivalence_class ]
 
     parallel_sets = []
     added_to_set = []
@@ -98,7 +101,8 @@ def parallel_subset_sizes(equivalence_class):
                 added_to_set += [j]
     return [ len(parallel_set) for parallel_set in parallel_sets ]
 
-equivalence_class_info = [ (len(equivalence_class), parallel_subset_sizes(equivalence_class))
+equivalence_class_info = [ (len(equivalence_class),
+                            parallel_subset_sizes(equivalence_class))
                            for equivalence_class in equivalence_classes ]
 
 # return product of elements in a list
