@@ -112,12 +112,11 @@ def product(list):
     return out
 
 # choose function (mutiplicative formula)
-def nCr(n,r):
-    return product([ n+1-i for i in range(1,r+1)]) / product([ i for i in range(1,r+1)])
+def nCk(n,k): return product([ n+1-i for i in range(1,k+1)]) / product(range(1,k+1))
 
 # probability of having at least one larmor set with exactly two addressable nuclei
 probability = 1 - product([ 1 - c13_abundance**2 * (1-c13_abundance)**(R-2) *
-                            ( nCr(R,2) - sum([ nCr(Sp,2) for Sp in pss ]) )
+                            ( nCk(R,2) - sum([ nCk(Sp,2) for Sp in pss ]) )
                             for eci in equivalence_class_info
                             for R in [eci[0]]
                             for pss in [eci[1]] ])
