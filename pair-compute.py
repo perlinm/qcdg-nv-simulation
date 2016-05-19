@@ -53,7 +53,7 @@ max_lmn = int((2*abs(ge*gC13) / (np.pi * a0**3 * hyperfine_cutoff))**(1./3)+1./2
 larmor_sets = []
 
 # loop over each integer z_sum up to the maximum possible value given the hyperfine cutoff
-# start at 1 to exclude solutions in the x-y plane
+# start at 1 to exclude nuclei which lie in the x-y plane
 for z_sum in range(1,12*max_lmn+1):
 
     # vector of integers (b,l,m,n) with this z_sum
