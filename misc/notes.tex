@@ -552,7 +552,6 @@ spin $p$ via
   \mathcal O_{m,n}=\t{SWAP}_{p,m}\mathcal O_{p,n}\t{SWAP}_{p,m}.
 \end{align}
 
-
 \newpage
 \section*{Gate generation}
 
@@ -753,25 +752,39 @@ In performing a search for larmor pairs, we can use restriction
 
 \section*{Computing the probability of occurrence}
 
-If we have a set of $R$ lattice sites indexed by $(b,\l,m,n)$ mutually
-satisfying (\ref{condA0}) and (\ref{condB0}), then the probability of
-filling exactly $r$ of them with $^{13}$C nuclei is
+Let $p$ denote the isotopic abundance of $^{13}$C, and consider a set
+$R$ of diamond lattice sites mutually satisfying (\ref{condA0}) and
+(\ref{condB0}). If there are $N$ ways of filling exactly 2 out of the
+lattice sites in $R$ with $^{13}$C nuclei in such a way that both
+$^{13}$C nuclear spins are addressable, the probability of doing so is
 \begin{align}
-  P_{R,r}=p^r\p{1-p}^{R-r}\m{R\\r}=\f{R!~p^r\p{1-p}^{R-r}}{r!\p{R-r}!},
+  P_{R,2}=p^2\p{1-p}^{\abs{R}-2}N.
 \end{align}
-where $p$ is the probability that any particular site with a $^{13}$C
-nucleus, i.e. the relative abundance of $^{13}$C. The probability of
-having at least two $^{13}$C nuclei in these sites is therefore
+Though there are $\m{\abs{R}\\2}$ ways total of filling the lattice
+sites in $R$ with exactly 2 nuclei, in some of these configurations
+the perpendicular components of the hyperfine fields (i.e.
+$\v A_j^\perp$) for these nuclei are mutually parallel, which makes
+the spins of these nuclei unaddressable. If there is a subset
+$S_R\subset R$ of lattice sites within which the $\v A_j^\perp$ for
+all lattice sites $s_j\in S_R$ are mutually parallel, then there are
+$\m{\abs{S_R}\\2}$ configurations out of the $\m{\abs{R}\\2}$ which
+must be excluded in the counting of $N$; therefore,
 \begin{align}
-  P_{R,r\ge2}=\sum_{r=2}^RP_{R,r}=1-\p{P_{R,0}+P_{R,1}}.
+  P_{R,2}=p^2\p{1-p}^{\abs{R}-2}
+  \sp{\m{\abs{R}\\2}-\sum_{S_R}\m{\abs{S_R}\\2}}.
 \end{align}
-If we have many such sets of lattice sites, then the total probability
-$\bar P$ of having at least two sites filled within at least one set
-of sites is
+The total probability $\bar P$ of finding at least one pair of
+addressable $^{13}$C nuclear spins in an NV system with multiple sets
+of larmor equal lattice sites is therefore
 \begin{align}
-  \bar P=1-\prod_R\p{1-P_{R,r\ge2}} =1-\prod_R\p{P_{R,0}+P_{R,1}}
-  =1-\prod_R\p{1-p}^R\p{1+\f{Rp}{1-p}}.
+  \bar P=1-\prod_R\p{1-P_{R,2}}
+  =1-\prod_R\p{1-p^2\p{1-p}^{\abs{R}-2}
+  \sp{\m{\abs{R}\\2}-\sum_{S_R}\m{\abs{S_R}\\2}}},
 \end{align}
+where the product over $R$ excludes sets of lattice sites at which
+individual nuclei are unaddressable (i.e. lattice sites along the
+natural NV axis $\uv z$, and lattice sites $\v s$ for which
+$\v s\c\uv z=0$).
 
 \newpage
 \section*{Singlet-triplet qubit initialization}
