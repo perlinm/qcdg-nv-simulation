@@ -188,20 +188,28 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const double dw_min = larmor_resolution(nv,target);
   const Vector3d A_perp = hyperfine_perp(nv,target);
 
-  // control fields and interaction vector
-  Vector3d axis_ctl = hat(A_perp);
-  double B_ctl = 0;
+  // control field
   control_fields controls;
   for (uint index: nv.clusters.at(cluster)) {
     if (index == target) continue;
     if (is_larmor_pair(nv,index,target)) {
       const Vector3d A_perp_alt = hyperfine_perp(nv,index);
-      B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
-      axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
+      const double B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
+      const Vector3d axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
       controls.add(B_ctl*axis_ctl, w_larmor);
     }
   }
-  const Vector3d A_int = dot(A_perp,axis_ctl)*axis_ctl;
+  assert(controls.num() >= 1);
+
+  // "interaction vector": A_perp minus the component suppressed by the control field
+  const Vector3d A_int = [&]() -> Vector3d {
+    if (controls.num() == 0) return A_perp;
+    else return dot(A_perp,hat(controls.B()))*hat(controls.B());
+  }();
+
+  // account for the angle of A_int relative to A_perp,
+  //   as a target azimuth of 0 will now result in n_2 = hat(A_int),
+  //   but we still want A_perp as "xhat_j"
   const double interaction_angle = asin(dot(hat(A_perp).cross(hat(A_int)),
                                             hat(effective_larmor(nv,target))));
 
@@ -243,7 +251,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   // correct for larmor precession of the nucleus
   const double z_phase = mod(interaction_time*w_larmor, 2*pi);
-  const double w_ctl = nv.nuclei.at(target).g*B_ctl/2;
+  const double w_ctl = nv.nuclei.at(target).g*controls.B().norm()/2;
   const double xy_phase = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =

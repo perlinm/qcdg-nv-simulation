@@ -277,7 +277,7 @@ struct control_fields{
 
   uint num() const { return Bs.size(); }
 
-  Vector3d B(const double t) const {
+  Vector3d B(const double t = 0) const {
     Vector3d net_B = Vector3d::Zero();
     for (uint c = 0; c < num(); c++) {
       net_B += Bs.at(c) * cos(freqs.at(c)*t + phases.at(c));
