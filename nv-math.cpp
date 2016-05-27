@@ -557,7 +557,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
     }
   }
   // rotate into the frame of the NV center and normalize the propagator
-  U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
+  U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
   return U;
 }
@@ -599,7 +599,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
   const uint integration_steps = simulation_time*frequency_scale*nv.integration_factor;
   const double dt = simulation_time/integration_steps;
 
-  const MatrixXcd H_0 = H_sys(nv,cluster); // full system Hamiltonian
+  const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
@@ -663,7 +663,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
     }
   }
   // rotate into the frame of the NV center and normalize the propagator
-  U = (act_NV(nv,U_NV.adjoint(),spins) * U).eval();
+  U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
   return U;
 }
