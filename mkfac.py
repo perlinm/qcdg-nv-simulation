@@ -83,4 +83,4 @@ fac_text += "| etags *.cpp *.h\n< {}\n> TAGS\n".format(executable)
 with open(".{}".format(executable.replace(".exe",".fac")),"w") as f:
     f.write(fac_text)
 
-subprocess.call(["fac"])
+subprocess.check_call(["fac"])
