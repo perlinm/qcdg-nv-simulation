@@ -259,11 +259,9 @@ mvec operator*(const MatrixXcd& G, const mvec& v) {
 // print operator in human-readable form
 void U_print(const MatrixXcd& U, const double threshold) {
   const int N = log2(U.rows());
-  VectorXcd hs = U_decompose(U);
+  const VectorXcd hs = remove_artifacts(U_decompose(U), threshold);
   for (int p = 0; p < pow(4,N); p++) {
-    if (abs(hs(p)) > threshold) {
-      if (abs(real(hs(p))) < threshold) hs(p) -= real(hs(p));
-      if (abs(imag(hs(p))) < threshold) hs(p) -= imag(hs(p))*j;
+    if (abs(hs(p)) != 0) {
       cout << U_basis_element_text(p,N) << ": " << hs(p) << endl;
     }
   }
@@ -294,11 +292,11 @@ void matrix_print(const MatrixXcd& M) {
       if (abs(M(m,n)) != 0) {
         cout << "|";
         for (uint q = 0; q < qbits; q++) {
-          cout << (qbit_state(m,qbits,q)?"d":"u");
+          cout << (qbit_state(q,qbits,m)?"d":"u");
         }
         cout << "><";
         for (uint q = 0; q < qbits; q++) {
-          cout << (qbit_state(n,qbits,q)?"d":"u");
+          cout << (qbit_state(q,qbits,n)?"d":"u");
         }
         cout << "| " << M(m,n) << endl;
       }
