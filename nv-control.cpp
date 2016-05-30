@@ -342,6 +342,11 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
   assert(in_vector(idx2,nv.clusters.at(cluster)));
 
   if (exact) {
+    // return exact SWAP_NVST gate in the appropriate bases
+    const nv_gates gates;
+    const uint cidx1 = get_index_in_cluster(nv, idx1)+1;
+    const uint cidx2 = get_index_in_cluster(nv, idx2)+1;
+
     const vector<Vector3d> idx1_basis = natural_basis(nv, idx1);
     const Vector3d x1 = idx1_basis.at(0);
     const Vector3d y1 = idx1_basis.at(1);
@@ -350,14 +355,13 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const Matrix2cd R2 = rotate({xhat,yhat,zhat}, {-y1,x1,z1});
     const MatrixXcd R = act(tp(R1,R2), {1,2}, 3);
 
-    const nv_gates gates;
-    const uint cidx1 = get_index_in_cluster(nv, idx1)+1;
-    const uint cidx2 = get_index_in_cluster(nv, idx2)+1;
     return protocol(act(R.adjoint() * gates.SWAP_NVST * R, {0,cidx1,cidx2}, spins), 0);
 
   } else {
+    // compute actual realization of the SWAP_NVST gate
     const protocol Z_NV = protocol(act_NV(nv, rotate(pi/2,zhat), spins), 0);
     const protocol X_NV = protocol(act_NV(nv, rotate(pi/2,xhat), spins), 0);
+    const protocol Z_to_mX = protocol(act_NV(nv, rotate(-pi/2,yhat), spins), 0);
 
     const protocol cNOT_UD_NV_adapted =
       X_NV * couple_target(nv, idx1, -pi/4, xhat, xhat, exact);
@@ -367,8 +371,6 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
       (Z_NV * Z_NV * rotate_target(nv, idx1, pi/2, -yhat, exact) *
        couple_target(nv, idx1, -pi/4, zhat, -yhat, exact) *
        couple_target(nv, idx2, -pi/4, zhat, -y1_in_idx2_basis, exact));
-
-    const protocol Z_to_mX = protocol(act_NV(nv, rotate(-pi/2,yhat), spins), 0);
 
     return (Z_to_mX.adjoint() *
             cNOT_UD_NV_adapted.adjoint() *
