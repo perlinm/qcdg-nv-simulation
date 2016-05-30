@@ -61,7 +61,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool iswap_fidelities;
   bool swap_fidelities;
   bool swap_nvst_fidelity;
-  bool swap_nvud_fidelity;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -85,9 +84,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("swap_nvst",
      po::value<bool>(&swap_nvst_fidelity)->default_value(false)->implicit_value(true),
      "compute expected SWAP_NVST fidelity")
-    ("swap_nvud",
-     po::value<bool>(&swap_nvud_fidelity)->default_value(false)->implicit_value(true),
-     "compute expected SWAP_NVUD fidelity")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -207,7 +203,6 @@ int main(const int arg_num, const char *arg_vec[]) {
                   + int(iswap_fidelities)
                   + int(swap_fidelities)
                   + int(swap_nvst_fidelity)
-                  + int(swap_nvud_fidelity)
                   != 1)) {
     cout << "Please choose one simulation to perform\n";
     return -1;
@@ -590,7 +585,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // SWAP fidelity: NV electron spin and singlet-triplet subspace of two nuclear spins
   // -------------------------------------------------------------------------------------
 
-  if (swap_nvst_fidelity || swap_nvud_fidelity) {
+  if (swap_nvst_fidelity) {
     if (larmor_pairs.size() == 0) {
       cout << "There are no larmor pairs in this system\n";
       return -1;
@@ -601,8 +596,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint idx2 = idxs.at(1);
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        if(swap_nvst_fidelity) P.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
-        if(swap_nvud_fidelity) P.at(exact) = SWAP_NVUD(nv, idx1, idx2, exact);
+        P.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
       }
       const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
       const uint idx2_in_cluster = get_index_in_cluster(nv,idx2);

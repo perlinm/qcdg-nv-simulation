@@ -330,7 +330,9 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // Specific operations
 // ---------------------------------------------------------------------------------------
 
-// SWAP operation between NV center and singlet-triplet (ST) subspace of two nuclear spins
+// SWAP operation between NV electron spin and the singlet-triplet (ST) subspace of two
+//   nuclear spins; spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,
+//   where {x1,y1,z1} is the natural basis of spin 1
 protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                    const bool exact) {
   // assert that both target nuclei are larmor pairs in the same cluster
@@ -339,57 +341,39 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
   const uint spins = nv.clusters.at(cluster).size()+1;
   assert(in_vector(idx2,nv.clusters.at(cluster)));
 
-  const nv_gates gates;
-
   if (exact) {
+    const vector<Vector3d> idx1_basis = natural_basis(nv, idx1);
+    const Vector3d x1 = idx1_basis.at(0);
+    const Vector3d y1 = idx1_basis.at(1);
+    const Vector3d z1 = idx1_basis.at(2);
+    const Matrix2cd R1 = rotate({xhat,yhat,zhat}, {-z1,y1,x1});
+    const Matrix2cd R2 = rotate({xhat,yhat,zhat}, {-y1,x1,z1});
+    const MatrixXcd R = act(tp(R1,R2), {1,2}, 3);
+
+    const nv_gates gates;
     const uint cidx1 = get_index_in_cluster(nv, idx1)+1;
     const uint cidx2 = get_index_in_cluster(nv, idx2)+1;
-    const MatrixXcd R = to_natural_frames(nv, cluster);
+    return protocol(act(R.adjoint() * gates.SWAP_NVST * R, {0,cidx1,cidx2}, spins), 0);
 
-    return protocol(R * act(gates.SWAP_NVST, {0, cidx1, cidx2}, spins) * R.adjoint(), 0);
   } else {
-    const protocol XHG_NV = protocol(act_NV(nv, gates.X * gates.HG, spins), 0);
     const protocol Z_NV = protocol(act_NV(nv, rotate(pi/2,zhat), spins), 0);
+    const protocol X_NV = protocol(act_NV(nv, rotate(pi/2,xhat), spins), 0);
 
-    const protocol iSWAP_NV_1 = iSWAP(nv, idx1);
-    const protocol SWAP_NV_1 = SWAP(nv, idx1);
-    const protocol cNOT_NV_2 = (Z_NV * rotate_target(nv, idx2, pi/2, xhat) *
-                                couple_target(nv, idx2, -pi/4, zhat, xhat));
-    const protocol E_NV_2 = couple_target(nv, idx2, -pi/4, yhat, xhat);
+    const protocol cNOT_UD_NV_adapted =
+      X_NV * couple_target(nv, idx1, -pi/4, xhat, xhat, exact);
 
-    // correct for the rotation of n1 (idx1) together with n2 (idx2) in cNOT_NV_2
-    const Vector3d rotation_axis = to_basis(nv, idx1) * from_basis(nv, idx2) * xhat;
-    const Vector3d xhat_p = rotate(xhat, pi/2, rotation_axis);
-    const Vector3d yhat_p = rotate(yhat, pi/2, rotation_axis);
-    const protocol iSWAP_NV_1_mod = (couple_target(nv, idx1, -pi/4, xhat, xhat_p) *
-                                     couple_target(nv, idx1, -pi/4, yhat, yhat_p));
+    const Vector3d y1_in_idx2_basis = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
+    const protocol cNOT_NV_UD_adapted =
+      (Z_NV * Z_NV * rotate_target(nv, idx1, pi/2, -yhat, exact) *
+       couple_target(nv, idx1, -pi/4, zhat, -yhat, exact) *
+       couple_target(nv, idx2, -pi/4, zhat, -y1_in_idx2_basis, exact));
 
-    return (XHG_NV * SWAP_NV_1 * E_NV_2 * cNOT_NV_2.adjoint() *
-            iSWAP_NV_1_mod.adjoint() * cNOT_NV_2 * iSWAP_NV_1);
+    const protocol Z_to_mX = protocol(act_NV(nv, rotate(-pi/2,yhat), spins), 0);
+
+    return (Z_to_mX.adjoint() *
+            cNOT_UD_NV_adapted.adjoint() *
+            cNOT_NV_UD_adapted *
+            cNOT_UD_NV_adapted *
+            Z_to_mX);
   }
-}
-
-// SWAP operation between NV center and the up/down subspace of two nuclear spins;
-//   spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,
-//   where {x1,y1,z1} is the natural basis of spin 1
-protocol SWAP_NVUD(const nv_system& nv, const uint idx1, const uint idx2,
-                   const bool exact) {
-  // assert that both target nuclei are larmor pairs in the same cluster
-  assert(is_larmor_pair(nv,idx1,idx2));
-  const uint cluster = get_cluster_containing_target(nv,idx1);
-  const uint spins = nv.clusters.at(cluster).size()+1;
-  assert(in_vector(idx2,nv.clusters.at(cluster)));
-
-  const protocol Z_NV = protocol(act_NV(nv, rotate(pi/2,zhat), spins), 0);
-  const protocol X_NV = protocol(act_NV(nv, rotate(pi/2,xhat), spins), 0);
-
-  const protocol cNOT_UD_NV = X_NV * couple_target(nv, idx1, -pi/4, xhat, xhat, exact);
-
-  const Vector3d yhat_p = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
-  const protocol cNOT_NV_UD = (Z_NV * Z_NV * rotate_target(nv, idx1, pi/2, -yhat, exact) *
-                               couple_target(nv, idx1, -pi/4, zhat, -yhat, exact) *
-                               couple_target(nv, idx2, -pi/4, zhat, -yhat_p, exact));
-
-  return cNOT_UD_NV.adjoint() * cNOT_NV_UD * cNOT_UD_NV;
-
 }

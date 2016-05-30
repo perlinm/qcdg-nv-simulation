@@ -87,12 +87,8 @@ inline protocol SWAP(const nv_system& nv, const uint index, const bool exact = f
           couple_target(nv, index, -pi/4, zhat, zhat, exact));
 }
 
-// SWAP operation between NV center and singlet-triplet (ST) subspace of two nuclear spins
-protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
-                   const bool exact = false);
-
-// SWAP operation between NV center and the up/down subspace of two nuclear spins;
-//   spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,
+// SWAP operation between NV electron spin and the singlet-triplet (ST) subspace of two
+//   nuclear spins; spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,
 //   where {x1,y1,z1} is the natural basis of spin 1
-protocol SWAP_NVUD(const nv_system& nv, const uint idx1, const uint idx2,
+protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                    const bool exact = false);
