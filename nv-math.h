@@ -63,7 +63,7 @@ inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start) {
 Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start);
 
 // struct for spins
-struct spin{
+struct spin {
   const Vector3d pos; // position
   const double g; // gyromagnetic ratio
   const mvec S; // spin vector
@@ -81,7 +81,7 @@ struct spin{
 enum axy_harmonic { first = 1, third = 3 };
 
 // struct containing system and simulation info
-struct nv_system{
+struct nv_system {
   const spin n = spin(ao, 0., s_vec/2);
   const spin e;
   const int ms;
@@ -239,7 +239,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 // Control fields and simulation
 // ---------------------------------------------------------------------------------------
 
-struct control_fields{
+struct control_fields {
   vector<Vector3d> Bs;
   vector<double> freqs;
   vector<double> phases;
@@ -319,7 +319,7 @@ MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
 // Protocol object
 // ---------------------------------------------------------------------------------------
 
-struct protocol{
+struct protocol {
   MatrixXcd U;
   double t;
 

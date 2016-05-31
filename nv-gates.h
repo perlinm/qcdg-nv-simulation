@@ -7,7 +7,7 @@
 
 using namespace Eigen;
 
-struct nv_gates{
+struct nv_gates {
 
   // single qubit gates
   const MatrixXcd Z = sz;

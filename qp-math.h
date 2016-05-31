@@ -134,7 +134,7 @@ inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma) {
 // Matrix vectors
 // ---------------------------------------------------------------------------------------
 
-struct mvec{
+struct mvec {
   vector<MatrixXcd> v;
 
   mvec(){};

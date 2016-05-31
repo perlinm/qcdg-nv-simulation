@@ -359,23 +359,23 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   } else {
     // compute actual realization of the SWAP_NVST gate
-    const protocol Z_NV = protocol(act_NV(nv, rotate(pi/2,zhat), spins), 0);
     const protocol X_NV = protocol(act_NV(nv, rotate(pi/2,xhat), spins), 0);
+    const protocol Z_NV = protocol(act_NV(nv, rotate(pi/2,zhat), spins), 0);
     const protocol Z_to_mX = protocol(act_NV(nv, rotate(-pi/2,yhat), spins), 0);
 
-    const protocol cNOT_UD_NV_adapted =
+    const protocol cNOT_AC_NV_adapted =
       X_NV * couple_target(nv, idx1, -pi/4, xhat, xhat, exact);
 
     const Vector3d y1_in_idx2_basis = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
-    const protocol cNOT_NV_UD_adapted =
+    const protocol cNOT_NV_AC_adapted =
       (Z_NV * Z_NV * rotate_target(nv, idx1, pi/2, -yhat, exact) *
        couple_target(nv, idx1, -pi/4, zhat, -yhat, exact) *
        couple_target(nv, idx2, -pi/4, zhat, -y1_in_idx2_basis, exact));
 
     return (Z_to_mX.adjoint() *
-            cNOT_UD_NV_adapted.adjoint() *
-            cNOT_NV_UD_adapted *
-            cNOT_UD_NV_adapted *
+            cNOT_AC_NV_adapted.adjoint() *
+            cNOT_NV_AC_adapted *
+            cNOT_AC_NV_adapted *
             Z_to_mX);
   }
 }
