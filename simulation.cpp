@@ -197,13 +197,13 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // run a sanity check on inputs
   if (!testing && (int(print_pairs)
-                  + int(coherence_scan)
-                  + int(single_control)
-                  + int(single_coupling)
-                  + int(iswap_fidelities)
-                  + int(swap_fidelities)
-                  + int(swap_nvst_fidelity)
-                  != 1)) {
+                   + int(coherence_scan)
+                   + int(single_control)
+                   + int(single_coupling)
+                   + int(iswap_fidelities)
+                   + int(swap_fidelities)
+                   + int(swap_nvst_fidelity)
+                   != 1)) {
     cout << "Please choose one simulation to perform\n";
     return -1;
   }
