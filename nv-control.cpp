@@ -331,8 +331,8 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // ---------------------------------------------------------------------------------------
 
 // SWAP operation between NV electron spin and the singlet-triplet (ST) subspace of two
-//   nuclear spins; spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,
-//   where {x1,y1,z1} is the natural basis of spin 1
+//   nuclear spins; spin 1 is in its natural basis {y1,-x1,z1}, whereas spin 2 is in the
+//   basis {-y1,x1,z1}
 protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                    const bool exact) {
   // assert that both target nuclei are larmor pairs in the same cluster
@@ -351,7 +351,7 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const Vector3d x1 = idx1_basis.at(0);
     const Vector3d y1 = idx1_basis.at(1);
     const Vector3d z1 = idx1_basis.at(2);
-    const Matrix2cd R1 = rotate({xhat,yhat,zhat}, {-z1,y1,x1});
+    const Matrix2cd R1 = rotate({xhat,yhat,zhat}, {x1,y1,z1});
     const Matrix2cd R2 = rotate({xhat,yhat,zhat}, {-y1,x1,z1});
     const MatrixXcd R = act(tp(R1,R2), {1,2}, 3);
 
@@ -364,11 +364,14 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const protocol Z_to_mX = protocol(act_NV(nv, rotate(-pi/2,yhat), spins), 0);
 
     const protocol cNOT_AC_NV_adapted =
-      X_NV * couple_target(nv, idx1, -pi/4, xhat, xhat, exact);
+      (X_NV *
+       couple_target(nv, idx1, -pi/4, xhat, xhat, exact) *
+       rotate_target(nv, idx1, pi/2, yhat, exact));
 
     const Vector3d y1_in_idx2_basis = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
     const protocol cNOT_NV_AC_adapted =
-      (Z_NV * Z_NV * rotate_target(nv, idx1, pi/2, -yhat, exact) *
+      (Z_NV * Z_NV *
+       rotate_target(nv, idx1, pi/2, -yhat, exact) *
        couple_target(nv, idx1, -pi/4, zhat, -yhat, exact) *
        couple_target(nv, idx2, -pi/4, zhat, -y1_in_idx2_basis, exact));
 
