@@ -331,7 +331,7 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // ---------------------------------------------------------------------------------------
 
 // SWAP operation between NV electron spin and the singlet-triplet (ST) subspace of two
-//   nuclear spins; spin 1 is in its natural basis {y1,-x1,z1}, whereas spin 2 is in the
+//   nuclear spins; spin 1 is in its natural basis {x1,y1,z1}, whereas spin 2 is in the
 //   basis {-y1,x1,z1}
 protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                    const bool exact) {
