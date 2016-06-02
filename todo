@@ -1,7 +1,5 @@
-add protocol to perferom SWAP_NVUD
 run simulations with c13_percentage ~ 0.01
 add protocol to perform SWAP_NVST with two spins which are not larmor pairs
-try all simulations with different scale factors
 
 
 determine likeliness of performing SWAP_NVST with high fidelity, as a function of:
