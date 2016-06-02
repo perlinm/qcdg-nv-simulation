@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import sys, os, subprocess
+from basename import basename
 
 if len(sys.argv) < 8:
     print("usage: " + sys.argv[0] + " sim_type static_Bz c13_percentage" + \
-          " max_cluster_size scale_factor log10_samples walltime_in_hours [mkfac.py args]")
+          " max_cluster_size scale_factor log10_samples walltime_in_hours" + \
+          " [mkfac.py args]")
     exit(1)
 
 sim_type = sys.argv[1]
@@ -26,17 +28,13 @@ project_dir = os.path.dirname(os.path.realpath(__file__))
 job_dir = "jobs"
 mkfac = "mkfac.py"
 script = "fidelity-sweep.py"
-basename = (sim_type + "-sBz-"+static_Bz + "-cp-"+c13_percentage + "-mcs-"+max_cluster_size
-            + "-sf-"+scale_factor + "-ls-"+log10_samples)
-job_file = job_dir+"/"+basename+".sh"
-out_file = job_dir+"/"+basename+".o"
-
-print(job_file)
+job_file = job_dir+"/"+basename(sim_args)+".sh"
+out_file = job_dir+"/"+basename(sim_args)+".o"
 
 resources = ["nodes={}:ppn={}".format(nodes,tasks_per_node),
              "walltime={}:00:00".format(walltime_in_hours),
              "pmem={}mb".format(mem_per_task_estimate_in_mb)]
-options = ["-N "+basename, "-m e", "-j oe", "-o "+out_file]
+options = ["-N "+basename(sim_args), "-m e", "-j oe", "-o "+out_file]
 for resource in resources:
     options += ["-l "+resource]
 
