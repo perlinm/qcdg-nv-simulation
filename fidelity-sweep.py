@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import sys, os, shutil, subprocess, random, threading, time, glob
 
-if len(sys.argv) < 7:
-    print("usage: " + sys.argv[0] + " sim_type static_Bz" + \
-          " c13_percentage max_cluster_size log10_samples task_num [seed]")
+if len(sys.argv) < 8:
+    print("usage: " + sys.argv[0] + " sim_type static_Bz c13_percentage" + \
+          " max_cluster_size scale_factor log10_samples task_num [seed_text]")
     exit(1)
 
 # process inputs
@@ -11,18 +11,20 @@ sim_type = sys.argv[1]
 static_Bz = sys.argv[2]
 c13_percentage = sys.argv[3]
 max_cluster_size = sys.argv[4]
-log10_samples = sys.argv[5]
-task_num = int(sys.argv[6])
+scale_factor = sys.argv[5]
+log10_samples = sys.argv[6]
+task_num = int(sys.argv[7])
 assert task_num > 1
-seed_text = " ".join(sys.argv[7:])
+seed_text = " ".join(sys.argv[8:])
 
 print_period = 1800 # seconds
 
 # identify some directories and names
 project_dir = os.path.dirname(os.path.realpath(__file__))
 sim_file = "simulate.exe"
-out_file = "data/fidelities-{}.txt".format("-".join([sim_type, static_Bz, c13_percentage,
-                                                     max_cluster_size, log10_samples]))
+basename = (sim_type + "-sBz-"+static_Bz + "-cp-"+c13_percentage + "-mcs-"+max_cluster_size
+            + "-sf-"+scale_factor + "-ls-"+log10_samples)
+out_file = "data/fidelities-{}.txt".format(basename)
 
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
@@ -57,7 +59,8 @@ def copy_results():
 commands = ["./"+sim_file, "--no_output", "--"+sim_type,
             "--static_Bz", static_Bz,
             "--c13_percentage", c13_percentage,
-            "--max_cluster_size", max_cluster_size]
+            "--max_cluster_size", max_cluster_size,
+            "--scale_factor", scale_factor]
 
 unsigned_long_long_max = 2**64-1
 print_time = time.time()
