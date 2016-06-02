@@ -47,8 +47,7 @@ job_text += "\n"
 job_text += "python {}/{} {} {}\n".format(project_dir,script," ".join(sim_args),task_num)
 
 
-print(job_text)
-# with open(job_file,"w") as f: f.write(job_text)
+with open(job_file,"w") as f: f.write(job_text)
 
-# subprocess.call(["./"+mkfac] + mkfac_args)
-# subprocess.call(["msub",job_file])
+subprocess.call(["./"+mkfac] + mkfac_args)
+subprocess.call(["msub",job_file])
