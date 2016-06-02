@@ -14,7 +14,7 @@ scale_factor = sys.argv[5]
 log10_samples = sys.argv[6]
 walltime_in_hours = sys.argv[7]
 mkfac_args = sys.argv[8:]
-sim_args = sys.argv[1:8]
+sim_args = sys.argv[1:7]
 
 nodes = 1
 tasks_per_node = 16
