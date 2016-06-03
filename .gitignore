@@ -4,6 +4,7 @@
 *.exe
 data
 jobs
+misc
 *.pdf
 .mkl-root
 .eigen-dirs
