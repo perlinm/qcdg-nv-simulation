@@ -7,7 +7,7 @@ real_jobs = "real" in sys.argv
 assert (test_jobs or real_jobs)
 
 sim_type = "swap_nvst"
-c13_base_percentage = 1.07
+c13_natural_percentage = 1.07
 
 def cmd_args(sim_args, walltime):
     return [ "./run-sweep.py" ] + [ str(a) for a in sim_args] + [ walltime, "whide" ]
@@ -17,7 +17,7 @@ for static_Bz in [ 500, 1000, 1500 ]:
         for max_cluster_size in [ 4 ]:
             for scale_factor in [ 5, 10, 20 ]:
                 log10_samples = int(numpy.round(3 - numpy.log10(c13_factor)))
-                c13_percentage = str(numpy.around(c13_base_percentage*c13_factor,
+                c13_percentage = str(numpy.around(c13_natural_percentage*c13_factor,
                                                   int(3 - numpy.log10(c13_factor))))
                 sim_args = [ sim_type, static_Bz, c13_percentage,
                              max_cluster_size, scale_factor, log10_samples ]
