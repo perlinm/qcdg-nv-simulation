@@ -564,6 +564,10 @@ NV and ST qubits directly, but this method requires performing many
 more individual spin addressing operations, and therefore has a
 substantially lower fidelity.
 
+% note: when we wish to read out the ST qubit, it is possible to do so
+% without performing the full coherent SWAP operation so long as we no
+% longer need the larmor pair as a resource for the time being
+
 \subsection{Robustness against noise}
 
 Talk about the robustness of the ST qubit against dephasing via the NV
