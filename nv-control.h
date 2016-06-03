@@ -62,7 +62,8 @@ inline protocol rotate_target(const nv_system& nv, const uint target, const doub
 
 // propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 protocol U_int(const nv_system& nv, const uint target, const double phase,
-               const Vector3d& nv_axis, const double target_azimuth, bool decouple = true);
+               const Vector3d& nv_axis, const double target_azimuth,
+               const bool decouple = true);
 
 // perform given NV coupling operation on a target nucleus
 protocol couple_target(const nv_system& nv, const uint target, const double phase,

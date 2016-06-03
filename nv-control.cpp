@@ -203,7 +203,8 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 
 // propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
 protocol U_int(const nv_system& nv, const uint target, const double phase,
-               const Vector3d& nv_axis, const double target_azimuth, const bool decouple) {
+               const Vector3d& nv_axis, const double target_azimuth,
+               const bool decouple) {
   // identify cluster of target nucleus
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
@@ -221,7 +222,8 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       if (is_larmor_pair(nv,index,target)) {
         const Vector3d A_perp_alt = hyperfine_perp(nv,index);
         const double B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
-        const Vector3d axis_ctl = hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
+        const Vector3d axis_ctl = hat(A_perp
+                                      - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
         controls.add(B_ctl*axis_ctl, w_larmor);
       }
     }
@@ -290,7 +292,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 // perform given NV coupling operation on a target nucleus
 protocol couple_target(const nv_system& nv, const uint target, const double phase,
                        const Vector3d& nv_axis, const Vector3d& target_axis,
-                       const bool exact, const bool decouple, bool adjust_AXY) {
+                       const bool exact, const bool decouple, const bool adjust_AXY) {
   if (exact) {
     // identify cluster of target nucleus
     const uint cluster = get_cluster_containing_target(nv,target);
@@ -321,7 +323,8 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 
   const protocol target_to_equator =
     U_ctl(nv, target, target_pitch/2, target_azimuth+pi/2, adjust_AXY);
-  const protocol coupling_xy = U_int(nv, target, phase, nv_axis, target_azimuth, decouple);
+  const protocol coupling_xy =
+    U_int(nv, target, phase, nv_axis, target_azimuth, decouple);
 
   return target_to_equator.adjoint() * coupling_xy * target_to_equator;
 }
