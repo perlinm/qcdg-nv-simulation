@@ -5,6 +5,7 @@
 data
 jobs
 misc
+swap-nvst-paper
 *.pdf
 .mkl-root
 .eigen-dirs
