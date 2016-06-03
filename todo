@@ -1,4 +1,3 @@
-run simulations with c13_percentage ~ 0.01
 add protocol to perform SWAP_NVST with two spins which are not larmor pairs
 
 
@@ -15,17 +14,14 @@ itemize assumptions and approximations used in simulations
 cluster nuclei whose effective larmor frequencies are within cluster_factor
 
 
-translate several pure states and density operators between abstract state and GA notations
-
-
 add a mode to output operation protocol
- - use secondary script to remove operations which cancel out (e.g. two consecutive XX pulses)
+ - use secondary script to remove operations which cancel out (e.g. two consecutive X pulses)
 
 if two SWAP_NVST targets are not larmor pairs,
   is it better to use natural bases, or a standard basis?
 
-is it worthwhile to implement a zz coupling protocol?
+is it worthwhile to implement a dedicated zz coupling protocol?
 
 implement state decay model, non-ideal NV pulses
 
-compute corrections that need to be made to approximate gates, and perform them
+compute and perform corrections that need to be made to approximate gates
