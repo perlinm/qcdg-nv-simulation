@@ -1,16 +1,30 @@
 #!/usr/bin/env python
-import sys, numpy, subprocess, glob
+import sys, os, numpy, subprocess, glob
 from basename import basename
 
-test_jobs = "test" in sys.argv
-real_jobs = "real" in sys.argv
-assert (test_jobs or real_jobs)
+def input_error():
+    print("usage: " + sys.argv[0] + " sim_type [test] [mkfac.py args]")
+    exit(1)
 
-sim_type = "swap_nvst"
+if len(sys.argv) < 3: input_error()
+
+sim_type = sys.argv[1]
+if sys.argv[2] == "test":
+    test_jobs = True
+    mkfac_args = sys.argv[3:]
+else:
+    test_jobs = False
+    mkfac_args = sys.argv[2:]
+
 c13_natural_percentage = 1.07
 
+project_dir = os.path.dirname(os.path.realpath(__file__))
+run_script = "run-sweep.py"
+
 def cmd_args(sim_args, walltime):
-    return [ "./run-sweep.py" ] + [ str(a) for a in sim_args] + [ walltime, "whide" ]
+    return ([ "{}/{}".format(project_dir,run_script) ]
+            + [ str(a) for a in sim_args]
+            + [ walltime ] + mkfac_args)
 
 for static_Bz in [ 500, 1000, 1500 ]:
     for c13_factor in [ 1, 0.1, 0.01 ]:
@@ -25,7 +39,7 @@ for static_Bz in [ 500, 1000, 1500 ]:
                 if test_jobs:
                     subprocess.call(cmd_args(sim_args,3))
 
-                if real_jobs:
+                else:
                     test_job_name = "./jobs/" + basename(sim_args) + ".o_feedback"
                     fname_candidates = glob.glob(test_job_name)
                     assert (len(fname_candidates) == 1)
