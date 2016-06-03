@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import sys, os
+import sys, os, re
 
 if len(sys.argv) not in [2,3]:
-    print("usage: {} fidelity_sweep_file [cutoff] [print]".format(sys.argv[0]))
+    print("usage: {} fidelity_data_file [cutoff] [print]".format(sys.argv[0]))
     exit(1)
 
 print_results = True if sys.argv[-1] == "print" else False
@@ -17,6 +17,7 @@ else:
 if not os.path.isfile(fname):
     print("invalid file: {}".format(fname))
     exit(1)
+samples = 10**int(re.split("-|\.",fname)[-2])
 
 results = []
 collect = False
@@ -47,4 +48,6 @@ filtered_results = [ r for r in results if r[0] > cutoff ]
 if print_results:
     for result in filtered_results:
         print(result)
+
 print(len(filtered_results)/len(results))
+print(len(filtered_results)/samples)
