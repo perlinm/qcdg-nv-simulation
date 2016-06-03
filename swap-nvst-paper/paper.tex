@@ -1,0 +1,607 @@
+\documentclass[twocolumn]{revtex4}
+
+% \usepackage{showframe}
+
+\usepackage{hyperref} % for linking references
+
+%%% math, symbols, etc.
+\usepackage{physics,braket,bm,bbm}
+\renewcommand{\t}{\text} % text in math mode
+\newcommand{\f}[2]{\dfrac{#1}{#2}} % shorthand for fractions
+\newcommand{\p}[1]{\left(#1\right)} % square parenthesis
+\renewcommand{\sp}[1]{\left[#1\right]} % square parenthesis
+\renewcommand{\set}[1]{\left\{#1\right\}} % curly parenthesis
+\renewcommand{\v}{\bm} % bold vectors
+\newcommand{\uv}[1]{\hat{\v{#1}}} % unit vectors
+\renewcommand{\c}{\cdot} % inner product
+\newcommand{\bk}{\Braket} % shorthand for braket notation
+
+% shorthand for frequently used commands
+\renewcommand{\u}{\uparrow}
+\renewcommand{\d}{\downarrow}
+\newcommand{\SWAP}{\t{SWAP}}
+\newcommand{\cNOT}{\t{cNOT}}
+\newcommand{\NV}{\t{NV}}
+\newcommand{\AC}{\t{AC}}
+\newcommand{\ST}{\t{ST}}
+\renewcommand{\S}{\t{S}}
+\newcommand{\T}{\t{T}}
+
+%%% figures
+\usepackage{graphicx,grffile,float} % floats, etc.
+\usepackage{multirow} % multirow entries in tables
+\usepackage{footnote} % footnotes in floating objects
+\usepackage[font=small,labelfont=bf]{caption} % caption text options
+
+%%% markup
+\usepackage{color,soul} % text color and other editing options
+% \ul{underline}, \st{strikethrough}, and \hl{highlight}
+\usepackage[draft]{fixme} % in text notes
+% \fxsetup{layout=footnote}
+\newcommand{\nt}{\fxnote}
+\newcommand{\re}[1]{{\bf \color{red} #1}}
+\newcommand{\bl}[1]{{\bf \color{blue} #1}}
+
+\begin{document}
+
+\title{Noise-Protected Quantum Memory Registers with Nitrogen-Vacancy
+  Centers and $^{13}$C Nuclear Spins}
+
+\author{Michael A. Perlin, Zhen-Yu Wang, and Martin B. Plenio}
+
+\affiliation{Institut f\"ur Theoretische Physik, Albert-Einstein-Allee
+  11, Universit\"at Ulm, D-89069 Ulm, Germany}
+
+\begin{abstract}
+  Here is the abstract.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Nitrogen-vacancy (NV) centers in diamond have been recognized in
+recent years as a promising platform for quantum sensing and
+information technologies. The electronic ground and optically excited
+states of NV$^-$ split into spin triplets which can be polarized,
+detected, and coherently manipulated with high fidelity with fields
+and microwave radiation \cite{dobrovitski2013quantum}. Hyperfine
+coupling between the NV center electron and $^{13}$C nuclei in bulk
+diamond allows for the coherent control and measurement of individual
+nuclear spins, and the realization of universal set of high-fidelity
+quantum gates \cite{dobrovitski2013quantum, casanova2016noise}. These
+properties have prompted extensive studies of NV centers for quantum
+metrology and information processing applications
+\cite{mamin2013nanoscale, steinert2010high, wang2015positioning,
+  chou2015optimal, childress2006fault, yao2012scalable}. % fixme: the
+% first and last sentences of this paragraph are essentially the same
+
+One such application of the NV center is as a memory register to store
+quantum information. While typical control operations on the NV
+electron spin happen on the scale of nanoseconds, its room-temperature
+coherence time is on the scale of microseconds
+\cite{dobrovitski2013quantum}.  Dynamic decoupling schemes and the use
+of isotopically pure diamond samples can increase the NV electron spin
+coherence time by a few orders of magnitude
+\cite{ryan2010robust}. Storing quantum information in the NV electron
+spin itself, however, reserves a valuable resource, as the center
+could otherwise be used to address nuclear spins and other quantum
+processing resources. The weaker environmental coupling of $^{13}$C
+nuclei present in diamond yields much longer coherence times than that
+of the NV electron spin, and by entangling multiple nuclear spins into
+the singlet-triplet states $\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, it is
+possible to generate logical qubits which are protected from various
+sources of system and environmental dephasing noise. Such techniques
+have been used to increase qubit lifetimes in both GaAs and silicon
+quantum dots \cite{bluhm2011dephasing, maune2012coherent}, but have
+yet to be realized in the NV center system.
+
+In this paper, we propose using the singlet-triplet subspace of two
+$^{13}$C nuclear spins with identical effective larmor frequencies as
+a logical qubit for storing quantum memory. Here identical effective
+larmor frequencies implies that, absent of symmetry-breaking control
+fields, the nuclei are indistinguishable from the perspective of the
+NV electron. This indistinguishability protects the logical qubit from
+dephasing via coupling to the NV electron spin, potentially increasing
+its coherence time by a few orders of magnitude. % fixme: elaborate
+We investigate the efficacy of this quantum memory register when
+realized via the recently developed dynamical decoupling protocol
+dubbed adaptive XY-$n$ (AXY-$n$) \cite{casanova2015robust}.
+
+\section{Theory}
+
+\subsection{Basic system model}
+
+The Hamiltonian of the NV center system in the presence of a strong,
+static magnetic field $\v B$ can be decomposed as
+\begin{align}
+  H_\t{sys} = H_\t{NV}^\t{GS} + H_\t{hf} + H_\t{nZ}  + H_\t{nn},
+\end{align}
+where
+\begin{align}
+  H_\t{NV}^\t{GS} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
+\end{align}
+is the ground-state NV electron spin Hamiltonian with zero-field
+splitting $D$, spin-1 operator $\v S$, natural NV axis $\uv z$, and
+electron gyromagnetic ratio $\gamma_e$;
+\begin{align}
+  H_\t{hf} = \sum_j\f{\gamma_e\gamma_j}{4\pi r_j^3}
+  \p{\v S\c\v I_j-3\sp{\v S\c\uv r_j}\sp{\v I_j\c\uv r_j}}
+\end{align}
+is the hyperfine coupling between the NV electron spin (located at the
+origin) and nuclei indexed by $j$ located at $\v r_j$;
+\begin{align}
+  H_\t{nZ} = -\sum_j\gamma_j\v B\c\v I_j
+\end{align}
+is the Zeeman Hamiltonian for nuclei indexed by $j$ with gyromagnetic
+ratio $\gamma_j$ and spin operators $\v I_j$; and
+\begin{align}
+  H_\t{nn} = \sum_{j<k}\f{\gamma_j\gamma_k}{4\pi r_{jk}^3}
+  \p{\v I_j\c\v I_k-3\sp{\v I_j\c\uv r_{jk}}\sp{\v I_k\c\uv r_{jk}}}
+\end{align}
+is the internuclear coupling with $\v r_{jk}\equiv\v r_j-\v r_k$. We
+will hereafter neglect internuclear coupling in all analytical work,
+though we will keep $H_\t{nn}$ in any numerical results.
+
+Changing into the rotating frame of $H_\t{NV}^\t{GS}$ affects only the
+hyperfine Hamiltonian, which becomes
+\begin{align}
+  \tilde H_\t{hf} = S_z\sum_j \v A_j\c\v I_j,
+\end{align}
+where we define the hyperfine field
+\begin{align}
+  \v A_j = \f{\gamma_e\gamma_j}{4\pi r_j^3}\p{\uv z - 3\sp{\uv
+  r_j\c\uv z}\uv r_j}.
+\end{align}
+The system Hamiltonian is thus
+\begin{align}
+  \tilde H_\t{sys} = S_z\sum_j \v A_j\c\v I_j
+  -\sum_j\gamma_j\v B\c\v I_j.
+\end{align}
+
+When restricted to the subspace of $\set{\ket0,\ket{m_s}}$ for the NV
+electron spin, with $m_s\in\set{1,-1}$, we can say that
+\begin{align}
+  S_z = \f{m_s}2\p{\sigma_z^{NV}+\mathbbm1},
+\end{align}
+where $\sigma_z^{NV}\equiv\op{m_s}-\op{0}$ and
+$\mathbbm1\equiv\op{m_s}+\op{0}$ is the identity. Defining the
+interaction Hamiltonian
+\begin{align}
+  H_\t{int} = \f{m_s}2\sigma_z^{NV}\sum_j\v A_j\c\v I_j
+\end{align}
+the effective larmor frequency
+\begin{align}
+  \v\omega_j = \gamma_j\v B - \f{m_s}2\v A_j,
+\end{align}
+and the effective Zeeman Hamiltonian
+\begin{align}
+  H_\t{nZ}^\t{eff} = -\sum_j\p{\gamma_j\v B - \f{m_s}2\v A_j}\c\v I_j
+  \equiv -\sum_j\v\omega_j\c\v I_j,
+\end{align}
+we can say that
+\begin{align}
+  \tilde H_\t{sys} = H_\t{int} + H_\t{nZ}^\t{eff}.
+  \label{H_sys_int_nZ}
+\end{align}
+
+Moving into the rotating frame of $H_\t{nZ}^\t{eff}$, the entire
+system is described the the Hamiltonian
+\begin{align}
+  \tilde H_\t{int} = \f{m_s}2\sigma_z^{NV}
+  \sum_j\tilde{\v A_j}\p{t}\c\v I_j,
+  \label{H_int_no_DD}
+\end{align}
+where $\tilde{\v A_j}\p{t}$ is the vector $\v A_j$ rotated about
+$\uv\omega_j$ by an angle $\omega_jt$. Written explicitly,
+\begin{align}
+  \tilde{\v A_j}\p{t} = \v A_j^\parallel + \v A_j^\perp\cos\p{\omega_jt}
+  + \v A_j^{\perp\perp}\sin\p{\omega_jt},
+  \label{A_rot}
+\end{align}
+where $\v A_j^\parallel\equiv\p{\v A_j\c\uv\omega_j}\uv\omega_j$ is
+the projection of $\v A_j$ along $\v \omega_j$,
+$\v A_j^\perp\equiv\v A_j-\v A_j^\parallel$ is the projection of
+$\v A_j$ onto the plane orthogonal to $\v\omega_j$, and
+$\v A_j^{\perp\perp}\equiv\uv\omega_j\times\v A_j^\perp$ is the vector
+$\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
+
+\subsection{Dynamic decoupling and nuclear spin addressing}
+
+Dynamic decoupling schemes effectively prepend a modulation function
+\begin{align}
+  F\p{t}=\sum_kf_k\cos\p{k\omega_{DD}t-\phi_{DD}}
+\end{align}
+with fundamental frequency $\omega_{DD}$, phase $\phi_{DD}$, and range
+$\set{1,-1}$ to $\sigma_z^{NV}$, so that the system Hamiltonian reads
+\begin{align}
+  \tilde H_\t{int} =
+  F\p{t}\f{m_s}2\sigma_z^{NV}\sum_j\tilde{\v A_j}\p{t}\c\v I_j.
+\end{align}
+At a resonance $k_{DD}\omega_{DD}\equiv\omega_r\gg A_j$, the secular
+approximation allows one to neglect $\v A_j^\parallel$ and express
+\begin{align}
+  \tilde H_\t{int} = f_{k_{DD}}\f{m_s}4\sigma_z^{NV}
+  \sum_{j:\omega_j=\omega_r} A_j^\perp\v I_j\c\uv n_j,
+  \label{H_int_resonance}
+\end{align}
+where $\uv n_j$ is the direction of $\v A_j^\perp$ rotated about
+$\uv\omega_j$ by $\phi_{DD}$, i.e.
+\begin{align}
+  \uv n_j = \uv A_j^\perp\cos\phi_{DD} +
+  \uv A_j^{\perp\perp}\sin\phi_{DD}.
+\end{align}
+One can concisely write (\ref{H_int_resonance}) with
+$h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/8$ and the Pauli spin-1/2
+vector $\v\sigma^j$ (as we consider only spin-1/2 nuclei) as
+\begin{align}
+  \tilde H_\t{int} = \sum_{j:\omega_j=\omega_r}
+  h_j^\t{int}\sigma_z^{NV}\v\sigma^j\c\uv n_j.
+  \label{H_int}
+\end{align}
+
+When the harmonics of $F\p{t}$ are off resonance with all $\omega_j$
+and $\omega_{DD}\gg A_j$ for all $j$, the secular approximation allows
+one to neglect $H_\t{int}$ entirely. In this case, one can apply an
+auxiliary magnetic field
+$\v B_\t{ctl}^{\p\omega}\p{t}=\v
+B_\t{ctl}\cos\p{\omega_\t{ctl}t-\phi_\t{ctl}}$ and shift into the
+rotating frame of $H_\t{nZ}^\t{eff}$, much like the frame shift
+between (\ref{H_sys_int_nZ}) and (\ref{H_int_no_DD}), to realize the
+Hamiltonian
+\begin{align}
+  \tilde H_\t{sys}^\t{ctl} =
+  -\sum_j\gamma_j\tilde{\v B}_{\t{ctl},j}\p{t}
+  \cos\p{\omega_\t{ctl}t-\phi_\t{ctl}}\c\v I_j,
+\end{align}
+with $\tilde{\v B}_{\t{ctl},j}\p{t}$ defined using $\v B_\t{ctl}$ and
+$\v\omega_j$ the same way that $\tilde{\v A_j}\p{t}$ was defined using
+$\v A_j$ and $\v\omega_j$ in (\ref{A_rot}), i.e. as $\v B_\t{ctl}$
+rotated about $\uv\omega_j$ by an angle $\omega_jt$:
+\begin{align}
+  \tilde{\v B}_{\t{ctl},j}\p{t} = \v B_{\t{ctl},j}^\parallel
+  + \v B_{\t{ctl},j}^\perp\cos\p{\omega_jt}
+  + \v B_{\t{ctl},j}^{\perp\perp}\sin\p{\omega_jt},
+\end{align}
+where
+$\v B_{\t{ctl},j}^\parallel\equiv\p{\v B_\t{ctl}
+  \c\uv\omega_j}\uv\omega_j$,
+$\v B_{\t{ctl},j}^\perp\equiv\v B_\t{ctl} - \v
+B_{\t{ctl},j}^\parallel$, and
+$\v B_{\t{ctl},j}^{\perp\perp}\equiv\uv\omega_j\times\v
+B_\t{ctl}^\perp$.
+
+When $\omega_\t{ctl}\gg\gamma_jB_\t{ctl}$, the secular approximation
+allows one to neglect $\v B_{\t{ctl},j}^\parallel$ and express
+\begin{align}
+  \tilde H_\t{ctl} = -\f12\sum_{j:\omega_j=\omega_\t{ctl}}
+  \gamma_jB_{\t{ctl},j}^\perp \v I_j\c\uv m_j,
+  \label{H_ctl_resonance}
+\end{align}
+where $\uv m_j$ is the direction of $\v B_{\t{ctl},j}^\perp$ rotated
+about $\uv\omega_j$ by $\phi_\t{ctl}$, i.e.
+\begin{align}
+  \uv m_j = \uv B_{\t{ctl},j}^\perp\cos\phi_\t{ctl} +
+  \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_\t{ctl}.
+\end{align}
+One can concisely write (\ref{H_ctl_resonance}) with
+$h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/4$ and the Pauli
+spin-1/2 vector $\v\sigma^j$ as
+\begin{align}
+  \tilde H_\t{ctl} = \sum_{j:\omega_j=\omega_\t{ctl}}
+  h_j^\t{ctl}\v\sigma^j\c\uv m_j.
+  \label{H_ctl}
+\end{align}
+
+In both (\ref{H_int}) and (\ref{H_ctl}), one can choose $\phi_{DD}$
+and $\phi_\t{ctl}$ such that $\uv n_j\p\phi$ and
+$\uv m_j\p{\phi_\t{ctl}}$ lie anywhere in the plane perpendicular to
+$\uv\omega_j$. One can also tune $h_j^\t{int}$ and $h_j^\t{ctl}$
+respectively via free parameters in the AXY-$n$ sequence and
+$\v B_\t{ctl}$. These controls, together with rotations of the NV
+electron spin, in principle allow one to realize a universal set of
+quantum gates. An exception to this statement is when two or more
+nuclei have the same effective larmor frequency $\omega_j$, in which
+case they are addressed simultaneously in (\ref{H_int}) and
+(\ref{H_ctl}).
+
+\subsection{Addressing larmor pairs}
+
+We call two spins indexed by $j$ and $k$ elements of a \emph{larmor
+  set} if their effective larmor frequencies are equal,
+i.e. $\omega_j=\omega_k$, and refer to a larmor set with exactly two
+spins as a \emph{larmor pair}. The problem with individually
+addressing elements of a larmor set is manifest in (\ref{H_int}) and
+(\ref{H_ctl}), wherein the previously developed procedure for nuclear
+spin addressing does not single out any nuclei. Nonetheless, under
+certain conditions it is possible to individually address elements of
+a larmor set by applying additional control fields.
+
+When employing a dynamic decoupling protocol on resonance with an
+effective larmor frequency $\omega_r$, one can apply an additional
+magnetic decoupling field
+$\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega_r
+  t-\phi_\t{dec}}$ and realize, with a rotating wave approximation in
+the frame of $H_\t{nZ}^\t{eff}$, the Hamiltonian
+\begin{align}
+  \tilde H_\t{int}^\t{dec} = \sum_{j:\omega_j=\omega_r}
+  \tilde h_j^\t{int}\sigma_z^{NV}\v\sigma^j\c\tilde{\v n}_j,
+  \label{H_int_dec}
+\end{align}
+where
+\begin{align}
+  \tilde h_j^\t{int}
+  = h_j^\t{int}\p{\uv A_j^\perp\c\uv B_{\t{dec},j}^\perp}
+  = h_j^\t{int}A_{j,\t{dec}}^\perp/A_j^\perp
+\end{align}
+and
+\begin{align}
+  \tilde{\v n}_j
+  &= \uv A_{j,\t{dec}}^\perp\cos\phi_{DD}
+    + \uv A_{j,\t{dec}}^{\perp\perp}\sin\phi_{DD}
+\end{align}
+with
+\begin{align}
+  \v A_{j,\t{dec}}^\perp
+  &= \p{\v A_j^{\perp}\c\uv B_{\t{dec},j}^\perp}\uv B_{\t{dec},j}^\perp, \\
+  \v A_{j,\t{dec}}^{\perp\perp}
+  &= \uv\omega_j\times\v A_{j,\t{dec}}^\perp, \\
+  \v B_{\t{dec},j}^\perp
+  &= \v B_\t{dec} - \p{\v B_\t{dec}\c\uv\omega_j}\uv\omega_j.
+\end{align} % fixme: provide derivation of these results?
+In words: the decoupling field $\v B_\t{dec}^{\p\omega}$ effectively
+suppresses the components of $\v A_j^\perp$ perpendicular to
+$\uv B_\t{dec}^\perp$. These results to not depend on $\phi_\t{dec}$,
+but do require that $A_j\ll\gamma_jB_{\t{dec},j}^\perp\ll\gamma_jB$.
+
+The utility of the decoupling field lies in the fact that when
+$\uv B_\t{dec}^\perp$ is orthogonal to $\v A_j^\perp$, the interaction
+with spin $j$ is suppressed as $\tilde h_j^\t{int}=0$. Considering a
+single larmor pair, one can therefore apply a decoupling field to
+eliminate one of the two terms in (\ref{H_int_dec}) and realize an
+effective Hamiltonian which couples the NV electron spin to only one
+nuclear spin. This scheme fails for larmor pairs with mutually
+parallel $\v A_j^\perp$.
+
+The tools developed in this paper do not allow for single-spin
+operations on elements of a larmor pair. Such operations must
+therefore be either forgone, or else realized via composite operations
+making use of (\ref{H_ctl}) and (\ref{H_int_dec}). The same is true of
+spin-spin coupling between the NV electron spin and a single element
+of a larmor set with more than two nuclei.
+
+\subsection{Coherent SWAP with a singlet-triplet qubit}
+
+For the following analysis, we will consider a single addressable
+larmor pair, i.e. a pair of nuclei indexed by 1 and 2 with effective
+larmor frequencies $\omega$ and for which $\v A_j^\perp$ are not
+mutually parallel. We will use the basis
+$\set{\ket\u\equiv\ket 0, \ket\d\equiv\ket{m_s}}$ for the spin states
+of the NV electron, and the standard basis
+$\set{\ket{\u\u}, \ket{\u\d}, \ket{\d\u}, \ket{\d\d}}$ for the spin
+states of the nuclei. We will refer to the logical qubit consisting of
+the basis states $\set{\ket{\u\d},\ket{\d\u}}$ as the anti-correlated
+(AC) qubit, and the logical qubit consisting of the basis states
+$\set{\ket\S,\ket\T}$ as the singlet-triplet (ST) qubit, where
+\begin{align}
+  \ket\S &\equiv \f1{\sqrt2}\p{\ket{\u\d}-\ket{\d\u}}, \\
+  \ket\T &\equiv \f1{\sqrt2}\p{\ket{\u\d}+\ket{\d\u}}.
+\end{align}
+
+A SWAP operation between two qubits indexed by 1 and 2 can be realized
+via the composite operation
+\begin{align}
+  \SWAP^{1,2} = \cNOT^{2\to1}\cNOT^{1\to2}\cNOT^{2\to1},
+\end{align}
+where $\cNOT^{j\to k}$ is the controlled-NOT gate, which flips the
+state of qubit $k$ conditionally on the state of qubit $j$. The
+$\cNOT^{j\to k}$ gate is realized via
+\begin{multline}
+  \cNOT^{j\to k} \\
+  = \exp\p{-j\f\pi4\sigma_z^j} \exp\p{-j\f\pi4\sigma_x^k}
+  \exp\p{j\f\pi4\sigma_z^j\sigma_x^k}.
+\end{multline}
+
+If we wish to perform a SWAP operation between the NV electron spin
+and an ST qubit, it is easier to first realize the operation
+\begin{multline}
+  \SWAP^{\NV,\AC} \\
+  = {\cNOT^{\AC\to\NV}}^\dagger\cNOT^{\NV\to\AC}\cNOT^{\AC\to\NV},
+  \label{SWAP_NVAC_sketch}
+\end{multline}
+where
+\begin{align}
+  \cNOT^{\AC\to\NV} = \cNOT^{1\to\NV}
+\end{align}
+and
+\begin{align}
+  \cNOT^{\NV\to\AC} = \cNOT^{\NV\to2}\cNOT^{\NV\to1}.
+\end{align}
+For later convenience, (\ref{SWAP_NVAC_sketch}) makes use of the fact
+that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore,
+\begin{multline}
+  \SWAP^{\NV,\AC} = \\
+  \exp\p{-j\f\pi4\sigma_x^\NV} \exp\p{j\f\pi4\sigma_{z'}^1}
+  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV} \exp\p{-j\f\pi4\sigma_{x'}^1}
+  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV} \exp\p{-j\f\pi4\sigma_{x''}^2}
+  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x''}^2}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_x^\NV} \exp\p{-j\f\pi4\sigma_{z'}^1}
+  \exp\p{j\f\pi4\sigma_x^\NV\sigma_{z'}^1},
+  \label{SWAP_NVAC_full}
+\end{multline}
+where we make explicit the fact that the the spin of nuclei 1 and 2
+may be given in their own respective bases
+$\set{\uv x',\uv y',\uv z'}$ and $\set{\uv x'',\uv y'',\uv z''}$. We
+can evaluate the first and last rotations of spin 1 in
+(\ref{SWAP_NVAC_full}) and combine factors to get
+\begin{multline}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
+  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
+  \times \\
+  \exp\p{-j\f\pi2\sigma_z^\NV}
+  \exp\p{j\f\pi4\sp{\sigma_{y'}^1-\sigma_{x''}^2}}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
+  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x''}^2}
+  \times \\
+  \exp\p{j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
+  \exp\p{-j\f\pi4\sigma_x^\NV}.
+\end{multline}
+Letting
+\begin{align}
+  \uv x' = \uv y'' &= \uv A_1^\perp, \\
+  \uv y' = -\uv x'' &= \uv A_1^{\perp\perp}, \\
+  \uv z' = \uv z'' &= \uv\omega_1\approx\uv z, \label{w=z}
+\end{align}
+where the approximation in (\ref{w=z}) holds for $\gamma_1B\gg A_1/2$,
+we can say that
+\begin{multline}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
+  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_z^1}
+  \times \\
+  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \times \\
+  \exp\p{j\f\pi4\sigma_x^\NV\sigma_z^1} \exp\p{-j\f\pi4\sigma_x^\NV}.
+  \label{SWAP_NVAC_sxsz}
+\end{multline}
+As we cannot directly realize the coupling $\sigma_x^\NV\sigma_z^1$,
+we must perform rotations as
+\begin{multline}
+  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_z^1} =
+  \exp\p{-j\f\pi4\sigma_y^\NV} \exp\p{j\f\pi4\sigma_{y'}^1}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_{y'}^1} \exp\p{j\f\pi4\sigma_y^\NV}.
+\end{multline}
+Substituting this identity into (\ref{SWAP_NVAC_sxsz}) yields
+\begin{multline}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
+  \exp\p{-j\f\pi4\sigma_y^\NV}
+  \times \\
+  \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \exp\p{j\f\pi4\sigma_y^\NV}
+  \times \\
+  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_y^\NV}
+  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \exp\p{-j\f\pi4\sum_j\sigma_{y'}^j}
+  \times \\
+  \exp\p{j\f\pi4\sigma_y^\NV} \exp\p{-j\f\pi4\sigma_x^\NV},
+  \label{SWAP_NVAC}
+\end{multline}
+where we have canceled out two rotations of the form
+$\exp\p{\pm j\pi/4~\sigma_{y'}^1}$ and inserted two rotations of the
+form $\exp\p{\pm j\pi/4~\sigma_{y'}^2}$ with no net effect.
+
+The $\SWAP^{\NV,\ST}$ can be realized using the $\SWAP^{\NV,\AC}$ gate
+via
+\begin{align}
+  \SWAP^{\NV,\ST} = R_\NV^\dagger \SWAP^{\NV,\AC} R_\NV,
+\end{align}
+where the rotation $R_\NV$ takes $\ket\u\to\p{\ket\u-\ket\d}/\sqrt2$
+and $\ket\d\to\p{\ket\u+\ket\d}/\sqrt2$. Written explicitly,
+\begin{align}
+  R_\NV = \exp\p{j\f\pi4\sigma_y^\NV}.
+\end{align}
+We therefore have that
+\begin{multline}
+  \SWAP^{\NV,\ST} = \exp\p{j\f\pi2\v\sigma^\NV\c\uv a}
+  \times \\
+  \exp\p{j\f\pi4\sum_j\sigma_{n'}^j}
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \exp\p{j\f\pi4\sigma_y^\NV}
+  \times \\
+  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
+  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \times \\
+  \exp\p{-j\f\pi4\sigma_y^\NV}
+  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \exp\p{-j\f\pi4\sum_j\sigma_{y'}^j}
+  \times \\
+  \exp\p{-j\f\pi2\v\sigma^\NV\c\uv a},
+  \label{SWAP_NVST}
+\end{multline}
+where $\v a = \uv x - \uv y$ and we have used the fact that
+\begin{multline}
+  \exp\p{j\f\pi4\sigma_y} \exp\p{-j\f\pi4\sigma_x}
+  \exp\p{j\f\pi4\sigma_y} \\
+  = \exp\p{-j\f\pi2\v\sigma\c\uv a}.
+\end{multline}
+
+In the subspace of interest, we have thus
+constructed the non-entangling SWAP operation
+\begin{multline}
+  \SWAP^{\NV,\ST} \\
+  = \op{\u\S}{\S\u} + \op{\u\T}{\d\S} + \op{\d\S}{\u\T} +
+  \op{\d\T}{\d\T}.
+\end{multline}
+If $\gamma_1=\gamma_2$, i.e. if nuclei 1 and 2 are of the same
+species, all factors in (\ref{SWAP_NVST}) can be realized directly via
+the protocols for (\ref{H_ctl}), (\ref{H_int_dec}), and rotations of
+the NV electron spin.
+
+Realizing $\SWAP^{\NV,\AC}$ by switching the cNOT operations in
+(\ref{SWAP_NVAC_sketch}) is seemingly impossible, as doing so requires
+rotating one spin in the larmor pair without rotating the other. It is
+possible to realize $\SWAP^{\NV,\ST}$ via cNOT operations between the
+NV and ST qubits directly, but this method requires performing many
+more individual spin addressing operations, and therefore has a
+substantially lower fidelity.
+
+\subsection{Robustness against noise}
+
+Talk about the robustness of the ST qubit against dephasing via the NV
+center, as well as its robustness against slowly varying (frequencies
+$\nu\ll\gamma_jB$) external magnetic noise.
+
+\section{Simulations and Results}
+
+\subsection{Abundance of larmor pairs}
+
+For any given hyperfine cutoff $A_\t{min}$ and an isotopic abundance
+$n$ of $^{13}$C, we can compute exactly the probability
+$P\p{A_\t{min},n}$ of finding an addressable larmor pair for which
+$A_j\ge A_\t{min}$. The simulations developed for this paper can also
+be used to test the computation of $P\p{A_\t{min},n}$ via the Monte
+Carlo method of simply generating many NV systems and counting the
+proportion of them which contain an addressable larmor pair.
+
+\subsection{SWAP fidelities via AXY-$n$}
+
+Discuss simulations and any relevant nuances therein. Present
+histograms of $\SWAP^{\NV,\ST}$ fidelities and net operation times.
+
+Note: the same simulations can also be used to generate similar
+histograms (as well as other info) about other operations,
+e.g. single-spin $\SWAP$ or $i\SWAP$ operations. Furthermore, the
+simulations can, without any modification, reproduce results such as
+Figure 2 in \cite{wang2015positioning} (``Positioning Nuclear Spins in
+Interacting Clusters for Quantum Technologies and
+Bio-imaging''). Minor additions to the codes might make them useful
+for comparing the efficacy of different spin-addressing protocols. Is
+there any interest in doing any of these things (for this paper or
+elsewhere)?
+
+\section{Conclusions}
+
+\section{Acknowledgments}
+
+\footnotesize \bibliography{\jobname}
+
+\end{document}
