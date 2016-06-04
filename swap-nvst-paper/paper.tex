@@ -36,11 +36,7 @@
 %%% markup
 \usepackage{color,soul} % text color and other editing options
 % \ul{underline}, \st{strikethrough}, and \hl{highlight}
-\usepackage[draft]{fixme} % in text notes
-% \fxsetup{layout=footnote}
-\newcommand{\nt}{\fxnote}
-\newcommand{\re}[1]{{\bf \color{red} #1}}
-\newcommand{\bl}[1]{{\bf \color{blue} #1}}
+\newcommand{\fixme}[1]{{\bf \color{red} fixme: #1}}
 
 \begin{document}
 
@@ -73,8 +69,8 @@ quantum gates \cite{dobrovitski2013quantum, casanova2016noise}. These
 properties have prompted extensive studies of NV centers for quantum
 metrology and information processing applications
 \cite{mamin2013nanoscale, steinert2010high, wang2015positioning,
-  chou2015optimal, childress2006fault, yao2012scalable}. % fixme: the
-% first and last sentences of this paragraph are essentially the same
+  chou2015optimal, childress2006fault, yao2012scalable}. \fixme{the
+  first and last sentences of this paragraph are essentially the same}
 
 One such application of the NV center is as a memory register to store
 quantum information. While typical control operations on the NV
@@ -103,10 +99,10 @@ larmor frequencies implies that, absent of symmetry-breaking control
 fields, the nuclei are indistinguishable from the perspective of the
 NV electron. This indistinguishability protects the logical qubit from
 dephasing via coupling to the NV electron spin, potentially increasing
-its coherence time by a few orders of magnitude. % fixme: elaborate
-We investigate the efficacy of this quantum memory register when
-realized via the recently developed dynamical decoupling protocol
-dubbed adaptive XY-$n$ (AXY-$n$) \cite{casanova2015robust}.
+its coherence time by a few orders of magnitude. \fixme{elaborate} We
+investigate the efficacy of this quantum memory register when realized
+via the recently developed dynamical decoupling protocol dubbed
+adaptive XY-$n$ (AXY-$n$) \cite{casanova2015robust}.
 
 \section{Theory}
 
@@ -348,7 +344,7 @@ with
   &= \uv\omega_j\times\v A_{j,\t{dec}}^\perp, \\
   \v B_{\t{dec},j}^\perp
   &= \v B_\t{dec} - \p{\v B_\t{dec}\c\uv\omega_j}\uv\omega_j.
-\end{align} % fixme: provide derivation of these results?
+\end{align} \fixme{derive these results explicitly?}
 In words: the decoupling field $\v B_\t{dec}^{\p\omega}$ effectively
 suppresses the components of $\v A_j^\perp$ perpendicular to
 $\uv B_\t{dec}^\perp$. These results to not depend on $\phi_\t{dec}$,
@@ -564,9 +560,10 @@ NV and ST qubits directly, but this method requires performing many
 more individual spin addressing operations, and therefore has a
 substantially lower fidelity.
 
-% note: when we wish to read out the ST qubit, it is possible to do so
-% without performing the full coherent SWAP operation so long as we no
-% longer need the larmor pair as a resource for the time being
+\fixme{when we wish to read out the ST qubit, it is possible to do so
+  without performing the full coherent SWAP operation so long as we no
+  longer need the larmor pair as a resource for the time being. Talk
+  about this.}
 
 \subsection{Robustness against noise}
 
