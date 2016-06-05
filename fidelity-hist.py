@@ -1,22 +1,18 @@
 #!/usr/bin/env python
 import sys, os, re
+from basename import basename
 
-if len(sys.argv) not in [2,3]:
-    print("usage: {} fidelity_data_file [cutoff] [print]".format(sys.argv[0]))
+if len(sys.argv) != 2:
+    print("usage: {} fidelity_data_file".format(sys.argv[0]))
     exit(1)
 
-print_results = True if sys.argv[-1] == "print" else False
-if print_results: del sys.argv[-1]
-
 fname = sys.argv[1]
-if len(sys.argv) == 3:
-    cutoff = float(sys.argv[2])
-else:
-    cutoff = 0.9
-
 if not os.path.isfile(fname):
     print("invalid file: {}".format(fname))
     exit(1)
+
+out_file = "{}/fidelities-{}".format(os.path.dirname(fname),os.path.basename(fname))
+
 samples = 10**int(re.split("-|\.",fname)[-2])
 
 results = []
@@ -33,21 +29,22 @@ with open(fname,'r') as f:
             continue
         if collect:
             line = line.split()
-            if len(line) < 3:
-                print("invalid data line")
-                exit(1)
-            elif len(line) == 3:
+            if len(line) == 3:
                 targets = int(line[0])
+            elif len(line) == 4:
+                targets = [int(line[0]),int(line[1])]
             else:
-                targets = [ int(target) for target in line[0:-2] ]
-            results += [(float(line[-2]),float(line[-1]),targets,seed)]
+                print("invalid data")
+                exit(1)
+            results += [(float(line[-2]),float(line[-1]),seed,targets)]
 
-results.sort(key = lambda x: x[0])
-filtered_results = [ r for r in results if r[0] > cutoff ]
+results.sort(key = lambda x: -x[0])
 
-if print_results:
-    for result in filtered_results:
-        print(result)
-
-print(len(filtered_results)/len(results))
-print(len(filtered_results)/samples)
+with open(out_file,"w") as f:
+    f.write("# samples: {}\n".format(samples))
+    f.write("# fidelity time seed target(s)\n")
+    for result in results:
+        f.write("{} {} {}".format(result[0],result[1],result[2]))
+        for target in result[3]:
+            f.write(" {}".format(target))
+        f.write("\n")
