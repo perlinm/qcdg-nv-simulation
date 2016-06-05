@@ -10,3 +10,4 @@ swap-nvst-paper
 .mkl-root
 .eigen-dirs
 TAGS
+__pycache__
