@@ -24,6 +24,7 @@ print_period = 1800 # seconds
 # identify some directories and names
 project_dir = os.path.dirname(os.path.realpath(__file__))
 sim_file = "simulate.exe"
+summary_script = "fidelity-summary.py"
 out_file = "data/{}.txt".format(basename(sim_args))
 
 if "TMPDIR" not in os.environ:
@@ -35,6 +36,13 @@ job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "-".join(sys.a
 os.makedirs(job_dir)
 shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
 os.chdir(job_dir)
+
+# define some variavles
+commands = ["./"+sim_file, "--no_output", "--"+sim_type,
+            "--static_Bz", static_Bz,
+            "--c13_percentage", c13_percentage,
+            "--max_cluster_size", max_cluster_size,
+            "--scale_factor", scale_factor]
 
 # method to execute a single simulation
 def run_sample(s):
@@ -54,13 +62,6 @@ def run_sample(s):
 def copy_results():
     for f in glob.glob("data/*"):
         shutil.copy2(f, project_dir+"/"+f)
-
-# define some variavles
-commands = ["./"+sim_file, "--no_output", "--"+sim_type,
-            "--static_Bz", static_Bz,
-            "--c13_percentage", c13_percentage,
-            "--max_cluster_size", max_cluster_size,
-            "--scale_factor", scale_factor]
 
 unsigned_long_long_max = 2**64-1
 print_time = time.time()
@@ -84,6 +85,9 @@ for s in range(samples):
 # wait for all threads to finish
 while threading.active_count() > 1:
     time.sleep(1)
+
+# generate fidelity summary
+subprocess.call(["./"+summary_script,out_file])
 
 # copy final results into the project directory
 copy_results()
