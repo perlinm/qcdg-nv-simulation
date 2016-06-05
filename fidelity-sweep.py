@@ -24,7 +24,7 @@ print_period = 1800 # seconds
 # identify some directories and names
 project_dir = os.path.dirname(os.path.realpath(__file__))
 sim_file = "simulate.exe"
-out_file = "data/fidelities-{}.txt".format(basename(sim_args))
+out_file = "data/{}.txt".format(basename(sim_args))
 
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
