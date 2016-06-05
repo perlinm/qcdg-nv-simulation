@@ -1,3 +1,4 @@
+.#*
 *\~
 *.tum
 *.o
@@ -11,3 +12,4 @@ swap-nvst-paper
 .eigen-dirs
 TAGS
 __pycache__
+*.pyc
