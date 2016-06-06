@@ -456,8 +456,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
     for (uint i = 0; i < nv.nuclei.size(); i++) {
-      const Vector3d A_i = hyperfine(nv,i);
-      A_perp.at(i) = (A_i-dot(A_i,zhat)*zhat).norm();
+      A_perp.at(i) = hyperfine_perp(nv,i).norm();
       w_larmor.at(i) = effective_larmor(nv,i).norm();
 
       if (w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
