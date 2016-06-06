@@ -68,9 +68,9 @@ const VectorXcd gates::S = (ud-du)/sqrt(2);
 const VectorXcd gates::T = (ud+du)/sqrt(2);
 
 // operations between NV and ST qubits
-const MatrixXcd gates::cNOT_NVST = act(cZ,{0,1},3);
-const MatrixXcd gates::cNOT_STNV =
-  act(E,{1,2},3) * act(cNOT,{1,0},3) * act(E.adjoint(),{1,2},3);
+const MatrixXcd cNOT_NVST = act(gates::cZ,{0,1},3);
+const MatrixXcd cNOT_STNV =
+  act(gates::E,{1,2},3) * act(gates::cNOT,{1,0},3) * act(gates::E.adjoint(),{1,2},3);
 const MatrixXcd gates::SWAP_NVST = cNOT_NVST * cNOT_STNV * cNOT_NVST;
 
 // spin propagators; Ua corresponds to a Hamiltonian H = h s_a

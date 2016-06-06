@@ -35,8 +35,6 @@ struct gates {
   static const VectorXcd T;
 
   // operations between NV and ST qubits
-  static const MatrixXcd cNOT_NVST;
-  static const MatrixXcd cNOT_STNV;
   static const MatrixXcd SWAP_NVST;
 
   // spin propagators; Ua corresponds to a Hamiltonian H = h s_a
