@@ -37,23 +37,6 @@ int main(const int arg_num, const char *arg_vec[]) {
      "seed for random number generator")
     ;
 
-  string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
-  fs::path output_dir;
-  string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
-  string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
-  bool no_output;
-
-  po::options_description file_io("File IO",help_text_length);
-  file_io.add_options()
-    ("lattice_file", po::value<string>(&lattice_file),
-     "input file defining system configuration")
-    ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
-     "directory for storing data")
-    ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
-    ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
-     "don't generate output files")
-    ;
-
   bool print_pairs;
   bool coherence_scan;
   bool single_control;
@@ -124,21 +107,6 @@ int main(const int arg_num, const char *arg_vec[]) {
      "turn off internuclear couplings")
     ;
 
-  uint scan_bins;
-  double f_DD;
-  double scan_time;
-  double scan_time_in_ms;
-
-  po::options_description scan_options("Coherence scanning options",help_text_length);
-  scan_options.add_options()
-    ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
-     "number of bins in coherence scanning range")
-    ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
-     "magnitude of fourier component used in coherence scanning")
-    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
-     "time for each coherence measurement (microseconds)")
-    ;
-
   vector<uint> target_nuclei;
   double phase;
   double phase_over_pi;
@@ -151,7 +119,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   double nv_azimuth;
   double nv_azimuth_over_pi;
 
-  po::options_description addressing_options("Nucleus addressing options"
+  po::options_description addressing_options("Nuclear spin addressing options"
                                              " (all angles are in units of pi radians)",
                                              help_text_length);
   addressing_options.add_options()
@@ -169,13 +137,45 @@ int main(const int arg_num, const char *arg_vec[]) {
      "azimuthal angle of NV rotation axis")
     ;
 
+  uint scan_bins;
+  double f_DD;
+  double scan_time;
+  double scan_time_in_ms;
+
+  po::options_description scan_options("Coherence scanning options",help_text_length);
+  scan_options.add_options()
+    ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
+     "number of bins in coherence scanning range")
+    ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
+     "magnitude of fourier component used in coherence scanning")
+    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
+     "time for each coherence measurement (microseconds)")
+    ;
+
+  string lattice_file = "lattice-r[cell_radius]-s[seed].txt";
+  fs::path output_dir;
+  string output_suffix = "r[cell_radius]-s[seed]-c[cluster_size]-k[k_DD]-[ms].txt";
+  string output_suffix_with_input_lattice = "c[cluster_size]-k[k_DD]-[ms].txt";
+  bool no_output;
+
+  po::options_description file_io("File IO",help_text_length);
+  file_io.add_options()
+    ("lattice_file", po::value<string>(&lattice_file),
+     "input file defining system configuration")
+    ("output_dir", po::value<fs::path>(&output_dir)->default_value("./data"),
+     "directory for storing data")
+    ("output_suffix", po::value<string>(&output_suffix), "output file suffix")
+    ("no_output", po::value<bool>(&no_output)->default_value(false)->implicit_value(true),
+     "don't generate output files")
+    ;
+
   po::options_description all("Allowed options");
   all.add(general);
-  all.add(file_io);
   all.add(simulations);
   all.add(simulation_options);
-  all.add(scan_options);
   all.add(addressing_options);
+  all.add(scan_options);
+  all.add(file_io);
 
   // collect inputs
   po::variables_map inputs;
