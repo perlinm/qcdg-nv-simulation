@@ -11,8 +11,8 @@
 
 #include "constants.h"
 #include "qp-math.h"
+#include "gates.h"
 #include "nv-math.h"
-#include "nv-gates.h"
 #include "nv-control.h"
 
 using namespace std;

@@ -5,8 +5,8 @@
 
 #include "constants.h"
 #include "qp-math.h"
+#include "gates.h"
 #include "nv-math.h"
-#include "nv-gates.h"
 #include "nv-control.h"
 
 using namespace std;
@@ -346,7 +346,6 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   if (exact) {
     // return exact SWAP_NVST gate in the appropriate bases
-    const nv_gates gates;
     const uint cidx1 = get_index_in_cluster(nv, idx1)+1;
     const uint cidx2 = get_index_in_cluster(nv, idx2)+1;
 
@@ -358,7 +357,7 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const Matrix2cd R2 = rotate({xhat,yhat,zhat}, {-y1,x1,z1});
     const MatrixXcd R = act(tp(R1,R2), {1,2}, 3);
 
-    return protocol(act(R.adjoint() * gates.SWAP_NVST * R, {0,cidx1,cidx2}, spins), 0);
+    return protocol(act(R.adjoint() * gates::SWAP_NVST * R, {0,cidx1,cidx2}, spins), 0);
 
   } else {
     // compute actual realization of the SWAP_NVST gate
