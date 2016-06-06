@@ -192,7 +192,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_output_suffix = inputs.count("output_suffix");
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
-  bool set_c13_abundance = !inputs["c13_abundance"].defaulted();
+  bool set_c13_abundance = !inputs["c13_percentage"].defaulted();
   bool set_target_nuclei = inputs.count("targets");
 
   // run a sanity check on inputs
