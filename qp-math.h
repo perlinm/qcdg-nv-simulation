@@ -1,10 +1,13 @@
 #pragma once
 #define EIGEN_USE_MKL_ALL
 
+#include <iostream> // for standard output
 #include <vector> // vector objects
 #include <eigen3/Eigen/Dense> // linear algebra library
 #include <eigen3/unsupported/Eigen/KroneckerProduct> // provides tensor product
 #include <eigen3/unsupported/Eigen/MatrixFunctions> // provides matrix functions
+
+#include "constants.h"
 
 using namespace std;
 using namespace Eigen;

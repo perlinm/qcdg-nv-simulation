@@ -3,6 +3,11 @@
 
 #include <eigen3/Eigen/Dense> // linear algebra library
 
+#include "constants.h"
+#include "qp-math.h"
+#include "gates.h"
+#include "nv-math.h"
+
 using namespace std;
 using namespace Eigen;
 
