@@ -18,18 +18,23 @@ else:
 
 c13_natural_percentage = 1.07
 
+static_Bzs = [ 500, 1000, 1500 ]
+c13_factors = [ 1, 0.1, 0.01 ]
+max_cluster_sizes = [ 4 ]
+scale_factors = [ 5, 10, 20 ]
+
 project_dir = os.path.dirname(os.path.realpath(__file__))
-run_script = "run-sweep.py"
+run_script = "fidelity-sweep-job.py"
 
 def cmd_args(sim_args, walltime):
     return ([ "{}/{}".format(project_dir,run_script) ]
             + [ str(a) for a in sim_args]
             + [ walltime ] + mkfac_args)
 
-for static_Bz in [ 500, 1000, 1500 ]:
-    for c13_factor in [ 1, 0.1, 0.01 ]:
-        for max_cluster_size in [ 4 ]:
-            for scale_factor in [ 5, 10, 20 ]:
+for static_Bz in static_Bzs:
+    for c13_factor in c13_factors:
+        for max_cluster_size in max_cluster_sizes:
+            for scale_factor in scale_factors:
                 log10_samples = int(numpy.round(3 - numpy.log10(c13_factor)))
                 c13_percentage = str(numpy.around(c13_natural_percentage*c13_factor,
                                                   int(3 - numpy.log10(c13_factor))))

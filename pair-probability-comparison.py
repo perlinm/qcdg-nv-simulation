@@ -28,8 +28,8 @@ if not start < end:
 project_dir = os.path.dirname(os.path.realpath(__file__))
 out_name = "pairs-{}.txt".format("-".join(sys.argv[1:5]))
 out_file = project_dir + "/data/" + out_name
-compute_script = project_dir + "/pair-compute.py"
-search_script = project_dir + "/pair-search.py"
+compute_script = project_dir + "/single-pair-compute.py"
+search_script = project_dir + "/single-pair-search.py"
 
 if os.path.exists(out_file):
     cutoffs, predicted, actual = numpy.loadtxt(out_file, unpack=True)
