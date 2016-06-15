@@ -104,7 +104,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
 
   MatrixXcd U_rotate;
   if (!adjust_AXY) {
-    U_rotate = simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
+    U_rotate = simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else {
 
     const double freq_ratio = [&]() -> double {
@@ -126,16 +126,16 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
       else return cycle_time - leading_time;
     }();
 
-    const MatrixXcd U_leading = simulate_AXY8(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                              controls, leading_time);
-    const MatrixXcd U_trailing = simulate_AXY8(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                               controls, trailing_time, leading_time);
+    const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                             controls, leading_time);
+    const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                              controls, trailing_time, leading_time);
     U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
   }
 
   const double flush_time = mod(-control_time - z_phase/w_larmor, t_larmor);
   const MatrixXcd U_flush =
-    simulate_AXY8(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
+    simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
   return protocol(U_flush * U_rotate, control_time + flush_time);
 }
 
@@ -262,14 +262,14 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const double leading_time = interaction_time - cycles*t_DD;
   const double phase_advance = (interaction_angle - target_azimuth)/w_larmor;
 
-  const MatrixXcd U_leading = simulate_AXY8(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                            controls, leading_time, phase_advance);
+  const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                           controls, leading_time, phase_advance);
   const MatrixXcd U_AXY = [&]() -> MatrixXcd {
     if (cycles > 0) {
       const double trailing_time = t_DD - leading_time;
-      const MatrixXcd U_trailing = simulate_AXY8(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                 controls, trailing_time,
-                                                 phase_advance + leading_time);
+      const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                                controls, trailing_time,
+                                                phase_advance + leading_time);
       return U_leading * pow(U_trailing*U_leading, cycles);
     } else return U_leading;
   }();

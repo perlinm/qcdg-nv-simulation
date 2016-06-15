@@ -307,16 +307,16 @@ MatrixXcd rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint sp
 MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
 
 // simulate propagator with static control fields
-MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
-                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                        const double simulation_time, const double advance = 0,
-                        const Vector3d B_ctl = Vector3d::Zero());
+MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
+                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                       const double simulation_time, const double advance = 0,
+                       const Vector3d B_ctl = Vector3d::Zero());
 
 // simulate propagator with dynamic control fields
-MatrixXcd simulate_AXY8(const nv_system& nv, const uint cluster,
-                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                        const control_fields& controls, const double simulation_time,
-                        const double advance = 0);
+MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
+                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                       const control_fields& controls, const double simulation_time,
+                       const double advance = 0);
 
 // ---------------------------------------------------------------------------------------
 // Protocol object
