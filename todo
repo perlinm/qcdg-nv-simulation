@@ -1,12 +1,15 @@
-add protocol to perform SWAP_NVST with two spins which are not larmor pairs
+typical fluctuations in magnetic field
+comparison between larmor pair memory and individual nuclear spins
+implement T1 decay considerations; how does performance change with temperature
+memory storage fidelity
+best/typical case fidelity
 
 
-determine likeliness of performing SWAP_NVST with high fidelity, as a function of:
-- hyperfine_cutoff
-- dw_min
-- c13_abundance
-- collect metadata on these cases (e.g. the magnitude of hyperfine_perp, operation time, etc.)
-- consider nonzero dw_12 (difference between larmor frequencies of target nuclei)?
+
+
+
+
+
 
 
 itemize assumptions and approximations used in simulations
@@ -20,8 +23,6 @@ add a mode to output operation protocol
 if two SWAP_NVST targets are not larmor pairs,
   is it better to use natural bases, or a standard basis?
 
-is it worthwhile to implement a dedicated zz coupling protocol?
-
-implement state decay model, non-ideal NV pulses
+non-ideal NV pulses
 
 compute and perform corrections that need to be made to approximate gates
