@@ -183,7 +183,7 @@ string U_basis_element_text(const uint p, const uint N) {
 // returns matrix whose columns are basis Hamiltonians for a system of N spins
 MatrixXcd U_basis_matrix(const uint N) {
   MatrixXcd out = MatrixXcd::Zero(pow(4,N),pow(4,N));
-  for (int p = 0; p < pow(4,N); p++) {
+  for (uint p = 0; p < pow(4,N); p++) {
     out.col(p) = flatten(U_basis_element(p,N));
   }
   return out;
