@@ -230,17 +230,17 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   }
   assert(controls.num() <= 1);
 
-  // "interaction vector": A_perp minus the component suppressed by the control field
+  // "interaction vector": A_perp without the component suppressed by the control field
   const Vector3d A_int = [&]() -> Vector3d {
     if (controls.num() == 0) return A_perp;
     else return dot(A_perp,hat(controls.B()))*hat(controls.B());
   }();
 
-  // account for the angle of A_int relative to A_perp,
-  //   as a target azimuth of 0 will now result in n_2 = hat(A_int),
-  //   but we still want A_perp as "xhat_j"
-  const double interaction_angle = asin(dot(hat(A_perp).cross(hat(A_int)),
-                                            hat(effective_larmor(nv,target))));
+  const Vector3d w_hat = hat(effective_larmor(nv,target));
+  const Vector3d interaction_axis = hat(rotate(A_perp, target_azimuth, w_hat));
+  const Vector3d A_int_rot = rotate(A_int, pi/2, w_hat);
+  const double protocol_angle = atan2(dot(interaction_axis,A_int_rot),
+                                      dot(interaction_axis,A_int));
 
   // AXY sequence parameters
   const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
@@ -260,7 +260,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
-  const double phase_advance = (interaction_angle - target_azimuth)/w_larmor;
+  const double phase_advance = -protocol_angle/w_larmor;
 
   const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
                                            controls, leading_time, phase_advance);
