@@ -199,21 +199,9 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast) {
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G) {
   assert(U.size() == G.size());
-
-  const MatrixXcd Uc = remove_phase(U);
-  const MatrixXcd Gc = remove_phase(G);
-
   const uint D = U.rows();
-  const uint N = log2(D);
-  double fidelity = D*D;
-
-  for (uint i = 0; i < D*D; i++) {
-    const MatrixXcd B_i = U_basis_element(i,N);
-    fidelity += real(trace(Uc*B_i.adjoint()*Uc.adjoint()*Gc*B_i*Gc.adjoint()));
-  }
-  fidelity /= D*D*(D+1);
-
-  return fidelity;
+  const MatrixXcd M = G.adjoint() * U;
+  return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
 }
 
 // compute mean fidelity of propagator acting on system_qubits
