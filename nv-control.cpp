@@ -222,8 +222,8 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       if (is_larmor_pair(nv,index,target)) {
         const Vector3d A_perp_alt = hyperfine_perp(nv,index);
         const double B_ctl = sqrt(nv.static_Bz * A_perp.norm()/nv.nuclei.at(target).g);
-        const Vector3d axis_ctl = hat(A_perp
-                                      - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
+        const Vector3d axis_ctl =
+          hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
         controls.add(B_ctl*axis_ctl, w_larmor);
       }
     }
