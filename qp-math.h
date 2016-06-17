@@ -28,15 +28,10 @@ inline double dot(const Vector3d& v, const Vector3d& w) { return v.dot(w); }
 // return unit vector in direction of vec
 inline Vector3d hat(const Vector3d& vec) { return vec.normalized(); }
 
-// project vec onto plane orthogonal to axis
-inline Vector3d project(const Vector3d& vec, const Vector3d& axis) {
-  return vec - vec.dot(hat(axis))*hat(axis);
-}
-
 // return a vector rotated by a given angle about a given axis
 inline Vector3d rotate(const Vector3d& vec, const double angle, const Vector3d& axis) {
   return (vec.dot(hat(axis))*hat(axis) +
-          cos(angle) * project(vec,axis) +
+          cos(angle) * (vec - dot(vec,axis)*axis) +
           sin(angle) * hat(axis).cross(vec));
 }
 
