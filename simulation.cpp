@@ -519,7 +519,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
   }
@@ -539,7 +539,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
   }
@@ -557,7 +557,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
   }
@@ -575,7 +575,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
            << P.at(false).t << endl;
     }
   }
@@ -600,7 +600,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
       const uint idx2_in_cluster = get_index_in_cluster(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P.at(0), P.at(1), {idx1_in_cluster, idx2_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, idx1_in_cluster, idx2_in_cluster}) << " "
            << P.at(false).t << endl;
     }
   }

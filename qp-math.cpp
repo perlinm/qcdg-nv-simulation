@@ -204,29 +204,43 @@ double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G) {
   return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
 }
 
-// compute mean fidelity of propagator acting on system_qubits
-double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& nuclei) {
+// compute mean fidelity of propagator acting on given qubits
+double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
+                     const vector<uint>& system_qubits) {
   assert(U.size() == G.size());
-
   const uint spins = log2(G.rows());
-  vector<uint> system_qubits = {0};
-  for (uint n: nuclei) system_qubits.push_back(n+1);
+  vector<uint> environment_qubits = {};
+  for (uint n = 0; n < spins; n++) {
+    if (!in_vector(n,system_qubits)) environment_qubits.push_back(n);
+  }
+  const uint N_env = environment_qubits.size();
+  const uint D_env = pow(2,N_env);
 
   const MatrixXcd U_err = G.adjoint() * U;
-  const VectorXcd H_err_vec = U_decompose(j*log(U_err));
 
-  MatrixXcd H_env = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
-  for (uint h = 0; h < H_err_vec.size(); h++) {
-    bool add_this_element = true;
-    for (uint q: system_qubits) {
-      if (int_bit(h,2*q) + int_bit(h,2*q+1)) {
-        add_this_element = false;
-        break;
+  MatrixXcd U_env = MatrixXcd::Identity(D_env,D_env);
+  for (uint m = 0; m < U_env.rows(); m++) {
+    uint err_row = 0;
+    for (uint q = 0; q < N_env; q++) {
+      if (qbit_state(q,N_env,m)) {
+        err_row += bit_int(environment_qubits.at(q),spins);
       }
     }
-    if (add_this_element) H_env += H_err_vec(h)*U_basis_element(h,spins);
+
+    for (uint n = 0; n < U_env.cols(); n++) {
+      uint err_col = 0;
+      for (uint q = 0; q < N_env; q++) {
+        if (qbit_state(q,N_env,n)) {
+          err_col += bit_int(environment_qubits.at(q),spins);
+        }
+      }
+
+      U_env(m,n) = U_err(err_row,err_col);
+    }
   }
-  return gate_fidelity(U*exp(j*H_env),G);
+  U_env /= sqrt(real(trace(U_env.adjoint()*U_env)) / D_env);
+
+  return gate_fidelity(U * act(U_env.adjoint(),environment_qubits,spins), G);
 }
 
 // ---------------------------------------------------------------------------------------
