@@ -458,8 +458,8 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
     U_0 = pow(U_0, int(scan_time/t_DD));
 
     // normalize propagators
-    U_m /= sqrt(real(trace(U_m.adjoint()*U_m)/double(U_m.rows())));
-    U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)/double(U_0.rows())));
+    U_m /= sqrt(real(trace(U_m.adjoint()*U_m)) / U_m.rows());
+    U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)) / U_0.rows());
 
     // update coherence
     coherence *= real(trace(U_0.adjoint()*U_m)) / pow(2,cluster_size);
@@ -558,7 +558,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   }
   // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
-  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
+  U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());
   return U;
 }
 
@@ -664,6 +664,6 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   }
   // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
-  U /= sqrt(real(trace(U.adjoint()*U)/double(U.rows())));
+  U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());
   return U;
 }
