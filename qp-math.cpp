@@ -156,7 +156,35 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace) {
   return B;
 }
 
+// extract sub-matrix which acts only on the given qbits
+MatrixXcd submatrix(const MatrixXcd& A, const vector<uint>& qbits) {
+  assert(A.rows() == A.cols());
+  const uint total_spins = log2(A.rows());
 
+  MatrixXcd B = MatrixXcd::Identity(pow(2,qbits.size()),pow(2,qbits.size()));
+  for (uint B_row = 0; B_row < B.rows(); B_row++) {
+    uint A_row = 0;
+    for (uint q = 0; q < qbits.size(); q++) {
+      if (qbit_state(q, qbits.size(), B_row)) {
+        A_row += bit_int(qbits.at(q), total_spins);
+      }
+    }
+
+    for (uint B_col = 0; B_col < B.cols(); B_col++) {
+      uint A_col = 0;
+      for (uint q = 0; q < qbits.size(); q++) {
+        if (qbit_state(q, qbits.size(), B_col)) {
+          A_col += bit_int(qbits.at(q), total_spins);
+        }
+      }
+
+      B(B_row,B_col) = A(A_row,A_col);
+    }
+  }
+  B /= sqrt(real(trace(B.adjoint()*B)) / B.rows());
+
+  return act(B,qbits,total_spins);
+}
 
 // ---------------------------------------------------------------------------------------
 // Gate decomposition and fidelity
@@ -210,39 +238,19 @@ double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G) {
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
                      const vector<uint>& system_qbits) {
   assert(U.size() == G.size());
+
   const uint spins = log2(G.rows());
   vector<uint> environment_qbits = {};
   for (uint n = 0; n < spins; n++) {
-    if (!in_vector(n,system_qbits)) environment_qbits.push_back(n);
+    if (!in_vector(n,system_qbits)) {
+      environment_qbits.push_back(n);
+    }
   }
-  const uint N_env = environment_qbits.size();
-  const uint D_env = pow(2,N_env);
 
   const MatrixXcd U_err = G.adjoint() * U;
+  const MatrixXcd U_env = submatrix(U_err,environment_qbits);
 
-  MatrixXcd U_env = MatrixXcd::Identity(D_env,D_env);
-  for (uint m = 0; m < U_env.rows(); m++) {
-    uint err_row = 0;
-    for (uint q = 0; q < N_env; q++) {
-      if (qbit_state(q,N_env,m)) {
-        err_row += bit_int(environment_qbits.at(q),spins);
-      }
-    }
-
-    for (uint n = 0; n < U_env.cols(); n++) {
-      uint err_col = 0;
-      for (uint q = 0; q < N_env; q++) {
-        if (qbit_state(q,N_env,n)) {
-          err_col += bit_int(environment_qbits.at(q),spins);
-        }
-      }
-
-      U_env(m,n) = U_err(err_row,err_col);
-    }
-  }
-  U_env /= sqrt(real(trace(U_env.adjoint()*U_env)) / D_env);
-
-  return gate_fidelity(U * act(U_env.adjoint(),environment_qbits,spins), G);
+  return gate_fidelity(U_env.adjoint()*U, G);
 }
 
 // ---------------------------------------------------------------------------------------
