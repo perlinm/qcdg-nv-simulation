@@ -192,8 +192,8 @@ MatrixXcd U_basis_matrix(const uint N) {
 // decompose an operator into its basis elements
 VectorXcd U_decompose(const MatrixXcd& U, const bool fast) {
   const uint N = log2(U.rows());
-  if (fast) return U_basis_matrix(N).householderQr().solve(flatten(U));
-  else return U_basis_matrix(N).fullPivLu().solve(flatten(U));
+  if (fast) return U_basis_matrix(N).partialPivLu().solve(flatten(U));
+  else return U_basis_matrix(N).fullPivHouseholderQr().solve(flatten(U));
 }
 
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
