@@ -67,7 +67,7 @@ const MatrixXcd gates::couple = uncouple.adjoint();
 const VectorXcd gates::S = (ud-du)/sqrt(2);
 const VectorXcd gates::T = (ud+du)/sqrt(2);
 
-// operations between NV and ST qubits
+// operations between NV and ST qbits
 const MatrixXcd cNOT_NVST = act(gates::cZ,{0,1},3);
 const MatrixXcd cNOT_STNV =
   act(gates::E,{1,2},3) * act(gates::cNOT,{1,0},3) * act(gates::E.adjoint(),{1,2},3);

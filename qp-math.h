@@ -97,10 +97,10 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 // Gate decomposition and fidelity
 // ---------------------------------------------------------------------------------------
 
-// returns element p of a basis for operators acting on a system with N qubits
+// returns element p of a basis for operators acting on a system with N qbits
 MatrixXcd U_basis_element(const uint p, const uint N);
 
-// returns element p of a basis for operators acting on a system with N qubits
+// returns element p of a basis for operators acting on a system with N qbits
 string U_basis_element_text(const uint p, const uint N);
 
 // flatten matrix into a 1-D vector
@@ -118,9 +118,9 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 // compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
 double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G);
 
-// compute mean fidelity of propagator acting on given qubits
+// compute mean fidelity of propagator acting on given qbits
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
-                     const vector<uint>& system_qubits);
+                     const vector<uint>& system_qbits);
 
 // compute fidelity of state rho with respect to state sigma
 inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma) {
