@@ -47,45 +47,48 @@ Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basi
   }
 }
 
-spin::spin(const Vector3d& pos, const double g, const mvec& S) :
-  pos(pos), g(g), S(S)
-{};
-
-nv_system::nv_system(const int ms, const double static_Bz, const axy_harmonic k_DD,
-                     const double scale_factor, const double integration_factor,
-                     const bool no_nn) :
-  e(Vector3d::Zero(), ge,
-    mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat)),
-  ms(ms), static_Bz(static_Bz), k_DD(k_DD),
-  scale_factor(scale_factor), integration_factor(integration_factor), no_nn(no_nn)
+nv_system::nv_system(const vector<Vector3d>& nuclei, const int ms, const double static_Bz,
+                     const axy_harmonic k_DD, const double scale_factor,
+                     const double integration_factor, const bool no_nn) :
+  nuclei(nuclei), ms(ms), static_Bz(static_Bz), k_DD(k_DD), scale_factor(scale_factor),
+  integration_factor(integration_factor), no_nn(no_nn)
 {};
 
 // ---------------------------------------------------------------------------------------
 // Spin placement and clustering methods
 // ---------------------------------------------------------------------------------------
 
+// determine whether two nuclei of the same species are a larmor pair
+bool is_larmor_pair(const vector<Vector3d>& nuclei, const uint idx1, const uint idx2) {
+  const Vector3d r1 = nuclei.at(idx1) - e_pos;
+  const Vector3d r2 = nuclei.at(idx2) - e_pos;
+  return
+    z_int_pos(r1).squaredNorm() == z_int_pos(r2).squaredNorm() &&
+    xy_int_pos(r1).squaredNorm() == xy_int_pos(r2).squaredNorm();
+}
+
 // check whether a nucleus is addressable
-bool can_address(const nv_system& nv, const uint target) {
-  const Vector3d r = nv.nuclei.at(target).pos - nv.e.pos;
+bool can_address(const vector<Vector3d>& nuclei, const uint target) {
+  const Vector3d r = nuclei.at(target) - e_pos;
   const Vector3i r_xy = xy_int_pos(r);
   const Vector3i r_z = z_int_pos(r);
 
   // exclude targets on the z axis or in the x-y plane
   if (r_xy.squaredNorm() == 0 || r_z.squaredNorm() == 0) return false;
 
-  for (uint i = 0; i < nv.nuclei.size(); i++) {
+  for (uint i = 0; i < nuclei.size(); i++) {
     if (i == target) continue;
 
-    if (is_larmor_pair(nv,target,i)) {
+    if (is_larmor_pair(nuclei,target,i)) {
       // exclude larmor pairs with parallel x-y components of the hyperfine field
-      const Vector3d s = nv.nuclei.at(i).pos - nv.e.pos;
+      const Vector3d s = nuclei.at(i) - e_pos;
       const Vector3i s_xy = xy_int_pos(s);
       if (s_xy == r_xy || s_xy == -r_xy) return false;
 
       // exclude larmor triplets
-      for (uint j = i+1; j < nv.nuclei.size(); j++) {
+      for (uint j = i+1; j < nuclei.size(); j++) {
         if (j == target) continue;
-        if (is_larmor_pair(nv,i,j)) return false;
+        if (is_larmor_pair(nuclei,i,j)) return false;
       }
     }
   }
@@ -93,31 +96,22 @@ bool can_address(const nv_system& nv, const uint target) {
   return true;
 }
 
-// determine whether two spins are a larmor pair
-bool is_larmor_pair(const nv_system& nv, const uint idx1, const uint idx2) {
-  const Vector3d r1 = nv.nuclei.at(idx1).pos - nv.e.pos;
-  const Vector3d r2 = nv.nuclei.at(idx2).pos - nv.e.pos;
-  return
-    z_int_pos(r1).squaredNorm() == z_int_pos(r2).squaredNorm() &&
-    xy_int_pos(r1).squaredNorm() == xy_int_pos(r2).squaredNorm();
-}
-
-// coupling strength between two spins; assumes strong magnetic field in zhat
-double coupling_strength(const spin& s1, const spin& s2) {
-  const Vector3d r = s2.pos - s1.pos;
-  return abs(s1.g*s2.g/(8*pi*pow(r.norm()*a0/2,3)) *
+// coupling strength between two C-13 nuclei; assumes strong magnetic field in zhat
+double coupling_strength(const Vector3d& p1, const Vector3d& p2) {
+  const Vector3d r = p2 - p1;
+  return abs(g_C13*g_C13/(8*pi*pow(r.norm()*a0/2,3)) *
              (1-3*dot(hat(r),zhat)*dot(hat(r),zhat)));
 }
 
 // group nuclei into clusters with intercoupling strengths >= coupling_strength
-vector<vector<uint>> cluster_with_coupling(const nv_system& nv,
+vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
                                            const double min_coupling_strength,
                                            const bool cluster_by_larmor_frequency) {
 
   vector<vector<uint>> clusters(0); // all clusters
   vector<uint> clustered(0); // indices of nuclei we have already clustered
 
-  for (uint n_seed = 0; n_seed < nv.nuclei.size(); n_seed++) {
+  for (uint n_seed = 0; n_seed < nuclei.size(); n_seed++) {
     if (in_vector(n_seed,clustered)) continue;
 
     // initialize current cluster, and add the current nucleus
@@ -129,13 +123,13 @@ vector<vector<uint>> cluster_with_coupling(const nv_system& nv,
     for (uint i = 0; i < cluster.size(); i++) {
       const uint n_old = cluster.at(i);
       // loop over all nuclei, checking whether to add them to the cluster
-      for (uint n_new = 0; n_new < nv.nuclei.size(); n_new++) {
+      for (uint n_new = 0; n_new < nuclei.size(); n_new++) {
         if (in_vector(n_new,clustered)) continue;
 
         // if n_old and n_new are interacting or are a larmor pair,
         //   add n_new to this cluster
-        if ((coupling_strength(nv,n_old,n_new) > min_coupling_strength) ||
-            (cluster_by_larmor_frequency && is_larmor_pair(nv,n_old,n_new))) {
+        if ((coupling_strength(nuclei.at(n_old),nuclei.at(n_new)) > min_coupling_strength) ||
+             (cluster_by_larmor_frequency && is_larmor_pair(nuclei,n_old,n_new))) {
           cluster.push_back(n_new);
           clustered.push_back(n_new);
         }
@@ -217,7 +211,7 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
     }
     return;
   }
-  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv);
+  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv.nuclei);
   if (cluster_size_target < min_cluster_size_cap) {
     nv.cluster_coupling = largest_coupling(nv);
     for (uint n = 0; n < nv.nuclei.size(); n++) {
@@ -243,7 +237,7 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
     last_coupling_too_small = coupling_too_small;
 
     nv.cluster_coupling += coupling_too_small ? dcc : -dcc;
-    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling,
+    nv.clusters = cluster_with_coupling(nv.nuclei, nv.cluster_coupling,
                                         cluster_by_larmor_frequency);
 
     coupling_too_small = (largest_cluster_size(nv.clusters) > cluster_size_target);
@@ -254,7 +248,7 @@ void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
 
   while (largest_cluster_size(nv.clusters) > cluster_size_target) {
     nv.cluster_coupling += dcc;
-    nv.clusters = cluster_with_coupling(nv, nv.cluster_coupling,
+    nv.clusters = cluster_with_coupling(nv.nuclei, nv.cluster_coupling,
                                         cluster_by_larmor_frequency);
   }
 }
@@ -286,10 +280,10 @@ uint get_index_in_cluster(const uint index, const vector<uint> cluster) {
 // ---------------------------------------------------------------------------------------
 
 // component of hyperfine field perpendicular to the larmor axis
-Vector3d hyperfine_perp(const nv_system&nv, const spin& s) {
-  const Vector3d w_eff = effective_larmor(nv,s);
-  const Vector3d A = hyperfine(nv,s);
-  return A - dot(A,hat(w_eff))*hat(w_eff);
+Vector3d hyperfine_perp(const nv_system&nv, const Vector3d& pos) {
+  const Vector3d w_eff_hat = hat(effective_larmor(nv,pos));
+  const Vector3d A = hyperfine(pos);
+  return A - dot(A,w_eff_hat)*w_eff_hat;
 }
 
 // minimum difference in larmor frequencies between target nucleus and other nuclei
@@ -377,27 +371,28 @@ int F_AXY(const double x, const vector<double> pulses) {
   return (pulse_count % 2 == 0 ? 1 : -1);
 }
 
-// Hamiltoninan coupling two spins
-MatrixXcd H_ss(const spin& s1, const spin& s2) {
-  const Vector3d r = s2.pos - s1.pos;
-  return s1.g*s2.g/(4*pi*pow(r.norm()*a0/2,3))
-    * (dot(s1.S,s2.S) - 3*tp(dot(s1.S,hat(r)), dot(s2.S,hat(r))));
+// Hamiltoninan coupling two C-13 nuclei
+MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
+               const Vector3d& p2, const double g2, const mvec& S2) {
+  const Vector3d r = p2 - p1;
+  return g1*g2/(4*pi*pow(r.norm()*a0/2,3))
+    * (dot(S1,S2) - 3*tp(dot(S1,hat(r)), dot(S2,hat(r))));
 }
 
-// spin coupling Hamiltonian for the entire spin system
+// spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
-  for (uint s = 0; s < cluster.size(); s++) {
-    // interaction between NV center and spin s
-    const spin n_s = nv.nuclei.at(cluster.at(s));
-    H += act(H_ss(nv.e,n_s), {0,s+1}, spins);
+  for (uint n1 = 0; n1 < cluster.size(); n1++) {
+    // interaction between NV center and nucleus n1
+    const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
+    H += act(H_en(nv,n1_pos), {0,n1+1}, spins);
     if (!nv.no_nn) {
-      // interaction betwen spin r and spin s
-      for (uint r = 0; r < s; r++) {
-        const spin n_r = nv.nuclei.at(cluster.at(r));
-        H += act(H_ss(n_s,n_r), {s+1,r+1}, spins);
+      // interaction betwen nuclei n1 and n2
+      for (uint n2 = 0; n2 < n1; n2++) {
+        const Vector3d n2_pos = nv.nuclei.at(cluster.at(n2));
+        H += act(H_nn(n1_pos,n2_pos), {n1+1,n2+1}, spins);
       }
     }
   }
@@ -412,8 +407,7 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B)
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for (uint s = 0; s < cluster.size(); s++) {
     // interaction of spin s with magnetic field
-    H -= act(nv.nuclei.at(cluster.at(s)).g*dot(B,nv.nuclei.at(cluster.at(s)).S),
-             {s+1}, spins);
+    H -= act(g_C13*dot(B,s_vec/2), {s+1}, spins);
   }
   return H;
 }
@@ -474,10 +468,9 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 // return control field for decoupling a single nucleus from other nuclei
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd) {
-  const spin s = nv.nuclei.at(index);
   const Vector3d w_j = effective_larmor(nv,index);
   const double w_rfd = w_j.norm()/(1-sin(theta_rfd)/(2*sqrt(2)*nv.scale_factor));
-  const double V_rfd = w_rfd/(s.g*nv.scale_factor);
+  const double V_rfd = w_rfd/(g_C13*nv.scale_factor);
   const Vector3d n_rfd = rotate(hat(hyperfine_perp(nv, index)), theta_rfd, hat(w_j));
   return control_fields(V_rfd*n_rfd, w_rfd, phi_rfd);
 }
@@ -485,7 +478,7 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 // perform given rotation on the NV center
 MatrixXcd rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins) {
   if (rotation.squaredNorm() > 0) {
-    return act( exp(-j*dot(rotation,nv.e.S)), {0}, spins);
+    return act( exp(-j*dot(rotation,nv.e_S())), {0}, spins);
   } else {
     return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   }
@@ -588,11 +581,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                 abs(dot(controls.Bs.at(c),yhat))*yhat +
                 abs(dot(controls.Bs.at(c),zhat))*zhat);
     }
-    double largest_g = 0;
-    for (uint n = 0; n < nv.clusters.at(cluster).size(); n++) {
-      largest_g = max(largest_g,abs(nv.nuclei.at(nv.clusters.at(cluster).at(n)).g));
-    }
-    return max(largest_control_freq,largest_g*B_cap.norm());
+    return max(largest_control_freq, g_C13*B_cap.norm());
   }();
 
   // integration step number and size

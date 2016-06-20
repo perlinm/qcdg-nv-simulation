@@ -98,7 +98,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
     control_time = t_phase - control_time;
   }
 
-  const double B_ctl = g_B_ctl/nv.nuclei.at(target).g; // control field strength
+  const double B_ctl = g_B_ctl/g_C13; // control field strength
   const Vector3d axis_ctl = axis(pi/2, target_azimuth, natural_basis(nv,target));
   const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
 
@@ -222,7 +222,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       if (is_larmor_pair(nv,index,target)) {
         const Vector3d A_perp_alt = hyperfine_perp(nv,index);
         const double B_ctl =
-          exp((log(nv.static_Bz) + log(A_perp.norm()/nv.nuclei.at(target).g))/2);
+          exp((log(nv.static_Bz) + log(A_perp.norm()/g_C13))/2);
         const Vector3d axis_ctl =
           hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
         controls.add(B_ctl*axis_ctl, w_larmor);
@@ -284,7 +284,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   // correct for larmor precession of the nucleus
   const double z_phase = mod(interaction_time*w_larmor, 2*pi);
-  const double w_ctl = nv.nuclei.at(target).g*controls.B().norm()/2;
+  const double w_ctl = g_C13*controls.B().norm()/2;
   const double xy_phase = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =

@@ -251,7 +251,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
 
   } else { // if !using_input_lattice
-    cell_radius = round(pow(abs(ge*gC13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3));
+    cell_radius = round(pow(abs(g_e*g_C13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3));
     cout << "Setting cell radius to: " << cell_radius << endl;
 
     boost::replace_all(lattice_file, "[cell_radius]", to_string(cell_radius));
@@ -264,13 +264,11 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   fs::create_directory(output_dir); // create data directory
 
-  // initialize nv_system object
-  nv_system nv(ms, static_Bz_in_gauss*gauss, k_DD,
-               scale_factor,integration_factor, no_nn);
-
   // -------------------------------------------------------------------------------------
   // Construct lattice of nuclei
   // -------------------------------------------------------------------------------------
+
+  vector<Vector3d> nuclei;
 
   if (!using_input_lattice) { // place nuclei at lattice sites
     // set positions of nuclei at lattice sites
@@ -280,10 +278,10 @@ int main(const int arg_num, const char *arg_vec[]) {
           for (int n = -2*cell_radius; n <= 2*cell_radius; n++) {
             if (rnd(generator) < c13_abundance) { // check for C-13 isotopic abundance
               if (l != 0 || m != 0 || n != 0) { // don't place C-13 nucleus on NV sites
-                const spin nucleus(b*ao+l*a1+m*a2+n*a3, gC13, s_vec/2);
+                const Vector3d pos = b*ao+l*a1+m*a2+n*a3;
                 // only place C-13 nuclei with a hyperfine field strength above the cutoff
-                if (hyperfine(nv,nucleus).norm() > hyperfine_cutoff) {
-                  nv.nuclei.push_back(nucleus);
+                if (hyperfine(pos).norm() > hyperfine_cutoff) {
+                  nuclei.push_back(pos);
                 }
               }
             }
@@ -291,17 +289,17 @@ int main(const int arg_num, const char *arg_vec[]) {
         }
       }
     }
-    cout << "Placed " << nv.nuclei.size() << " C-13 nuclei\n\n";
-    if (nv.nuclei.size() == 0) return 0;
+    cout << "Placed " << nuclei.size() << " C-13 nuclei\n\n";
+    if (nuclei.size() == 0) return 0;
 
     // write cell radius and nucleus positions to file
     if (!no_output && !print_pairs) {
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
-      for (uint i = 0; i < nv.nuclei.size(); i++) {
-        lattice << nv.nuclei.at(i).pos(0) << ' '
-                << nv.nuclei.at(i).pos(1) << ' '
-                << nv.nuclei.at(i).pos(2) << endl;
+      for (uint i = 0; i < nuclei.size(); i++) {
+        lattice << nuclei.at(i) << ' '
+                << nuclei.at(i) << ' '
+                << nuclei.at(i) << endl;
       }
       lattice.close();
     }
@@ -326,13 +324,13 @@ int main(const int arg_num, const char *arg_vec[]) {
       y = stod(line);
       getline(lattice,line);
       z = stod(line);
-      nv.nuclei.push_back(spin((Vector3d() << x,y,z).finished(),gC13,s_vec/2));
+      nuclei.push_back((Vector3d() << x,y,z).finished());
     }
     lattice.close();
 
     // assert that no C-13 nuclei lie at the NV lattice sites
-    for (uint i = 0; i < nv.nuclei.size(); i++) {
-      if ((nv.nuclei.at(i).pos == nv.n.pos) || (nv.nuclei.at(i).pos == nv.e.pos)) {
+    for (uint i = 0; i < nuclei.size(); i++) {
+      if ((nuclei.at(i) == n_pos) || (nuclei.at(i) == e_pos)) {
         cout << "The input lattice places a C-13 nucleus at one of the NV lattice sites!"
              << endl;
         return -1;
@@ -342,8 +340,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // identify nuclei which cannot be addressed
   vector<uint> unaddressable_nuclei;
-  for (uint n = 0; n < nv.nuclei.size(); n++) {
-    if (!can_address(nv,n)) {
+  for (uint n = 0; n < nuclei.size(); n++) {
+    if (!can_address(nuclei,n)) {
       unaddressable_nuclei.push_back(n);
     }
   }
@@ -357,7 +355,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // remove nuclei which cannot be addressed from the list of target nuclei
   if (!set_target_nuclei) {
-    for (uint n = 0; n < nv.nuclei.size(); n++) {
+    for (uint n = 0; n < nuclei.size(); n++) {
       if (!in_vector(n,unaddressable_nuclei)) {
         target_nuclei.push_back(n);
       }
@@ -365,7 +363,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   } else { // if (set_target_nuclei)
     vector<uint> unaddressable_targets;
     for (uint n = 0; n < target_nuclei.size(); n++) {
-      if (!can_address(nv,target_nuclei.at(n))) {
+      if (!can_address(nuclei,target_nuclei.at(n))) {
         unaddressable_targets.push_back(target_nuclei.at(n));
         target_nuclei.erase(target_nuclei.begin()+n);
         n--;
@@ -379,6 +377,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << endl << endl;
     }
   }
+
+  // initialize nv_system object
+  nv_system nv(nuclei, ms, static_Bz_in_gauss*gauss, k_DD,
+               scale_factor,integration_factor, no_nn);
 
   // -------------------------------------------------------------------------------------
   // Identify larmor pairs
@@ -414,7 +416,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // unless we are performing a coherence scan, we will be grouping together clusters by
   //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
   //  for the given min_cluster_size_cap
-  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv);
+  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv.nuclei);
   const bool cluster_by_larmor_frequency =
     !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
   if (!coherence_scan) {
