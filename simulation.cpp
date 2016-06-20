@@ -378,10 +378,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // initialize nv_system object
-  nv_system nv(nuclei, ms, static_Bz_in_gauss*gauss, k_DD,
-               scale_factor,integration_factor, no_nn);
-
   // -------------------------------------------------------------------------------------
   // Identify larmor pairs
   // -------------------------------------------------------------------------------------
@@ -391,7 +387,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const uint n_i = target_nuclei.at(i);
     for (uint j = i+1; j < target_nuclei.size(); j++) {
       const uint n_j = target_nuclei.at(j);
-      if (is_larmor_pair(nv,n_i,n_j)) {
+      if (is_larmor_pair(nuclei,n_i,n_j)) {
         larmor_pairs.push_back({n_i,n_j});
       }
     }
@@ -416,23 +412,25 @@ int main(const int arg_num, const char *arg_vec[]) {
   // unless we are performing a coherence scan, we will be grouping together clusters by
   //  the larmor frequencies of the nuclei, so first we check whether doing so is possible
   //  for the given min_cluster_size_cap
-  const uint min_cluster_size_cap = smallest_possible_cluster_size(nv.nuclei);
-  const bool cluster_by_larmor_frequency =
+  const uint min_cluster_size_cap = smallest_possible_cluster_size(nuclei);
+  const bool cluster_larmor_pairs =
     !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
   if (!coherence_scan) {
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
     if (!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
   }
 
-  cluster_nuclei(nv, max_cluster_size, cluster_by_larmor_frequency);
+  const vector<vector<uint>> clusters = cluster_nuclei(nuclei, max_cluster_size,
+                                                       cluster_larmor_pairs);
+  const double cluster_coupling = get_cluster_coupling(nuclei,clusters);
 
-  cout << "Nuclei grouped into " << nv.clusters.size() << " clusters"
-       << " with a coupling factor of "  << nv.cluster_coupling << " Hz\n";
+  cout << "Nuclei grouped into " << clusters.size() << " clusters"
+       << " with a coupling factor of " << cluster_coupling << " Hz\n";
 
   // collect and print histogram of cluster sizes
-  vector<uint> size_hist(largest_cluster_size(nv.clusters));
-  for (uint i = 0; i < nv.clusters.size(); i++) {
-    size_hist.at(nv.clusters.at(i).size()-1) += 1;
+  vector<uint> size_hist(largest_cluster_size(clusters));
+  for (uint i = 0; i < clusters.size(); i++) {
+    size_hist.at(clusters.at(i).size()-1) += 1;
   }
   cout << "Cluster size histogram:\n";
   for (uint i = 0; i < size_hist.size(); i++) {
@@ -446,6 +444,10 @@ int main(const int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[cluster_size]", to_string(max_cluster_size));
   boost::replace_all(output_suffix, "[k_DD]", to_string(k_DD_int));
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
+
+  // initialize nv_system object
+  const nv_system nv(nuclei, clusters, ms, static_Bz_in_gauss*gauss, k_DD,
+                     scale_factor,integration_factor, no_nn);
 
   // -------------------------------------------------------------------------------------
   // Coherence scan
@@ -495,7 +497,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     if (!no_output) {
       fs::path scan_path = output_dir/fs::path("scan-"+output_suffix);
       ofstream scan_file(scan_path.string());
-      scan_file << "# cluster coupling factor (Hz): " << nv.cluster_coupling << endl;
+      scan_file << "# cluster coupling factor (Hz): " << cluster_coupling << endl;
       scan_file << "# f_DD: " << f_DD << endl;
       scan_file << "# scan time: " << scan_time << endl;
       scan_file << endl;

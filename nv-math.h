@@ -75,6 +75,7 @@ enum axy_harmonic { first = 1, third = 3 };
 // struct containing system and simulation info
 struct nv_system {
   const vector<Vector3d> nuclei;
+  const vector<vector<uint>> clusters;
   const int ms;
   const double static_Bz;
   const axy_harmonic k_DD;
@@ -82,12 +83,9 @@ struct nv_system {
   const double integration_factor;
   const bool no_nn;
 
-  double cluster_coupling = 0;
-  vector<vector<uint>> clusters;
-
-  nv_system(const vector<Vector3d>& nuclei, const int ms, const double static_Bz,
-            const axy_harmonic k_DD, const double scale_factor,
-            const double integration_factor, const bool no_nn);
+  nv_system(const vector<Vector3d>& nuclei, const vector<vector<uint>>& clusters,
+            const int ms, const double static_Bz, const axy_harmonic k_DD,
+            const double scale_factor, const double integration_factor, const bool no_nn);
 
   mvec e_S() const {
     return mvec(sx/sqrt(2),xhat) + mvec(ms*sy/sqrt(2),yhat) + mvec(ms*(sz+I2)/2.,zhat);
@@ -112,34 +110,41 @@ inline bool can_address(const nv_system& nv, const uint target) {
 
 // coupling strength between two C-13 nuclei; assumes strong magnetic field in zhat
 double coupling_strength(const Vector3d& p1, const Vector3d& p2);
-inline double coupling_strength(const nv_system& nv, const uint idx1, const uint idx2) {
-  return coupling_strength(nv.nuclei.at(idx1), nv.nuclei.at(idx2));
+inline double coupling_strength(const vector<Vector3d>& nuclei,
+                                const uint idx1, const uint idx2) {
+  return coupling_strength(nuclei.at(idx1), nuclei.at(idx2));
 }
 
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
 vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
                                            const double min_coupling_strength,
-                                           const bool cluster_by_larmor_frequency);
+                                           const bool cluster_by_larmor_frequency = true);
 
 // group together clusters sharing larmor pairs
-vector<vector<uint>> group_clusters(const nv_system& nv);
+vector<vector<uint>> group_clusters(const vector<Vector3d>& nuclei,
+                                    vector<vector<uint>> old_clusters);
+
+// find largest intercluster coupling strength
+double get_cluster_coupling(const vector<Vector3d>& nuclei,
+                            const vector<vector<uint>>& clusters);
 
 // get size of largest spin cluster
 uint largest_cluster_size(const vector<vector<uint>>& clusters);
 
 // largest internuclear coupling
-double largest_coupling(const nv_system& nv);
+double largest_coupling(const vector<Vector3d>& nuclei);
 
 // minimum allowable cluster size limit
 inline double smallest_possible_cluster_size(const vector<Vector3d>& nuclei) {
-  return largest_cluster_size(cluster_with_coupling(nuclei, DBL_MAX, true));
+  return largest_cluster_size(cluster_with_coupling(nuclei, DBL_MAX));
 }
 
 // cluster nuclei and set cluster_coupling for a given maximum cluster size
-void cluster_nuclei(nv_system& nv, const uint max_cluster_size,
-                    const bool cluster_by_larmor_frequency,
-                    const double initial_cluster_coupling = 100,
-                    const double cc_resolution = 1e-5);
+vector<vector<uint>> cluster_nuclei(const vector<Vector3d>& nuclei,
+                                    const uint max_cluster_size,
+                                    const bool cluster_by_larmor_frequency,
+                                    const double initial_cluster_coupling = 100,
+                                    const double cc_resolution = 1e-5);
 
 uint get_cluster_containing_target(const nv_system& nv, const uint index);
 
