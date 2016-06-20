@@ -120,10 +120,6 @@ vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
                                            const double min_coupling_strength,
                                            const bool cluster_by_larmor_frequency = true);
 
-// group together clusters sharing larmor pairs
-vector<vector<uint>> group_clusters(const vector<Vector3d>& nuclei,
-                                    vector<vector<uint>> old_clusters);
-
 // find largest intercluster coupling strength
 double get_cluster_coupling(const vector<Vector3d>& nuclei,
                             const vector<vector<uint>>& clusters);

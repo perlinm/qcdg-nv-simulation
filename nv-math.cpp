@@ -141,40 +141,6 @@ vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
   return clusters;
 }
 
-// group together clusters sharing larmor pairs
-vector<vector<uint>> group_clusters(const vector<Vector3d>& nuclei,
-                                    vector<vector<uint>> old_clusters) {
-  vector<vector<uint>> new_clusters;
-
-  while (old_clusters.size() > 0) {
-
-    new_clusters.push_back(old_clusters.at(0));
-    old_clusters.erase(old_clusters.begin());
-
-    bool grouped = false;
-    vector<uint> new_cluster = new_clusters.back();
-    for (uint i = 0; i < new_cluster.size(); i++) {
-      for (uint c = 0; c < old_clusters.size(); c++) {
-        const vector<uint> old_cluster = old_clusters.at(c);
-        for (uint j = 0; j < old_clusters.at(c).size(); j++) {
-          if (is_larmor_pair(nuclei, new_cluster.at(i), old_cluster.at(j))) {
-            new_cluster.insert(new_cluster.end(), old_cluster.begin(), old_cluster.end());
-            old_clusters.erase(old_clusters.begin()+c);
-            c--;
-            grouped = true;
-            break;
-          }
-        }
-      }
-    }
-    if (grouped) {
-      new_clusters.at(new_clusters.size()-1) = new_cluster;
-    }
-  }
-
-  return new_clusters;
-}
-
 // get size of largest cluster
 uint largest_cluster_size(const vector<vector<uint>>& clusters) {
   uint largest_size = 0;
