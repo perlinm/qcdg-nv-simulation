@@ -446,8 +446,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   boost::replace_all(output_suffix, "[ms]", (ms > 0)?"up":"dn");
 
   // initialize nv_system object
-  const nv_system nv(nuclei, clusters, ms, static_Bz_in_gauss*gauss, k_DD,
-                     scale_factor,integration_factor, no_nn);
+  const nv_system nv(nuclei, clusters, ms, g_C13*static_Bz_in_gauss*gauss, k_DD,
+                     scale_factor, integration_factor, no_nn);
 
   // -------------------------------------------------------------------------------------
   // Coherence scan

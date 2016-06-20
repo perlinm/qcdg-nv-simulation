@@ -77,14 +77,14 @@ struct nv_system {
   const vector<Vector3d> nuclei;
   const vector<vector<uint>> clusters;
   const int ms;
-  const double static_Bz;
+  const double static_gBz;
   const axy_harmonic k_DD;
   const double scale_factor;
   const double integration_factor;
   const bool no_nn;
 
   nv_system(const vector<Vector3d>& nuclei, const vector<vector<uint>>& clusters,
-            const int ms, const double static_Bz, const axy_harmonic k_DD,
+            const int ms, const double static_gBz, const axy_harmonic k_DD,
             const double scale_factor, const double integration_factor, const bool no_nn);
 
   mvec e_S() const {
@@ -171,7 +171,7 @@ inline Vector3d hyperfine_perp(const nv_system&nv, const uint index) {
 
 // effective larmor frequency of target C-13 nucleus located at pos
 inline Vector3d effective_larmor(const nv_system& nv, const Vector3d& pos) {
-  return g_C13*nv.static_Bz*zhat - nv.ms/2.*hyperfine(pos);
+  return nv.static_gBz*zhat - nv.ms/2.*hyperfine(pos);
 }
 inline Vector3d effective_larmor(const nv_system& nv, const uint index) {
   return effective_larmor(nv,nv.nuclei.at(index));
@@ -215,26 +215,26 @@ inline MatrixXcd H_nn(const Vector3d& p1, const Vector3d& p2) {
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
 // nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& B);
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB);
 
 // NV Zeeman Hamiltonian
-inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& B) {
-  return -g_e*dot(B,nv.e_S());
+inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& gB) {
+  return -g_e/g_C13*dot(gB,nv.e_S());
 }
 
 // NV zero-field splitting + static Zeeman Hamiltonian
 inline MatrixXcd H_NV_GS(const nv_system& nv) {
-  return NV_ZFS*dot(nv.e_S(),zhat)*dot(nv.e_S(),zhat) + H_NV_Z(nv,nv.static_Bz*zhat);
+  return NV_ZFS*dot(nv.e_S(),zhat)*dot(nv.e_S(),zhat) + H_NV_Z(nv,nv.static_gBz*zhat);
 }
 
 // net NV Hamiltonian
-inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& B) {
-  return H_NV_GS(nv) + H_NV_Z(nv,B);
+inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& gB) {
+  return H_NV_GS(nv) + H_NV_Z(nv,gB);
 }
 
 // total internal system Hamiltonian
 inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
-  return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_Bz*zhat) +
+  return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_gBz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 }
 
@@ -253,49 +253,49 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 // ---------------------------------------------------------------------------------------
 
 struct control_fields {
-  vector<Vector3d> Bs;
+  vector<Vector3d> gBs;
   vector<double> freqs;
   vector<double> phases;
 
   control_fields(){};
-  control_fields(const Vector3d& B, const double freq = 0, const double phase = 0) {
-    this->add(B,freq,phase);
+  control_fields(const Vector3d& gB, const double freq = 0, const double phase = 0) {
+    this->add(gB,freq,phase);
   }
-  control_fields(const vector<Vector3d>& Bs, const vector<double>& freqs,
+  control_fields(const vector<Vector3d>& gBs, const vector<double>& freqs,
                  const vector<double>& phases) {
-    assert((Bs.size() == freqs.size()) && (Bs.size() == phases.size()));
-    this->Bs = Bs;
+    assert((gBs.size() == freqs.size()) && (gBs.size() == phases.size()));
+    this->gBs = gBs;
     this->freqs = freqs;
     this->phases = phases;
   }
 
-  void add(const Vector3d& B, const double freq, const double phase = 0) {
-    Bs.push_back(B);
+  void add(const Vector3d& gB, const double freq, const double phase = 0) {
+    gBs.push_back(gB);
     freqs.push_back(freq);
     phases.push_back(phase);
   }
   void add(const control_fields& controls) {
     for (uint i = 0; i < controls.num(); i++) {
-      Bs.push_back(controls.Bs.at(i));
+      gBs.push_back(controls.gBs.at(i));
       freqs.push_back(controls.freqs.at(i));
       phases.push_back(controls.phases.at(i));
     }
   }
   void remove(const uint i) {
-    assert(i < Bs.size());
-    Bs.erase(Bs.begin() + i);
+    assert(i < gBs.size());
+    gBs.erase(gBs.begin() + i);
     freqs.erase(freqs.begin() + i);
     phases.erase(phases.begin() + i);
   }
 
-  uint num() const { return Bs.size(); }
+  uint num() const { return gBs.size(); }
 
-  Vector3d B(const double t = 0) const {
-    Vector3d net_B = Vector3d::Zero();
+  Vector3d gB(const double t = 0) const {
+    Vector3d net_gB = Vector3d::Zero();
     for (uint c = 0; c < num(); c++) {
-      net_B += Bs.at(c) * cos(freqs.at(c)*t + phases.at(c));
+      net_gB += gBs.at(c) * cos(freqs.at(c)*t + phases.at(c));
     }
-    return net_B;
+    return net_gB;
   }
 
   bool all_fields_static() const{

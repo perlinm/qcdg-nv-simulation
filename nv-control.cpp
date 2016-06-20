@@ -85,22 +85,21 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
   const double f_DD = 0;
 
   const double dw_min = larmor_resolution(nv,target);
-  double g_B_ctl = dw_min/nv.scale_factor; // control field strength * gyromangnetic ratio
+  double gB_ctl = dw_min/nv.scale_factor; // control field strength * gyromangnetic ratio
 
   // frequency and period of phase rotation
-  const double w_phase = g_B_ctl/4;
+  const double w_phase = gB_ctl/4;
   const double t_phase = 2*pi/w_phase;
 
   // time for which to apply the control field
   double control_time = mod(-phase/w_phase, t_phase); // control operation time
   if (control_time > t_phase/2) {
-    g_B_ctl *= -1;
+    gB_ctl *= -1;
     control_time = t_phase - control_time;
   }
 
-  const double B_ctl = g_B_ctl/g_C13; // control field strength
   const Vector3d axis_ctl = axis(pi/2, target_azimuth, natural_basis(nv,target));
-  const control_fields controls(B_ctl*axis_ctl, w_larmor); // control field object
+  const control_fields controls(gB_ctl*axis_ctl, w_larmor); // control field object
 
   MatrixXcd U_rotate;
   if (!adjust_AXY) {
@@ -221,11 +220,10 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       if (index == target) continue;
       if (is_larmor_pair(nv,index,target)) {
         const Vector3d A_perp_alt = hyperfine_perp(nv,index);
-        const double B_ctl =
-          exp((log(nv.static_Bz) + log(A_perp.norm()/g_C13))/2);
+        const double gB_ctl = exp((log(nv.static_gBz) + log(A_perp.norm()))/2);
         const Vector3d axis_ctl =
           hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
-        controls.add(B_ctl*axis_ctl, w_larmor);
+        controls.add(gB_ctl*axis_ctl, w_larmor);
       }
     }
   }
@@ -235,7 +233,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const Vector3d A_int = [&]() -> Vector3d {
     if (controls.num() == 0) return A_perp;
     else {
-      const Vector3d ctl_dir = hat(controls.B());
+      const Vector3d ctl_dir = hat(controls.gB());
       return dot(A_perp,ctl_dir)*ctl_dir;
     }
   }();
@@ -284,7 +282,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   // correct for larmor precession of the nucleus
   const double z_phase = mod(interaction_time*w_larmor, 2*pi);
-  const double w_ctl = g_C13*controls.B().norm()/2;
+  const double w_ctl = controls.gB().norm()/2;
   const double xy_phase = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =
