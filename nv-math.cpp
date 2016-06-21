@@ -521,7 +521,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   }
 
   // propagator for AXY sequence remainder
-  const double remaining_time = simulation_time - int(simulation_time/t_DD)*t_DD;
+  const double remaining_time = mod(simulation_time, t_DD);
   for (uint i = 1; i < advanced_pulses.size(); i++) {
     const double t = advanced_pulses.at(i-1)*t_DD;
     const double dt = advanced_pulses.at(i)*t_DD - t;
@@ -551,7 +551,8 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                         simulation_time, advance, controls.gB());
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
-  if (simulation_time == 0) return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+  const uint D = pow(2,spins);
+  if (simulation_time == 0) return MatrixXcd::Identity(D,D);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -576,7 +577,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
   const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
-  MatrixXcd U = MatrixXcd::Identity(H_0.rows(),H_0.cols()); // system propagator
+  MatrixXcd U = MatrixXcd::Identity(D,D); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
