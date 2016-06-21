@@ -6,6 +6,9 @@
 const std::complex<double> j(0.0,1.0);
 const double pi = M_PI;
 
+// threshold for numerical error on dimensionless quantities
+const double numerical_error = 1e-15;
+
 // physical constants in SI units
 const double mu0_SI = 4*pi*1e-7; // magnetic constant (tesla meters / amp)
 const double c_SI = 299792458; // speed of light (meters / second)

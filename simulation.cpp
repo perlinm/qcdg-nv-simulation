@@ -519,7 +519,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const Vector3d target_axis = axis(target_polar,target_azimuth);
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = rotate_target(nv, target, 2*phase, target_axis, exact);
+        P.at(exact) = rotate_target(nv, target, phase, target_axis, exact);
       }
       const uint target_in_cluster = get_index_in_cluster(nv, target);
       cout << target << " "

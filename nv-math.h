@@ -337,7 +337,7 @@ struct protocol {
   double t;
 
   protocol(){};
-  protocol(const MatrixXcd& U, const double t) {
+  protocol(const MatrixXcd& U, const double t = 0) {
     this->U = U;
     this->t = t;
   }
@@ -352,6 +352,10 @@ struct protocol {
 
   protocol adjoint() const {
     return protocol(U.adjoint(), t);
+  }
+
+  static protocol Identity(const uint D) {
+    return protocol(MatrixXcd::Identity(D,D));
   }
 };
 

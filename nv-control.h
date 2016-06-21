@@ -33,10 +33,14 @@ inline Vector3d axis(const double polar, const double azimuth,
                                                    sin(azimuth) * basis.at(1) );
 }
 
-// rotate into the natural frames of all nuclei in the cluster
-MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster);
-inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster) {
-  return to_natural_frames(nv, nv.clusters.at(cluster));
+// rotate into the natural frames of nuclei in a given cluster
+// if a target is specified, rotate all nulcei into the frame of that target;
+//  otherwise, rotate each nucleus into its own frame
+MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster,
+                            const uint target = 0);
+inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster,
+                                   const uint target = 0) {
+  return to_natural_frames(nv, nv.clusters.at(cluster), target);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -48,10 +52,10 @@ inline MatrixXcd polarize(const VectorXcd psi) {
   return psi*VectorXcd::Ones(psi.size()).adjoint();
 }
 
-// propagator U = exp(-i * phase * sigma_{axis}^{index})
+// propagator U = exp(-i * angle * I_{target}^{axis})
 protocol U_ctl(const nv_system& nv, const uint target, const double phase,
                const double target_azimuth, const bool adjust_AXY = true,
-               const double z_phase = 0);
+               const double z_angle = 0);
 
 // compute and perform operationc necessary to act U on target nucleus
 protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
@@ -65,7 +69,7 @@ inline protocol rotate_target(const nv_system& nv, const uint target, const doub
   return act_target(nv, target, rotate(angle, axis), exact, decouple, adjust_AXY);
 }
 
-// propagator U = exp(-i * phase * sigma_{n_1}^{NV}*sigma_{n_2}^{target})
+// propagator U = exp(-i * phase * I_{NV}^{n_1}*I_{target}^{n_2})
 protocol U_int(const nv_system& nv, const uint target, const double phase,
                const Vector3d& nv_axis, const double target_azimuth,
                const bool decouple = true);
@@ -81,17 +85,10 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
 // ---------------------------------------------------------------------------------------
 
 // iSWAP operation
-inline protocol iSWAP(const nv_system& nv, const uint index, const bool exact = false) {
-  return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
-          couple_target(nv, index, -pi/4, yhat, yhat, exact));
-}
+protocol iSWAP(const nv_system& nv, const uint target, const bool exact = false);
 
 // SWAP operation
-inline protocol SWAP(const nv_system& nv, const uint index, const bool exact = false) {
-  return (couple_target(nv, index, -pi/4, xhat, xhat, exact) *
-          couple_target(nv, index, -pi/4, yhat, yhat, exact) *
-          couple_target(nv, index, -pi/4, zhat, zhat, exact));
-}
+protocol SWAP(const nv_system& nv, const uint target, const bool exact = false);
 
 // SWAP operation between NV electron spin and the singlet-triplet (ST) subspace of two
 //   nuclear spins; spin bases are: {-z1,y1,x1} for spin 1, and {-y1,x1,z1} for spin 2,

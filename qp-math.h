@@ -54,13 +54,14 @@ inline MatrixXcd tp(const MatrixXcd& A, const MatrixXcd& B) {
 MatrixXcd tp(const initializer_list<MatrixXcd>& list);
 
 // remove numerical artifacts from a matrix
-MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold = 1e-12);
+MatrixXcd remove_artifacts(const MatrixXcd& A, const double threshold = numerical_error);
 
 // get global phase of matrix
-complex<double> get_phase(const MatrixXcd& A, const double threshold = 1e-12);
+complex<double> get_phase(const MatrixXcd& A, const double threshold = numerical_error);
 
 // remove global phase from matrix
-inline MatrixXcd remove_phase(const MatrixXcd& A, const double threshold = 1e-12) {
+inline MatrixXcd remove_phase(const MatrixXcd& A,
+                              const double threshold = numerical_error) {
   return A*conj(get_phase(A, threshold));
 }
 
