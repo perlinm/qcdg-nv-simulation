@@ -26,6 +26,7 @@
 \newcommand{\ST}{\t{ST}}
 \renewcommand{\S}{\t{S}}
 \newcommand{\T}{\t{T}}
+\newcommand{\R}{\mathcal R}
 
 %%% figures
 \usepackage{graphicx,grffile,float} % floats, etc.
@@ -76,7 +77,7 @@ One such application of the NV center is as a memory register to store
 quantum information. While typical control operations on the NV
 electron spin happen on the scale of nanoseconds, its room-temperature
 coherence time is on the scale of microseconds
-\cite{dobrovitski2013quantum}.  Dynamic decoupling schemes and the use
+\cite{dobrovitski2013quantum}. Dynamic decoupling schemes and the use
 of isotopically pure diamond samples can increase the NV electron spin
 coherence time by a few orders of magnitude
 \cite{ryan2010robust}. Storing quantum information in the NV electron
@@ -111,11 +112,11 @@ adaptive XY-$n$ (AXY-$n$) \cite{casanova2015robust}.
 The Hamiltonian of the NV center system in the presence of a strong,
 static magnetic field $\v B$ can be decomposed as
 \begin{align}
-  H_\t{sys} = H_\t{NV}^\t{GS} + H_\t{hf} + H_\t{nZ}  + H_\t{nn},
+  H_\t{sys} = H_\NV^\t{GS} + H_\t{hf} + H_\t{nZ}  + H_\t{nn},
 \end{align}
 where
 \begin{align}
-  H_\t{NV}^\t{GS} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
+  H_\NV^\t{GS} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
 \end{align}
 is the ground-state NV electron spin Hamiltonian with zero-field
 splitting $D$, spin-1 operator $\v S$, natural NV axis $\uv z$, and
@@ -139,7 +140,7 @@ is the internuclear coupling with $\v r_{jk}\equiv\v r_j-\v r_k$. We
 will hereafter neglect internuclear coupling in all analytical work,
 though we will keep $H_\t{nn}$ in any numerical results.
 
-Changing into the rotating frame of $H_\t{NV}^\t{GS}$ affects only the
+Changing into the rotating frame of $H_\NV^\t{GS}$ affects only the
 hyperfine Hamiltonian, which becomes
 \begin{align}
   \tilde H_\t{hf} = S_z\sum_j \v A_j\c\v I_j,
@@ -155,16 +156,15 @@ The system Hamiltonian is thus
   -\sum_j\gamma_j\v B\c\v I_j.
 \end{align}
 
-When restricted to the subspace of $\set{\ket0,\ket{m_s}}$ for the NV
-electron spin, with $m_s\in\set{1,-1}$, we can say that
+When restricted to the subspace of $\set{\ket0,\ket{m_s}}$ with with
+$m_s\in\set{1,-1}$ for the NV electron spin,
 \begin{align}
-  S_z = \f{m_s}2\p{\sigma_z^{NV}+\mathbbm1},
+  S_z = \f{m_s}2\p{I_\NV^z+\mathbbm1},
 \end{align}
-where $\sigma_z^{NV}\equiv\op{m_s}-\op{0}$ and
-$\mathbbm1\equiv\op{m_s}+\op{0}$ is the identity. Defining the
-interaction Hamiltonian
+where $I_\NV^z\equiv\p{\op{m_s}-\op{0}}/2$ and
+$\mathbbm1\equiv\op{m_s}+\op{0}$. Defining the interaction Hamiltonian
 \begin{align}
-  H_\t{int} = \f{m_s}2\sigma_z^{NV}\sum_j\v A_j\c\v I_j
+  H_\t{int} = m_sI_\NV^z\sum_j\v A_j\c\v I_j
 \end{align}
 the effective larmor frequency
 \begin{align}
@@ -173,18 +173,18 @@ the effective larmor frequency
 and the effective Zeeman Hamiltonian
 \begin{align}
   H_\t{nZ}^\t{eff} = -\sum_j\p{\gamma_j\v B - \f{m_s}2\v A_j}\c\v I_j
-  \equiv -\sum_j\v\omega_j\c\v I_j,
+  = -\sum_j\v\omega_j\c\v I_j,
 \end{align}
-we can say that
+the system Hamiltonian can be written as
 \begin{align}
   \tilde H_\t{sys} = H_\t{int} + H_\t{nZ}^\t{eff}.
   \label{H_sys_int_nZ}
 \end{align}
 
 Moving into the rotating frame of $H_\t{nZ}^\t{eff}$, the entire
-system is described the the Hamiltonian
+system is described by the Hamiltonian
 \begin{align}
-  \tilde H_\t{int} = \f{m_s}2\sigma_z^{NV}
+  \tilde H_\t{int} = m_sI_\NV^z
   \sum_j\tilde{\v A_j}\p{t}\c\v I_j,
   \label{H_int_no_DD}
 \end{align}
@@ -195,12 +195,20 @@ $\uv\omega_j$ by an angle $\omega_jt$. Written explicitly,
   + \v A_j^{\perp\perp}\sin\p{\omega_jt},
   \label{A_rot}
 \end{align}
-where $\v A_j^\parallel\equiv\p{\v A_j\c\uv\omega_j}\uv\omega_j$ is
-the projection of $\v A_j$ along $\v \omega_j$,
-$\v A_j^\perp\equiv\v A_j-\v A_j^\parallel$ is the projection of
-$\v A_j$ onto the plane orthogonal to $\v\omega_j$, and
-$\v A_j^{\perp\perp}\equiv\uv\omega_j\times\v A_j^\perp$ is the vector
-$\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
+where
+\begin{align}
+  \v A_j^\parallel\equiv\p{\v A_j\c\uv\omega_j}\uv\omega_j
+\end{align}
+is the projection of $\v A_j$ along $\v \omega_j$,
+\begin{align}
+\v A_j^\perp\equiv\v A_j-\v A_j^\parallel
+\end{align}
+is the projection of $\v A_j$ onto the plane orthogonal to
+$\v\omega_j$, and
+\begin{align}
+\v A_j^{\perp\perp}\equiv\uv\omega_j\times\v A_j^\perp
+\end{align}
+is the vector $\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
 
 \subsection{Dynamic decoupling and nuclear spin addressing}
 
@@ -209,15 +217,15 @@ Dynamic decoupling schemes effectively prepend a modulation function
   F\p{t}=\sum_kf_k\cos\p{k\omega_{DD}t-\phi_{DD}}
 \end{align}
 with fundamental frequency $\omega_{DD}$, phase $\phi_{DD}$, and range
-$\set{1,-1}$ to $\sigma_z^{NV}$, so that the system Hamiltonian reads
+$\set{1,-1}$ to $\sigma_z^\NV$, so that the system Hamiltonian reads
 \begin{align}
   \tilde H_\t{int} =
-  F\p{t}\f{m_s}2\sigma_z^{NV}\sum_j\tilde{\v A_j}\p{t}\c\v I_j.
+  F\p{t}m_sI_\NV^z\sum_j\tilde{\v A_j}\p{t}\c\v I_j.
 \end{align}
 At a resonance $k_{DD}\omega_{DD}\equiv\omega_r\gg A_j$, the secular
 approximation allows one to neglect $\v A_j^\parallel$ and express
 \begin{align}
-  \tilde H_\t{int} = f_{k_{DD}}\f{m_s}4\sigma_z^{NV}
+  \tilde H_\t{int} = \f12 f_{k_{DD}} m_sI_\NV^z
   \sum_{j:\omega_j=\omega_r} A_j^\perp\v I_j\c\uv n_j,
   \label{H_int_resonance}
 \end{align}
@@ -228,18 +236,18 @@ $\uv\omega_j$ by $\phi_{DD}$, i.e.
   \uv A_j^{\perp\perp}\sin\phi_{DD}.
 \end{align}
 One can concisely write (\ref{H_int_resonance}) with
-$h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/8$ and the Pauli spin-1/2
+$h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/2$ and the Pauli spin-1/2
 vector $\v\sigma^j$ (as we consider only spin-1/2 nuclei) as
 \begin{align}
   \tilde H_\t{int} = \sum_{j:\omega_j=\omega_r}
-  h_j^\t{int}\sigma_z^{NV}\v\sigma^j\c\uv n_j.
+  h_j^\t{int}I_\NV^z\v I_j\c\uv n_j.
   \label{H_int}
 \end{align}
 
 When the harmonics of $F\p{t}$ are off resonance with all $\omega_j$
 and $\omega_{DD}\gg A_j$ for all $j$, the secular approximation allows
-one to neglect $H_\t{int}$ entirely. In this case, one can apply an
-auxiliary magnetic field
+one to neglect $\tilde H_\t{int}$ entirely. In this case, one can
+apply an auxiliary magnetic field
 $\v B_\t{ctl}^{\p\omega}\p{t}=\v
 B_\t{ctl}\cos\p{\omega_\t{ctl}t-\phi_\t{ctl}}$ and shift into the
 rotating frame of $H_\t{nZ}^\t{eff}$, much like the frame shift
@@ -260,12 +268,14 @@ rotated about $\uv\omega_j$ by an angle $\omega_jt$:
   + \v B_{\t{ctl},j}^{\perp\perp}\sin\p{\omega_jt},
 \end{align}
 where
-$\v B_{\t{ctl},j}^\parallel\equiv\p{\v B_\t{ctl}
-  \c\uv\omega_j}\uv\omega_j$,
-$\v B_{\t{ctl},j}^\perp\equiv\v B_\t{ctl} - \v
-B_{\t{ctl},j}^\parallel$, and
-$\v B_{\t{ctl},j}^{\perp\perp}\equiv\uv\omega_j\times\v
-B_\t{ctl}^\perp$.
+\begin{align}
+  \v B_{\t{ctl},j}^\parallel
+  &\equiv \p{\v B_\t{ctl} \c\uv\omega_j}\uv\omega_j \\
+  \v B_{\t{ctl},j}^\perp
+  &\equiv \v B_\t{ctl} - \v B_{\t{ctl},j}^\parallel \\
+  \v B_{\t{ctl},j}^{\perp\perp}
+  &\equiv \uv\omega_j\times\v B_\t{ctl}^\perp.
+\end{align}
 
 When $\omega_\t{ctl}\gg\gamma_jB_\t{ctl}$, the secular approximation
 allows one to neglect $\v B_{\t{ctl},j}^\parallel$ and express
@@ -281,11 +291,10 @@ about $\uv\omega_j$ by $\phi_\t{ctl}$, i.e.
   \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_\t{ctl}.
 \end{align}
 One can concisely write (\ref{H_ctl_resonance}) with
-$h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/4$ and the Pauli
-spin-1/2 vector $\v\sigma^j$ as
+$h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2$ as
 \begin{align}
   \tilde H_\t{ctl} = \sum_{j:\omega_j=\omega_\t{ctl}}
-  h_j^\t{ctl}\v\sigma^j\c\uv m_j.
+  h_j^\t{ctl}\v I_j\c\uv m_j.
   \label{H_ctl}
 \end{align}
 
@@ -317,47 +326,106 @@ When employing a dynamic decoupling protocol on resonance with an
 effective larmor frequency $\omega_r$, one can apply an additional
 magnetic decoupling field
 $\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega_r
-  t-\phi_\t{dec}}$ and realize, with a rotating wave approximation in
-the frame of $H_\t{nZ}^\t{eff}$, the Hamiltonian
+  t-\phi_\t{dec}}$ and realize, in the frame of $H_\NV^\t{GS}$, the
+system Hamiltonian
+\begin{align}
+  \tilde H_\t{sys}^\t{dec} = H_\t{int} + H_\t{nZ}^\t{eff} + H_\t{dec},
+\end{align}
+where
+\begin{align}
+  H_\t{dec} = -\sum_j\gamma_j\v B_\t{dec}\c\v I_j
+  \cos\p{\omega_rt-\phi_\t{dec}}.
+\end{align}
+
+In the frame of $H_\t{nZ}^\t{eff}=-\sum_j\v\omega_j\c\v I_j$, the
+decoupling Hamiltonian becomes
+\begin{align}
+  \tilde H_\t{dec} = -\sum_j\gamma_j\tilde{\v B}_{\t{dec},j}
+  \c\v I_j \cos\p{\omega_rt-\phi_\t{dec}}
+  \label{H_dec_eff_full}
+\end{align}
+with
+\begin{align}
+  \tilde{\v B}_{\t{dec},j} = \v B_{\t{dec},j}^\parallel
+  + \v B_{\t{dec},j}^\perp\cos\p{\omega_j t}
+  + \v B_{\t{dec},j}^{\perp\perp}\sin\p{\omega_j t}
+\end{align}
+and
+\begin{align}
+  \v B_{\t{dec},j}^\parallel
+  &\equiv \p{\v B_\t{dec} \c\uv\omega_j}\uv\omega_j, \\
+  \v B_{\t{dec},j}^\perp
+  &\equiv \v B_\t{dec} - \v B_{\t{dec},j}^\parallel, \\
+  \v B_{\t{dec},j}^{\perp\perp}
+  &\equiv \uv\omega_j\times\v B_\t{dec}^\perp.
+\end{align}
+If $\omega_r,\omega_j\gg \gamma_jB_\t{dec}$, then we can neglect
+$\v B_{\t{dec},j}^\parallel$ in (\ref{H_dec_eff_full}) by the secular
+approximation, and by the rotating approximation express
+\begin{multline}
+  \tilde H_\t{dec} \\
+  = -\sum_{j:\omega_j=\omega_r}
+  \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_\t{dec}
+  + \v B_{\t{dec},j}^{\perp\perp}\sin\phi_\t{dec}}\c\v I_j.
+\end{multline}
+Defining
+\begin{align}
+  \v\nu_j = \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_\t{dec}
+  + \v B_{\t{dec},j}^{\perp\perp}\sin\phi_\t{dec}},
+\end{align}
+we can express
+\begin{align}
+  \tilde H_\t{dec} = -\sum_{j:\omega_j=\omega_r}\v\nu_j\c\v I_j.
+\end{align}
+The system Hamiltonian in the frame of $H_\t{nZ}^\t{eff}$ thus takes
+the form
+\begin{align}
+  \tilde H_\t{sys}^\t{dec} = \tilde H_\t{int} + \tilde H_\t{dec}
+  = \sum_{j:\omega_j=\omega_r}
+  \p{h_j^\t{int}I_\NV^z\v I_j\c\uv n_j - \v\nu_j\c\v I_j}.
+\end{align}
+
+In the frame of $\tilde H_\t{dec}$, the entire system is governed by
+the Hamiltonian
 \begin{align}
   \tilde H_\t{int}^\t{dec} = \sum_{j:\omega_j=\omega_r}
-  \tilde h_j^\t{int}\sigma_z^{NV}\v\sigma^j\c\tilde{\v n}_j,
+  h_j^\t{int}I_\NV^z\v I_j\c\tilde{\v n}_j\p{t},
+  \label{H_int_dec_full}
+\end{align}
+where $\tilde{\v n}_j\p{t}$ is the unit vector $\uv n_j$ rotated
+about $\uv\nu_j$ by $\nu_jt$, i.e.
+\begin{align}
+  \tilde{\v n}_j\p{t} = \v n_j^\parallel +
+  \v n_j^\perp\cos\p{\nu_jt} + \v n_j^{\perp\perp}\sin\p{\nu_jt},
+\end{align}
+where
+\begin{align}
+  \v n_j^\parallel &\equiv \p{\uv n_j\c\uv\nu_j}\uv\nu_j, \\
+  \v n_j^\perp &\equiv \uv n_j - \uv n_j^\parallel, \\
+  \v n_j^{\perp\perp} &\equiv \uv\nu_j\times\uv n_j.
+\end{align}
+If $\omega_j\gg\nu_j\gg h_j^\t{int}$, the secular approximation allows
+us to neglect $\v n_j^\perp$ and $\v n_j^{\perp\perp}$ in
+(\ref{H_int_dec_full}), leaving
+\begin{align}
+  \tilde H_\t{int}^\t{dec}
+  = \sum_{j:\omega_j=\omega_r}
+  \tilde h_j^\t{int}I_\NV^z\v I_j\c\uv\nu_j,
   \label{H_int_dec}
 \end{align}
 where
 \begin{align}
-  \tilde h_j^\t{int}
-  = h_j^\t{int}\p{\uv A_j^\perp\c\uv B_{\t{dec},j}^\perp}
-  = h_j^\t{int}A_{j,\t{dec}}^\perp/A_j^\perp
+  \tilde h_j^\t{int} = h_j\uv n_j\c\uv\nu_j.
 \end{align}
-and
-\begin{align}
-  \tilde{\v n}_j
-  &= \uv A_{j,\t{dec}}^\perp\cos\phi_{DD}
-    + \uv A_{j,\t{dec}}^{\perp\perp}\sin\phi_{DD}
-\end{align}
-with
-\begin{align}
-  \v A_{j,\t{dec}}^\perp
-  &= \p{\v A_j^{\perp}\c\uv B_{\t{dec},j}^\perp}\uv B_{\t{dec},j}^\perp, \\
-  \v A_{j,\t{dec}}^{\perp\perp}
-  &= \uv\omega_j\times\v A_{j,\t{dec}}^\perp, \\
-  \v B_{\t{dec},j}^\perp
-  &= \v B_\t{dec} - \p{\v B_\t{dec}\c\uv\omega_j}\uv\omega_j.
-\end{align} \fixme{derive these results explicitly?}
-In words: the decoupling field $\v B_\t{dec}^{\p\omega}$ effectively
-suppresses the components of $\v A_j^\perp$ perpendicular to
-$\uv B_\t{dec}^\perp$. These results to not depend on $\phi_\t{dec}$,
-but do require that $A_j\ll\gamma_jB_{\t{dec},j}^\perp\ll\gamma_jB$.
 
 The utility of the decoupling field lies in the fact that when
-$\uv B_\t{dec}^\perp$ is orthogonal to $\v A_j^\perp$, the interaction
-with spin $j$ is suppressed as $\tilde h_j^\t{int}=0$. Considering a
-single larmor pair, one can therefore apply a decoupling field to
-eliminate one of the two terms in (\ref{H_int_dec}) and realize an
-effective Hamiltonian which couples the NV electron spin to only one
-nuclear spin. This scheme fails for larmor pairs with mutually
-parallel $\v A_j^\perp$.
+$\uv n_j$ and $\uv\nu_j$ are orthogonal, the interaction with spin $j$
+is suppressed as $\tilde h_j^\t{int}=0$. Considering a single larmor
+pair, one can therefore apply a decoupling field to eliminate one of
+the two terms in (\ref{H_int_dec}) and realize an effective
+Hamiltonian which couples the NV electron spin to only one nuclear
+spin. This scheme fails for larmor pairs with mutually parallel
+$\v A_j^\perp$.
 
 The tools developed in this paper do not allow for single-spin
 operations on elements of a larmor pair. Such operations must
@@ -394,8 +462,8 @@ state of qubit $k$ conditionally on the state of qubit $j$. The
 $\cNOT^{j\to k}$ gate is realized via
 \begin{multline}
   \cNOT^{j\to k} \\
-  = \exp\p{-j\f\pi4\sigma_z^j} \exp\p{-j\f\pi4\sigma_x^k}
-  \exp\p{j\f\pi4\sigma_z^j\sigma_x^k}.
+  = \exp\p{-j\f\pi2I_j^z} \exp\p{-j\f\pi2I_k^x}
+  \exp\p{j\pi I_j^z I_k^x}.
 \end{multline}
 
 If we wish to perform a SWAP operation between the NV electron spin
@@ -417,17 +485,17 @@ For later convenience, (\ref{SWAP_NVAC_sketch}) makes use of the fact
 that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore,
 \begin{multline}
   \SWAP^{\NV,\AC} = \\
-  \exp\p{-j\f\pi4\sigma_x^\NV} \exp\p{j\f\pi4\sigma_{z'}^1}
-  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
+  \exp\p{-j\f\pi2 I_\NV^x} \exp\p{j\f\pi2 I_1^{z'}}
+  \exp\p{-j\pi I_\NV^x I_1^{z'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV} \exp\p{-j\f\pi4\sigma_{x'}^1}
-  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
+  \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_1^{x'}}
+  \exp\p{j\pi I_\NV^z I_1^{x'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV} \exp\p{-j\f\pi4\sigma_{x''}^2}
-  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x''}^2}
+  \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_2^{x''}}
+  \exp\p{j\pi I_\NV^zI_2^{x''}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_x^\NV} \exp\p{-j\f\pi4\sigma_{z'}^1}
-  \exp\p{j\f\pi4\sigma_x^\NV\sigma_{z'}^1},
+  \exp\p{-j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_1^{z'}}
+  \exp\p{j\pi I_\NV^x I_1^{z'}},
   \label{SWAP_NVAC_full}
 \end{multline}
 where we make explicit the fact that the the spin of nuclei 1 and 2
@@ -436,17 +504,17 @@ $\set{\uv x',\uv y',\uv z'}$ and $\set{\uv x'',\uv y'',\uv z''}$. We
 can evaluate the first and last rotations of spin 1 in
 (\ref{SWAP_NVAC_full}) and combine factors to get
 \begin{multline}
-  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
-  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi2 I_\NV^x}
+  \exp\p{-j\pi I_\NV^x I_1^{z'}}
   \times \\
-  \exp\p{-j\f\pi2\sigma_z^\NV}
-  \exp\p{j\f\pi4\sp{\sigma_{y'}^1-\sigma_{x''}^2}}
+  \exp\p{-j\pi I_\NV^z}
+  \exp\p{j\f\pi2\sp{I_1^{y'}-I_2^{x''}}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
-  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x''}^2}
+  \exp\p{-j\pi I_\NV^z I_1^{y'}}
+  \exp\p{j\pi I_\NV^z I_2^{x''}}
   \times \\
-  \exp\p{j\f\pi4\sigma_x^\NV\sigma_{z'}^1}
-  \exp\p{-j\f\pi4\sigma_x^\NV}.
+  \exp\p{j\pi I_\NV^x I_1^{z'}}
+  \exp\p{-j\f\pi2 I_\NV^x}.
 \end{multline}
 Letting
 \begin{align}
@@ -455,53 +523,51 @@ Letting
   \uv z' = \uv z'' &= \uv\omega_1\approx\uv z, \label{w=z}
 \end{align}
 where the approximation in (\ref{w=z}) holds for $\gamma_1B\gg A_1/2$,
-we can say that
 \begin{multline}
-  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
-  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_z^1}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi2 I_\NV^x}
+  \exp\p{-j\pi I_\NV^x I_1^z}
   \times \\
-  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sum_jI_j^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \exp\p{-j\pi I_\NV^z I_1^{y'}}
+  \exp\p{-j\pi I_\NV^z I_2{y'}}
   \times \\
-  \exp\p{j\f\pi4\sigma_x^\NV\sigma_z^1} \exp\p{-j\f\pi4\sigma_x^\NV}.
+  \exp\p{j\pi I_\NV^x I_1^z} \exp\p{-j\f\pi2 I_\NV^x}.
   \label{SWAP_NVAC_sxsz}
 \end{multline}
 As we cannot directly realize the coupling $\sigma_x^\NV\sigma_z^1$,
 we must perform rotations as
 \begin{multline}
-  \exp\p{-j\f\pi4\sigma_x^\NV\sigma_z^1} =
-  \exp\p{-j\f\pi4\sigma_y^\NV} \exp\p{j\f\pi4\sigma_{y'}^1}
+  \exp\p{-j\pi I_\NV^x I_1^z} =
+  \exp\p{-j\f\pi2 I_\NV^y} \exp\p{j\f\pi2 I_1^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
-  \times \\
-  \exp\p{-j\f\pi4\sigma_{y'}^1} \exp\p{j\f\pi4\sigma_y^\NV}.
+  \exp\p{-j\pi I_\NV^z I_1^{x'}}
+  \times \exp\p{-j\f\pi2 I_1^{y'}} \exp\p{j\f\pi2 I_\NV^y}.
 \end{multline}
 Substituting this identity into (\ref{SWAP_NVAC_sxsz}) yields
 \begin{multline}
-  \SWAP^{\NV,\AC} = \exp\p{j\f\pi4\sigma_x^\NV}
-  \exp\p{-j\f\pi4\sigma_y^\NV}
+  \SWAP^{\NV,\AC} = \exp\p{j\f\pi2 I_\NV^x}
+  \exp\p{-j\f\pi2 I_\NV^y}
   \times \\
-  \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
-  \exp\p{j\f\pi4\sigma_y^\NV}
+  \exp\p{j\f\pi2\sum_jI_j^{y'}}
+  \exp\p{-j\pi I_\NV^z I_1^{x'}}
+  \exp\p{j\f\pi2 I_\NV^y}
   \times \\
-  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sum_jI_j^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \exp\p{-j\pi I_\NV^z I_1^{y'}}
+  \exp\p{-j\pi I_\NV^z I_2^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_y^\NV}
-  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
-  \exp\p{-j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\f\pi2 I_\NV^y}
+  \exp\p{j\pi I_\NV^z I_1^{x'}}
+  \exp\p{-j\f\pi2\sum_jI_j^{y'}}
   \times \\
-  \exp\p{j\f\pi4\sigma_y^\NV} \exp\p{-j\f\pi4\sigma_x^\NV},
+  \exp\p{j\f\pi2 I_\NV^y} \exp\p{-j\f\pi2 I_\NV^x},
   \label{SWAP_NVAC}
 \end{multline}
 where we have canceled out two rotations of the form
-$\exp\p{\pm j\pi/4~\sigma_{y'}^1}$ and inserted two rotations of the
-form $\exp\p{\pm j\pi/4~\sigma_{y'}^2}$ with no net effect.
+$\exp\p{\pm j\pi/2~I_1^{y'}}$ and inserted two rotations of the
+form $\exp\p{\pm j\pi/2~I_2^{y'}}$ with no net effect.
 
 The $\SWAP^{\NV,\ST}$ can be realized using the $\SWAP^{\NV,\AC}$ gate
 via
@@ -511,33 +577,33 @@ via
 where the rotation $R_\NV$ takes $\ket\u\to\p{\ket\u-\ket\d}/\sqrt2$
 and $\ket\d\to\p{\ket\u+\ket\d}/\sqrt2$. Written explicitly,
 \begin{align}
-  R_\NV = \exp\p{j\f\pi4\sigma_y^\NV}.
+  R_\NV = \exp\p{j\f\pi2 I_\NV^y}.
 \end{align}
 We therefore have that
 \begin{multline}
-  \SWAP^{\NV,\ST} = \exp\p{j\f\pi2\v\sigma^\NV\c\uv a}
+  \SWAP^{\NV,\ST} = \exp\p{j\pi\v I_\NV\c\uv a}
   \times \\
-  \exp\p{j\f\pi4\sum_j\sigma_{n'}^j}
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
-  \exp\p{j\f\pi4\sigma_y^\NV}
+  \exp\p{j\f\pi2\sum_jI_j^{y'}}
+  \exp\p{-j\pi I_\NV^z I_1^{x'}}
+  \exp\p{j\f\pi2 I_\NV^y}
   \times \\
-  \exp\p{-j\f\pi2\sigma_z^\NV} \exp\p{j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sum_jI_j^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^1}
-  \exp\p{-j\f\pi4\sigma_z^\NV\sigma_{y'}^2}
+  \exp\p{-j\pi I_\NV^z I_1^{y'}}
+  \exp\p{-j\pi I_\NV^z I_2^{y'}}
   \times \\
-  \exp\p{-j\f\pi4\sigma_y^\NV}
-  \exp\p{j\f\pi4\sigma_z^\NV\sigma_{x'}^1}
-  \exp\p{-j\f\pi4\sum_j\sigma_{y'}^j}
+  \exp\p{-j\f\pi2 I_\NV^y}
+  \exp\p{j\pi I_\NV^z I_1^{x'}}
+  \exp\p{-j\f\pi2\sum_jI_j^{y'}}
   \times \\
-  \exp\p{-j\f\pi2\v\sigma^\NV\c\uv a},
+  \exp\p{-j\pi\v I_\NV\c\uv a},
   \label{SWAP_NVST}
 \end{multline}
 where $\v a = \uv x - \uv y$ and we have used the fact that
 \begin{multline}
-  \exp\p{j\f\pi4\sigma_y} \exp\p{-j\f\pi4\sigma_x}
-  \exp\p{j\f\pi4\sigma_y} \\
-  = \exp\p{-j\f\pi2\v\sigma\c\uv a}.
+  \exp\p{j\f\pi2 I^y} \exp\p{-j\f\pi2 I^x}
+  \exp\p{j\f\pi2 I^y} \\
+  = \exp\p{-j\pi\v I\c\uv a}.
 \end{multline}
 
 In the subspace of interest, we have thus
