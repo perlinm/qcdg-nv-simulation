@@ -190,11 +190,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   const double azimuth = atan2(ry,rx);
   const double pitch = asin(rz/angle);
 
-  const double net_pole_rotation = pi - 2*abs(pitch);
-  const double net_equatorial_rotation =
-    2*abs(pitch) + (angle < pi ? angle : 2*pi - angle);
-
-  if (net_pole_rotation < net_equatorial_rotation) {
+  const protocol pole_rotation = [&]() -> protocol {
     const int pole = pitch > 0 ? 1 : -1; // "north" vs "south" pole
     const double angle_to_pole = pi/2 - abs(pitch);
 
@@ -203,16 +199,22 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
       else return U_ctl(nv, target, pole*angle_to_pole, azimuth-pi/2, adjust_AXY);
     }();
     const protocol rotate_z = U_ctl(nv, target, 0, 0, adjust_AXY, pole*angle);
-    return to_pole.adjoint() * rotate_z * to_pole;
 
-  } else {
+    return to_pole.adjoint() * rotate_z * to_pole;
+  }();
+
+  const protocol equatorial_rotation = [&]() -> protocol {
     const protocol to_equator = [&]() -> protocol {
       if (abs(pitch) < numerical_error) return protocol::Identity(D);
       else return U_ctl(nv, target, pitch, azimuth+pi/2, adjust_AXY);
     }();
     const protocol rotate_xy = U_ctl(nv, target, angle, azimuth, adjust_AXY);
+
     return to_equator.adjoint() * rotate_xy * to_equator;
-  }
+  }();
+
+  if (pole_rotation.t < equatorial_rotation.t) return pole_rotation;
+  else return equatorial_rotation;
 }
 
 // propagator U = exp(-i * phase * I_{NV}^{n_1}*I_{target}^{n_2})
@@ -270,7 +272,6 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   // time for which to interact
   double interaction_time = mod(phase/w_phase, t_phase);
-  cout << "interaction_time/t_phase: " << interaction_time/t_phase << endl;
   if (interaction_time > t_phase/2) {
     f_DD *= -1;
     interaction_time = t_phase - interaction_time;
@@ -278,16 +279,16 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
-  const double phase_advance = -protocol_angle/w_larmor;
+  const double angle_advance = -protocol_angle/w_larmor;
 
   const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                           controls, leading_time, phase_advance);
+                                           controls, leading_time, angle_advance);
   const MatrixXcd U_AXY = [&]() -> MatrixXcd {
     if (cycles > 0) {
       const double trailing_time = t_DD - leading_time;
       const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                 controls, trailing_time,
-                                                phase_advance + leading_time);
+                                                angle_advance + leading_time);
       return U_leading * pow(U_trailing*U_leading, cycles);
     } else return U_leading;
   }();
