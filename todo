@@ -1,3 +1,12 @@
+debug:
+./mkfac.py && ./simulate.exe --static_Bz 1000 --c13_percentage 0.0107 --max_cluster_size 4 --scale_factor 10 --seed 13926275415587499346 --couple --phase 1.1
+
+fix in appropriate scalings with \gg
+
+consider limits on B_dec (scale down h_j if necessary)
+  gB_z should be ~ 1 MHz, gB_dec should be ~ 10 kHz (check 3D positioning paper)
+  total pulses should be ~< 3000
+
 typical fluctuations in magnetic field
 comparison between larmor pair memory and individual nuclear spins
 implement T1 decay considerations; how does performance change with temperature
