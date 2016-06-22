@@ -598,6 +598,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
         if (pulses.at(p) < x_AXY + dx) {
           if (pulses.at(p) >= x_AXY) {
             return p;
+
           }
         } else break;
       }
@@ -617,10 +618,10 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
       double x_0 = x;
       uint next_pulse = pulse;
 
-      // the following loop handles multiple pulses within a time period of dt
+      // the following loop handles multiple pulses within a time period of dx
       do {
         double dx_0 = mod(pulses.at(next_pulse) - x_0);
-        if (dx_0 > 0.5) dx_0 -= 1;
+        if (dx_0 > 0.5) dx_0 -= 1; // fix for clipping bug when dx_0 ~= 1
         const Vector3d gB = controls.gB((x_0+dx_0/2)*t_DD);
         const MatrixXcd H = H_0 + H_ctl(nv, cluster, gB);
 
@@ -646,3 +647,4 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
   return U;
 }
+
