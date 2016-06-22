@@ -619,14 +619,15 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
       // the following loop handles multiple pulses within a time period of dt
       do {
-        const double dx_0 = mod(pulses.at(next_pulse) - x_0);
+        double dx_0 = mod(pulses.at(next_pulse) - x_0);
+        if (dx_0 > 0.5) dx_0 -= 1;
         const Vector3d gB = controls.gB((x_0+dx_0/2)*t_DD);
         const MatrixXcd H = H_0 + H_ctl(nv, cluster, gB);
 
         U = (X * exp(-j*dx_0*t_DD*H) * U).eval();
         U_NV = (sx * exp(-j*dx_0*t_DD*H_NV(nv,gB)) * U_NV).eval();
 
-        x_0 = pulses.at(next_pulse);
+        x_0 += dx_0;
         next_pulse = next_pulse % (pulses.size()-2) + 1;
       } while (mod(pulses.at(next_pulse) - x) <= dx);
 
