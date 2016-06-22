@@ -422,13 +422,13 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const protocol cNOT_AC_NV_adapted =
       (qY_NV *
        couple_target(nv, idx1, -pi, zhat, xhat, exact) *
-       rotate_target(nv, idx1, pi, yhat, exact) *
+       rotate_target(nv, idx1, pi/2, yhat, exact) *
        hXmY_NV);
 
     const Vector3d y1_in_idx2_basis = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
     const protocol cNOT_NV_AC_adapted =
       (hZ_NV *
-       rotate_target(nv, idx1, -pi, yhat, exact) *
+       rotate_target(nv, idx1, -pi/2, yhat, exact) *
        couple_target(nv, idx1, pi, zhat, yhat, exact) *
        couple_target(nv, idx2, pi, zhat, y1_in_idx2_basis, exact));
 
