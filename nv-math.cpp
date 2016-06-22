@@ -572,7 +572,8 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   }();
 
   // integration step number and size
-  const uint integration_steps = simulation_time*frequency_scale*nv.integration_factor;
+  const uint integration_steps =
+    ceil(simulation_time*frequency_scale*nv.integration_factor);
   const double dt = simulation_time/integration_steps;
 
   const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
@@ -640,5 +641,6 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());
+
   return U;
 }
