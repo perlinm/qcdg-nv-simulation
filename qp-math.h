@@ -13,7 +13,7 @@ using namespace std;
 using namespace Eigen;
 
 // floating-point modulus
-inline double mod(const double number, const double modulus) {
+inline double mod(const double number, const double modulus = 1) {
   return number - floor(number/modulus)*modulus;
 }
 

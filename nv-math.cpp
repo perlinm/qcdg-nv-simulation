@@ -327,8 +327,7 @@ vector<double> axy_pulse_times(const double f, const axy_harmonic k) {
 
 vector<double> advanced_pulse_times(const vector<double> pulse_times,
                                     const double advance) {
-  const double normed_advance = mod(advance, 1);
-  if (normed_advance == 0) return pulse_times;
+  if (advance == 0) return pulse_times;
 
   // number of pulses
   const uint N = pulse_times.size()-2;
@@ -337,8 +336,8 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times,
   vector<double> advanced_pulse_times;
   advanced_pulse_times.push_back(0);
   for (uint p = 0; p < 2*N; p++) {
-    if (p/N + pulse_times.at(p%N+1) - normed_advance >= 0) {
-      advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - normed_advance);
+    if (p/N + pulse_times.at(p%N+1) - advance >= 0) {
+      advanced_pulse_times.push_back(p/N + pulse_times.at(p%N+1) - advance);
     }
     if (advanced_pulse_times.size()-1 == N) break;
   }
@@ -348,7 +347,7 @@ vector<double> advanced_pulse_times(const vector<double> pulse_times,
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
 int F_AXY(const double x, const vector<double> pulses) {
-  const double normed_x = mod(x, 1);
+  const double normed_x = mod(x);
   uint pulse_count = 0;
   for (uint i = 1; i < pulses.size()-1; i++) {
     if (pulses.at(i) < normed_x) pulse_count++;
@@ -482,14 +481,15 @@ MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins) {
 // simulate propagator with static control fields
 MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const double simulation_time, const double advance,
+                       const double simulation_time, const double advance_time,
                        const Vector3d gB_ctl) {
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
+  const double advance = advance_time/t_DD;
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
-  const vector<double> advanced_pulses = advanced_pulse_times(pulses, advance/t_DD);
+  const vector<double> advanced_pulses = advanced_pulse_times(pulses, advance);
 
   const MatrixXcd H = H_sys(nv, cluster) + H_ctl(nv, cluster, gB_ctl); // full Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
@@ -497,7 +497,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
-  if (F_AXY(advance/t_DD, pulses) == -1) {
+  if (F_AXY(advance, pulses) == -1) {
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
   }
@@ -507,12 +507,12 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
     MatrixXcd U_AXY = MatrixXcd::Identity(H.rows(),H.cols());
     Matrix2cd U_NV_AXY = I2;
     for (uint i = 1; i < advanced_pulses.size(); i++) {
-      const double t = advanced_pulses.at(i-1)*t_DD;
-      const double dt = advanced_pulses.at(i)*t_DD - t;
-      U_AXY = (X * exp(-j*dt*H) * U_AXY).eval();
-      U_NV_AXY = (sx * exp(-j*dt*H_NV(nv,gB_ctl)) * U_NV_AXY).eval();
+      const double x = advanced_pulses.at(i-1);
+      const double dx = advanced_pulses.at(i) - x;
+      U_AXY = (X * exp(-j*dx*t_DD*H) * U_AXY).eval();
+      U_NV_AXY = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV_AXY).eval();
     }
-    // "undo" the last pulse at t = t_DD
+    // "undo" the last pulse at x = 1
     U_AXY = (X * U_AXY).eval();
     U_NV_AXY = (sx * U_NV_AXY).eval();
 
@@ -523,15 +523,15 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   // propagator for AXY sequence remainder
   const double remaining_time = mod(simulation_time, t_DD);
   for (uint i = 1; i < advanced_pulses.size(); i++) {
-    const double t = advanced_pulses.at(i-1)*t_DD;
-    const double dt = advanced_pulses.at(i)*t_DD - t;
-    if (t + dt < remaining_time) {
-      U = (X * exp(-j*dt*H) * U).eval();
-      U_NV = (sx * exp(-j*dt*H_NV(nv,gB_ctl)) * U_NV).eval();
+    const double x = advanced_pulses.at(i-1);
+    const double dx = advanced_pulses.at(i) - x;
+    if (x + dx < remaining_time) {
+      U = (X * exp(-j*dx*t_DD*H) * U).eval();
+      U_NV = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV).eval();
     } else {
-      const double dtf = remaining_time - t;
-      U = (exp(-j*dtf*H) * U).eval();
-      U_NV = (exp(-j*dtf*H_NV(nv,gB_ctl)) * U_NV).eval();
+      const double dx_f = remaining_time/t_DD - x;
+      U = (exp(-j*dx_f*t_DD*H) * U).eval();
+      U_NV = (exp(-j*dx_f*t_DD*H_NV(nv,gB_ctl)) * U_NV).eval();
       break;
     }
   }
@@ -545,10 +545,10 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
                        const control_fields& controls, const double simulation_time,
-                       const double advance) {
+                       const double advance_time) {
   if (controls.all_fields_static()) {
     return simulate_AXY(nv, cluster, w_DD, f_DD, k_DD,
-                        simulation_time, advance, controls.gB());
+                        simulation_time, advance_time, controls.gB());
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
   const uint D = pow(2,spins);
@@ -556,6 +556,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
+  const double advance = advance_time/t_DD;
   const vector<double> pulses = axy_pulse_times(f_DD,k_DD);
 
   // largest frequency scale of simulation
@@ -574,7 +575,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   // integration step number and size
   const uint integration_steps =
     ceil(simulation_time*frequency_scale*nv.integration_factor);
-  const double dt = simulation_time/integration_steps;
+  const double dx = simulation_time/t_DD / integration_steps;
 
   const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
@@ -582,20 +583,20 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   Matrix2cd U_NV = I2; // NV-only propagator
 
   // if we need to start with a flipped NV center, flip it
-  if (F_AXY(advance/t_DD, pulses) == -1) {
+  if (F_AXY(advance, pulses) == -1) {
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
   }
 
-  for (uint t_i = 0; t_i < integration_steps; t_i++) {
-    const double t = t_i*dt + advance; // time
+  for (uint x_i = 0; x_i < integration_steps; x_i++) {
+    const double x = x_i*dx + advance; // time normalized to t_DD
 
     // determine whether to apply an NV pi-pulse
     const uint pulse = [&]() -> uint {
-      const double t_AXY = mod(t, t_DD);
+      const double x_AXY = mod(x);
       for (uint p = 1; p < pulses.size()-1; p++) {
-        if (pulses.at(p)*t_DD < t_AXY + dt) {
-          if (pulses.at(p)*t_DD >= t_AXY) {
+        if (pulses.at(p) < x_AXY + dx) {
+          if (pulses.at(p) >= x_AXY) {
             return p;
           }
         } else break;
@@ -605,37 +606,37 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
     // update propagator
     if (!pulse) {
-      const Vector3d gB = controls.gB(t+dt/2);
+      const Vector3d gB = controls.gB((x+dx/2)*t_DD);
       const MatrixXcd H = H_0 + H_ctl(nv, cluster, gB);
 
-      U = (exp(-j*dt*H) * U).eval();
-      U_NV = (exp(-j*dt*H_NV(nv,gB)) * U_NV).eval();
+      U = (exp(-j*dx*t_DD*H) * U).eval();
+      U_NV = (exp(-j*dx*t_DD*H_NV(nv,gB)) * U_NV).eval();
 
     } else { // if (pulse)
 
-      double t_0 = t;
+      double x_0 = x;
       uint next_pulse = pulse;
 
       // the following loop handles multiple pulses within a time period of dt
       do {
-        const double dt_0 = mod(pulses.at(next_pulse)*t_DD - t_0, t_DD);
-        const Vector3d gB = controls.gB(t_0+dt_0/2);
+        const double dx_0 = mod(pulses.at(next_pulse) - x_0);
+        const Vector3d gB = controls.gB((x_0+dx_0/2)*t_DD);
         const MatrixXcd H = H_0 + H_ctl(nv, cluster, gB);
 
-        U = (X * exp(-j*dt_0*H) * U).eval();
-        U_NV = (sx * exp(-j*dt_0*H_NV(nv,gB)) * U_NV).eval();
+        U = (X * exp(-j*dx_0*t_DD*H) * U).eval();
+        U_NV = (sx * exp(-j*dx_0*t_DD*H_NV(nv,gB)) * U_NV).eval();
 
-        t_0 = pulses.at(next_pulse)*t_DD;
+        x_0 = pulses.at(next_pulse);
         next_pulse = next_pulse % (pulses.size()-2) + 1;
-      } while (mod(pulses.at(next_pulse)*t_DD - t, t_DD) <= dt);
+      } while (mod(pulses.at(next_pulse) - x) <= dx);
 
-      const double t_f = (t_i+1)*dt + advance;
-      const double dt_f = mod(t_f - t_0, t_DD);
-      const Vector3d gB = controls.gB(t_f-dt_f/2);
+      const double x_f = (x_i+1)*dx + advance;
+      const double dx_f = mod(x_f - x_0);
+      const Vector3d gB = controls.gB((x_f-dx_f/2)*t_DD);
       const MatrixXcd H = H_0 + H_ctl(nv, cluster, gB);
 
-      U = (exp(-j*dt_f*H) * U).eval();
-      U_NV = (exp(-j*dt_f*H_NV(nv,gB)) * U_NV).eval();
+      U = (exp(-j*dx_f*t_DD*H) * U).eval();
+      U_NV = (exp(-j*dx_f*t_DD*H_NV(nv,gB)) * U_NV).eval();
     }
   }
   // rotate into the frame of the NV center and normalize the propagator
