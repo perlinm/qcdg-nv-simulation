@@ -1,6 +1,3 @@
-debug:
-./mkfac.py && ./simulate.exe --static_Bz 1000 --c13_percentage 0.0107 --max_cluster_size 4 --scale_factor 10 --seed 13926275415587499346 --couple --phase 1.1
-
 fix in appropriate scalings with \gg
 
 consider limits on B_dec (scale down h_j if necessary)
