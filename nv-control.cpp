@@ -92,14 +92,14 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
   const double f_DD = 0;
 
   const double dw_min = larmor_resolution(nv,target);
-  double gB_ctl = dw_min/nv.scale_factor; // control field strength * gyromangnetic ratio
+  double gB_ctl = min(dw_min/nv.scale_factor, max_gB_ctl);
 
-  // frequency and period of rotation
-  const double w_rot = -gB_ctl/2;
-  const double t_rot = abs(2*pi/w_rot);
+  // coupling strength and rotation period
+  const double h_ctl = -gB_ctl/2;
+  const double t_rot = abs(2*pi/h_ctl);
 
   // time for which to apply the control field
-  double control_time = mod(angle/w_rot, t_rot); // control operation time
+  double control_time = mod(angle/h_ctl, t_rot); // control operation time
   if (control_time > t_rot/2) {
     gB_ctl *= -1;
     control_time = t_rot - control_time;
@@ -225,10 +225,12 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // larmor frequency of and perpendicular component of hyperfine field at target nucleus
+  // larmor frequency, resolution, perpendicular component of hyperfine field,
+  //   and maximum possible value of f_DD
   const double w_larmor = effective_larmor(nv,target).norm();
   const double dw_min = larmor_resolution(nv,target);
   const Vector3d A_perp = hyperfine_perp(nv,target);
+  const double f_DD_max = axy_f_max(nv.k_DD);
 
   // control field
   control_fields controls;
@@ -237,7 +239,10 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
       if (index == target) continue;
       if (is_larmor_pair(nv,index,target)) {
         const Vector3d A_perp_alt = hyperfine_perp(nv,index);
-        const double gB_ctl = exp((log(nv.static_gBz) + log(A_perp.norm()))/2);
+        const double gB_ctl =
+          min({ exp( (log(2*w_larmor) + log(f_DD_max*A_perp.norm())) / 2),
+                2*w_larmor / nv.scale_factor,
+                max_gB_ctl});
         const Vector3d axis_ctl =
           hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
         controls.add(gB_ctl*axis_ctl, w_larmor);
@@ -264,17 +269,20 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   // AXY sequence parameters
   const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), axy_f_max(nv.k_DD));
+  double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), f_DD_max);
+  if (controls.gB().norm() / (f_DD*A_int.norm()) < nv.scale_factor) {
+    f_DD = controls.gB().norm() / (nv.scale_factor*A_int.norm());
+  }
 
-  // frequency and period of phase rotation
-  const double w_phase = f_DD*nv.ms*A_int.norm()/2;
-  const double t_phase = abs(4*pi/w_phase);
+  // coupling strength and rotation period
+  const double h_int = f_DD*nv.ms*A_int.norm()/2;
+  const double t_rot = abs(4*pi/h_int);
 
   // time for which to interact
-  double interaction_time = mod(phase/w_phase, t_phase);
-  if (interaction_time > t_phase/2) {
+  double interaction_time = mod(phase/h_int, t_rot);
+  if (interaction_time > t_rot/2) {
     f_DD *= -1;
-    interaction_time = t_phase - interaction_time;
+    interaction_time = t_rot - interaction_time;
   }
 
   const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);

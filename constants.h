@@ -39,3 +39,5 @@ const double volt = 1/(q_e*hbar_SI); // one volt (Hz)
 const double NV_ZFS = 2*pi*2.87e9; // NV center zero field splitting energy (Hz)
 const double a0 = 0.35668 * nm; // diamond lattice parameter at 300 K
 
+// experimental considerations
+const double max_gB_ctl = 5e4;

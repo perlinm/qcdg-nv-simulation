@@ -1,7 +1,4 @@
-fix in appropriate scalings with \gg
-
-consider limits on B_dec (scale down h_j if necessary)
-  gB_z should be ~ 1 MHz, gB_dec should be ~ 10 kHz (check 3D positioning paper)
+gB_z should be ~ 1 MHz, gB_dec should be ~ 10 kHz (check 3D positioning paper)
   total pulses should be ~< 3000
 
 typical fluctuations in magnetic field
