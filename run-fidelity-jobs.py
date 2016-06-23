@@ -18,10 +18,10 @@ else:
 
 c13_natural_percentage = 1.07
 
-static_Bzs = [ 500, 1000, 1500 ]
-c13_factors = [ 1, 0.1, 0.01 ]
-max_cluster_sizes = [ 4 ]
-scale_factors = [ 5, 10, 20 ]
+static_Bzs = [ 50, 100, 500, 1000 ]
+c13_factors = [ 0.1, 0.01 ]
+max_cluster_sizes = [ 5 ]
+scale_factors = [ 5, 10, 15 ]
 
 project_dir = os.path.dirname(os.path.realpath(__file__))
 run_script = "fidelity-sweep-job.py"
