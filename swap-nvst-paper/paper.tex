@@ -229,15 +229,17 @@ approximation allows one to neglect $\v A_j^\parallel$ and express
   \sum_{j:\omega_j=\omega_r} A_j^\perp\v I_j\c\uv n_j,
   \label{H_int_resonance}
 \end{align}
-where $\uv n_j$ is the direction of $\v A_j^\perp$ rotated about
-$\uv\omega_j$ by $\phi_{DD}$, i.e.
+where $\uv n_j$ is a unit vector in the direction of $\v A_j^\perp$
+rotated about $\uv\omega_j$ by $\phi_{DD}$, i.e.
 \begin{align}
   \uv n_j = \uv A_j^\perp\cos\phi_{DD} +
   \uv A_j^{\perp\perp}\sin\phi_{DD}.
 \end{align}
 One can concisely write (\ref{H_int_resonance}) with
-$h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/2$ and the Pauli spin-1/2
-vector $\v\sigma^j$ (as we consider only spin-1/2 nuclei) as
+\begin{align}
+h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/2
+\end{align}
+as
 \begin{align}
   \tilde H_\t{int} = \sum_{j:\omega_j=\omega_r}
   h_j^\t{int}I_\NV^z\v I_j\c\uv n_j.
@@ -291,7 +293,10 @@ about $\uv\omega_j$ by $\phi_\t{ctl}$, i.e.
   \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_\t{ctl}.
 \end{align}
 One can concisely write (\ref{H_ctl_resonance}) with
-$h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2$ as
+\begin{align}
+h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2
+\end{align}
+as
 \begin{align}
   \tilde H_\t{ctl} = \sum_{j:\omega_j=\omega_\t{ctl}}
   h_j^\t{ctl}\v I_j\c\uv m_j.
@@ -304,11 +309,10 @@ $\uv m_j\p{\phi_\t{ctl}}$ lie anywhere in the plane perpendicular to
 $\uv\omega_j$. One can also tune $h_j^\t{int}$ and $h_j^\t{ctl}$
 respectively via free parameters in the AXY-$n$ sequence and
 $\v B_\t{ctl}$. These controls, together with rotations of the NV
-electron spin, in principle allow one to realize a universal set of
-quantum gates. An exception to this statement is when two or more
-nuclei have the same effective larmor frequency $\omega_j$, in which
-case they are addressed simultaneously in (\ref{H_int}) and
-(\ref{H_ctl}).
+electron spin, allow one to realize a universal set of quantum
+gates. An exception to this statement is when two or more nuclei have
+the same effective larmor frequency $\omega_j$, in which case they are
+addressed simultaneously in (\ref{H_int}) and (\ref{H_ctl}).
 
 \subsection{Addressing larmor pairs}
 
@@ -398,7 +402,7 @@ about $\uv\nu_j$ by $\nu_jt$, i.e.
   \tilde{\v n}_j\p{t} = \v n_j^\parallel +
   \v n_j^\perp\cos\p{\nu_jt} + \v n_j^{\perp\perp}\sin\p{\nu_jt},
 \end{align}
-where
+with
 \begin{align}
   \v n_j^\parallel &\equiv \p{\uv n_j\c\uv\nu_j}\uv\nu_j, \\
   \v n_j^\perp &\equiv \uv n_j - \uv n_j^\parallel, \\
@@ -410,6 +414,8 @@ us to neglect $\v n_j^\perp$ and $\v n_j^{\perp\perp}$ in
 \begin{align}
   \tilde H_\t{int}^\t{dec}
   = \sum_{j:\omega_j=\omega_r}
+  h_j^\t{int}I_\NV^z\v I_j\c\v n_j^\parallel
+  = \sum_{j:\omega_j=\omega_r}
   \tilde h_j^\t{int}I_\NV^z\v I_j\c\uv\nu_j,
   \label{H_int_dec}
 \end{align}
@@ -418,14 +424,19 @@ where
   \tilde h_j^\t{int} = h_j\uv n_j\c\uv\nu_j.
 \end{align}
 
-The utility of the decoupling field lies in the fact that when
-$\uv n_j$ and $\uv\nu_j$ are orthogonal, the interaction with spin $j$
-is suppressed as $\tilde h_j^\t{int}=0$. Considering a single larmor
-pair, one can therefore apply a decoupling field to eliminate one of
-the two terms in (\ref{H_int_dec}) and realize an effective
-Hamiltonian which couples the NV electron spin to only one nuclear
-spin. This scheme fails for larmor pairs with mutually parallel
-$\v A_j^\perp$.
+In words, the decoupling field $\v B_\t{dec}^{\p\omega}\p{t}$ modifies
+$\tilde H_\t{int}$ in (\ref{H_int}) by suppressing the components of
+$\uv n_j$ (i.e. $\uv A_j^\perp$ rotated about $\uv\omega_j$ by
+$\phi_{DD}$) which are perpendicular to the respective $\uv\nu_j$
+(i.e.  $\uv B_{\t{dec},j}^\perp$ rotated about $\uv\omega_j$ by
+$\phi_\t{dec}$). The utility of this decoupling field lies in the fact
+that when $\uv n_j$ and $\uv\nu_j$ are orthogonal, the interaction
+with spin $j$ is suppressed as $\tilde h_j^\t{int}=0$. Considering a
+single larmor pair, one can therefore apply a decoupling field to
+eliminate one of the two terms in (\ref{H_int_dec}) and realize an
+effective Hamiltonian which couples the NV electron spin to only one
+nuclear spin. This scheme fails for larmor pairs with mutually
+parallel $\v A_j^\perp$.
 
 The tools developed in this paper do not allow for single-spin
 operations on elements of a larmor pair. Such operations must
