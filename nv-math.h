@@ -191,11 +191,10 @@ inline double axy_f_max(const axy_harmonic k) {
 vector<double> axy_pulse_times(const double f, const axy_harmonic k);
 
 // advance pulses by a given (normalized) time
-vector<double> advanced_pulse_times(const vector<double> pulse_times,
-                                    const double advance);
+vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance);
 
 // evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
-int F_AXY(const double x, const vector<double> pulses);
+int F_AXY(double x, const vector<double> pulses);
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
@@ -319,14 +318,14 @@ MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
 // simulate propagator with static control fields
 MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const double simulation_time, const double advance = 0,
+                       const double simulation_time, const double advance_time = 0,
                        const Vector3d B_ctl = Vector3d::Zero());
 
 // simulate propagator with dynamic control fields
 MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
                        const double w_DD, const double f_DD, const axy_harmonic k_DD,
                        const control_fields& controls, const double simulation_time,
-                       const double advance = 0);
+                       const double advance_time = 0, const double phi_DD = 0);
 
 // ---------------------------------------------------------------------------------------
 // Protocol object

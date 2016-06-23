@@ -225,57 +225,68 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // larmor frequency, resolution, perpendicular component of hyperfine field,
+  // effective larmor frequency and rotation axis,
+  //   perpendicular component of hyperfine field,
   //   and maximum possible value of f_DD
   const double w_larmor = effective_larmor(nv,target).norm();
-  const double dw_min = larmor_resolution(nv,target);
+  const Vector3d w_hat = hat(effective_larmor(nv,target));
   const Vector3d A_perp = hyperfine_perp(nv,target);
   const double f_DD_max = axy_f_max(nv.k_DD);
 
-  // control field
+  // control fields, AXY sequence phase, and effective hyperfine coupling strength
   control_fields controls;
-  if (decouple) {
-    for (uint index: nv.clusters.at(cluster)) {
-      if (index == target) continue;
-      if (is_larmor_pair(nv,index,target)) {
-        const Vector3d A_perp_alt = hyperfine_perp(nv,index);
-        const double gB_ctl =
-          min({ exp( (log(2*w_larmor) + log(f_DD_max*A_perp.norm())) / 2),
-                2*w_larmor / nv.scale_factor,
-                max_gB_ctl});
-        const Vector3d axis_ctl =
-          hat(A_perp - dot(A_perp,hat(A_perp_alt))*hat(A_perp_alt));
-        controls.add(gB_ctl*axis_ctl, w_larmor);
-      }
-    }
-  }
-  assert(controls.num() <= 1);
+  double phi_DD;
+  double A_int;
 
-  // "interaction vector": A_perp without the component suppressed by the control field
-  const Vector3d A_int = [&]() -> Vector3d {
-    if (controls.num() == 0) return A_perp;
+  const int decouple_index = [&]() -> int {
+    if (!decouple) return -1;
     else {
-      const Vector3d ctl_dir = hat(controls.gB());
-      return dot(A_perp,ctl_dir)*ctl_dir;
+      for (uint index: nv.clusters.at(cluster)) {
+        if (index == target) continue;
+        if (is_larmor_pair(nv,index,target)) {
+          return index;
+        }
+      }
+      return -1;
     }
   }();
 
-  const Vector3d w_hat = hat(effective_larmor(nv,target));
-  const Vector3d interaction_axis = hat(rotate(A_perp, target_azimuth, w_hat));
-  const Vector3d A_int_rot = rotate(A_int, pi/2, w_hat);
-  const double protocol_angle = atan2(dot(interaction_axis,A_int_rot),
-                                      dot(interaction_axis,A_int));
+  if (decouple_index >= 0) {
+    // set control field
+    const double gB_ctl =
+      min({ exp( (log(2*w_larmor) + log(f_DD_max*A_perp.norm())) / 2),
+            2*w_larmor / nv.scale_factor,
+            max_gB_ctl});
+    const Vector3d axis_ctl = hat(rotate(A_perp, target_azimuth, w_hat));
+    controls.add(gB_ctl*axis_ctl, w_larmor);
+
+    // set phi_DD
+    const Vector3d axis_ctl_rot = rotate(axis_ctl, pi/2, w_hat);
+    const Vector3d A_perp_dec = hyperfine_perp(nv, decouple_index);
+    const double A_perp_dec_ctl = dot(A_perp_dec, axis_ctl);
+    const double A_perp_dec_ctl_rot = dot(A_perp_dec, axis_ctl_rot);
+    phi_DD = pi/2 - atan2(A_perp_dec_ctl_rot, A_perp_dec_ctl);
+
+    // set A_int
+    const Vector3d A_perp_rot = rotate(A_perp, phi_DD, w_hat);
+    A_int = dot(A_perp_rot, axis_ctl);
+
+  } else { // there is nothing to decouple
+    phi_DD = target_azimuth;
+    A_int = A_perp.norm();
+  }
 
   // AXY sequence parameters
   const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
   const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(dw_min/(A_int.norm()*nv.scale_factor), f_DD_max);
-  if (controls.gB().norm() / (f_DD*A_int.norm()) < nv.scale_factor) {
-    f_DD = controls.gB().norm() / (nv.scale_factor*A_int.norm());
+  double f_DD = min(larmor_resolution(nv,target)/(A_int*nv.scale_factor), f_DD_max);
+  if (decouple_index >= 0 &&
+      controls.gB().norm() / (f_DD*A_int) < nv.scale_factor) {
+    f_DD = controls.gB().norm() / (nv.scale_factor*A_int);
   }
 
   // coupling strength and rotation period
-  const double h_int = f_DD*nv.ms*A_int.norm()/2;
+  const double h_int = f_DD*nv.ms*A_int/2;
   const double t_rot = abs(4*pi/h_int);
 
   // time for which to interact
@@ -287,16 +298,15 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 
   const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
-  const double angle_advance = -protocol_angle/w_larmor;
 
   const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                           controls, leading_time, angle_advance);
+                                           controls, leading_time, 0, phi_DD);
   const MatrixXcd U_AXY = [&]() -> MatrixXcd {
     if (cycles > 0) {
       const double trailing_time = t_DD - leading_time;
       const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                controls, trailing_time,
-                                                angle_advance + leading_time);
+                                                controls, trailing_time, leading_time,
+                                                phi_DD);
       return U_leading * pow(U_trailing*U_leading, cycles);
     } else return U_leading;
   }();
