@@ -311,7 +311,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const double xy_angle = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =
-    act_target(nv, target, rotate(xy_angle,xy_axis)*rotate(z_angle,zhat), false, false);
+    act_target(nv, target, rotate(xy_angle,xy_axis)*rotate(z_angle,zhat));
 
   return flush_target * protocol(U_coupling, interaction_time);
 }
