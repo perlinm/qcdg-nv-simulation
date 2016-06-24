@@ -433,19 +433,19 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   } else {
     // compute actual realization of the SWAP_NVST gate
-    const protocol qY_NV = protocol(act_NV(nv, rotate(pi/2,yhat), spins));
-    const protocol hZ_NV = protocol(act_NV(nv, rotate(pi,zhat), spins));
-    const protocol hXmY_NV = protocol(act_NV(nv, rotate(pi,xhat-yhat), spins));
+    const protocol hY_NV = protocol(act_NV(nv, rotate(pi/2,yhat), spins));
+    const protocol Z_NV = protocol(act_NV(nv, rotate(pi,zhat), spins));
+    const protocol XmY_NV = protocol(act_NV(nv, rotate(pi,xhat-yhat), spins));
 
     const protocol cNOT_AC_NV_adapted =
-      qY_NV *
+      hY_NV *
       couple_target(nv, idx1, -pi, zhat, xhat) *
       rotate_target(nv, idx1, pi/2, yhat) *
-      hXmY_NV;
+      XmY_NV;
 
     const Vector3d y1_in_idx2_basis = to_basis(nv, idx2) * from_basis(nv, idx1) * yhat;
     const protocol cNOT_NV_AC_adapted =
-      hZ_NV *
+      Z_NV *
       rotate_target(nv, idx1, -pi/2, yhat) *
       couple_target(nv, idx1, pi, zhat, yhat) *
       couple_target(nv, idx2, pi, zhat, y1_in_idx2_basis);
