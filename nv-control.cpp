@@ -164,7 +164,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 
     if (decouple) {
       // rotate only target nucleus
-      return protocol(act(rotation, {target_in_cluster+1}, spins), 0);
+      return protocol(act(rotation, {target_in_cluster+1}, spins));
     } else {
       // rotate all nuclei with the same effective larmor frequency as the target
       MatrixXcd G = MatrixXcd::Identity(D,D);
@@ -173,7 +173,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
           G *= act(rotation, {s+1}, spins);
         }
       }
-      return protocol(G,0);
+      return protocol(G);
     }
   }
 
@@ -340,7 +340,7 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
                                             dot(s_vec/2,hat(target_axis))));
     if (decouple) {
       const Matrix4cd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
-      return protocol(act(R.adjoint() * U * R, {0,target_in_cluster+1}, spins), 0);
+      return protocol(act(R.adjoint() * U * R, {0,target_in_cluster+1}, spins));
     } else {
       MatrixXcd G = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
       for (uint s = 0; s < nv.clusters.at(cluster).size(); s++) {
@@ -350,7 +350,7 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
           G *= act(R.adjoint() * U * R, {0,s+1}, spins);
         }
       }
-      return protocol(G,0);
+      return protocol(G);
     }
   }
 
