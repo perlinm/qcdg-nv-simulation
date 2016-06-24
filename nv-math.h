@@ -334,23 +334,26 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 struct protocol {
   MatrixXcd U;
   double t;
+  uint pulses;
 
   protocol(){};
-  protocol(const MatrixXcd& U, const double t = 0) {
+  protocol(const MatrixXcd& U, const double t = 0, const uint pulses = 0) {
     this->U = U;
     this->t = t;
+    this->pulses = pulses;
   }
 
   bool operator==(const protocol& p) const {
-    return (t == p.t) && (U == p.U);
+    return (t == p.t) && (U == p.U) && (pulses == p.pulses);
   }
   bool operator!=(const protocol& p) const { return !(*this == p); }
+
   protocol operator*(const protocol& p) const {
-    return protocol(U * p.U, t + p.t);
+    return protocol(U * p.U, t + p.t, pulses + p.pulses);
   }
 
   protocol adjoint() const {
-    return protocol(U.adjoint(), t);
+    return protocol(U.adjoint(), t, pulses);
   }
 
   static protocol Identity(const uint D) {
