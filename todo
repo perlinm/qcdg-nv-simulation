@@ -1,8 +1,12 @@
-typical fluctuations in magnetic field
-comparison between larmor pair memory and individual nuclear spins
-implement T1 decay considerations; how does performance change with temperature
-memory storage fidelity
-best/typical case fidelity
+memory storage fidelity:
+  (i) decoupled NV center
+  (ii) no NV center (i.e. NV center in |0> state)
+
+best/typical fidelity
+
+implement T1 decay considerations; how does performance change with temperature?
+comparison between memory of larmor pairs, and that of individual nuclear spins
+consider typical fluctuations in magnetic field
 
 
 
