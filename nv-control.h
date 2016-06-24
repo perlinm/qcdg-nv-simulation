@@ -37,9 +37,10 @@ inline Vector3d axis(const double polar, const double azimuth,
 // if a target is specified, rotate all nulcei into the frame of that target;
 //  otherwise, rotate each nucleus into its own frame
 MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster,
-                            const uint target = 0);
-inline MatrixXcd to_natural_frames(const nv_system& nv, const uint cluster,
-                                   const uint target = 0) {
+                            const uint target = -1);
+inline MatrixXcd to_natural_frames(const nv_system& nv, const uint spin_in_cluster,
+                                   const uint target = -1) {
+  const uint cluster = get_cluster_containing_target(nv,spin_in_cluster);
   return to_natural_frames(nv, nv.clusters.at(cluster), target);
 }
 
