@@ -108,7 +108,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
   const Vector3d axis_ctl = axis(pi/2, target_azimuth, natural_basis(nv,target));
   const control_fields controls(gB_ctl*axis_ctl, w_larmor); // control field object
 
-  MatrixXcd U_rotate;
+  protocol U_rotate;
   if (!adjust_AXY) {
     U_rotate = simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, controls, control_time);
   } else {
@@ -132,17 +132,18 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
       else return cycle_time - leading_time;
     }();
 
-    const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                             controls, leading_time);
-    const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
-                                              controls, trailing_time, leading_time);
+    const protocol U_leading = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                            controls, leading_time);
+    const protocol U_trailing = simulate_AXY(nv, cluster, w_DD_adjusted, f_DD, k_DD,
+                                             controls, trailing_time, leading_time);
     U_rotate = U_leading * pow(U_trailing*U_leading, cycles);
   }
 
   const double flush_time = mod(-control_time - z_angle/w_larmor, t_larmor);
-  const MatrixXcd U_flush =
+  const protocol U_flush =
     simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, flush_time, control_time);
-  return protocol(U_flush * U_rotate, control_time + flush_time);
+
+  return U_flush * U_rotate;
 }
 
 // determine and simulate operations necessary to act U on target nucleus
@@ -213,7 +214,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
     return to_equator.adjoint() * rotate_xy * to_equator;
   }();
 
-  if (pole_rotation.t < equatorial_rotation.t) return pole_rotation;
+  if (pole_rotation.time < equatorial_rotation.time) return pole_rotation;
   else return equatorial_rotation;
 }
 
@@ -299,21 +300,21 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const unsigned long int cycles = (unsigned long int)(interaction_time/t_DD);
   const double leading_time = interaction_time - cycles*t_DD;
 
-  const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                           controls, leading_time, 0, phi_DD);
-  const MatrixXcd U_AXY = [&]() -> MatrixXcd {
+  const protocol U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                          controls, leading_time, 0, phi_DD);
+  const protocol U_AXY = [&]() -> protocol {
     if (cycles > 0) {
       const double trailing_time = t_DD - leading_time;
-      const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                                controls, trailing_time, leading_time,
-                                                phi_DD);
+      const protocol U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                               controls, trailing_time, leading_time,
+                                               phi_DD);
       return U_leading * pow(U_trailing*U_leading, cycles);
     } else return U_leading;
   }();
 
   // rotate NV coupling axis into its interaction axis (i.e. zhat)
-  const MatrixXcd nv_axis_rotation = act_NV(nv, rotate(zhat,nv_axis), spins);
-  const MatrixXcd U_coupling = nv_axis_rotation.adjoint() * U_AXY * nv_axis_rotation;
+  const protocol nv_axis_rotation = act_NV(nv, rotate(zhat,nv_axis), spins);
+  const protocol U_coupling = nv_axis_rotation.adjoint() * U_AXY * nv_axis_rotation;
 
   // correct for larmor precession of the nucleus
   const double z_angle = mod(interaction_time*w_larmor, 2*pi);
@@ -323,7 +324,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   const protocol flush_target =
     act_target(nv, target, rotate(xy_angle,xy_axis)*rotate(z_angle,zhat));
 
-  return flush_target * protocol(U_coupling, interaction_time);
+  return flush_target * U_coupling;
 }
 
 // perform given NV coupling operation on a target nucleus
@@ -433,9 +434,9 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   } else {
     // compute actual realization of the SWAP_NVST gate
-    const protocol hY_NV = protocol(act_NV(nv, rotate(pi/2,yhat), spins));
-    const protocol Z_NV = protocol(act_NV(nv, rotate(pi,zhat), spins));
-    const protocol XmY_NV = protocol(act_NV(nv, rotate(pi,xhat-yhat), spins));
+    const protocol hY_NV = act_NV(nv, rotate(pi/2,yhat), spins);
+    const protocol Z_NV = act_NV(nv, rotate(pi,zhat), spins);
+    const protocol XmY_NV = act_NV(nv, rotate(pi,xhat-yhat), spins);
 
     const protocol cNOT_AC_NV_adapted =
       hY_NV *

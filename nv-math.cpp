@@ -461,16 +461,16 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
 }
 
 // perform given rotation on the NV center
-MatrixXcd rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins) {
+protocol rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins) {
   if (rotation.squaredNorm() > 0) {
-    return act( exp(-j*dot(rotation,nv.e_S())), {0}, spins);
+    return protocol(act( exp(-j*dot(rotation,nv.e_S())), {0}, spins), 0, 1);
   } else {
-    return MatrixXcd::Identity(pow(2,spins),pow(2,spins));
+    return protocol::Identity(pow(2,spins));
   }
 }
 
 // compute and perform rotation of NV center necessary to generate U_NV
-MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins) {
+protocol act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins) {
   const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
   const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
                                 yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
@@ -479,10 +479,10 @@ MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins) {
 }
 
 // simulate propagator with static control fields
-MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
-                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const double simulation_time, const double advance_time,
-                       const Vector3d gB_ctl) {
+protocol simulate_AXY(const nv_system& nv, const uint cluster,
+                      const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                      const double simulation_time, const double advance_time,
+                      const Vector3d gB_ctl) {
   const uint spins = nv.clusters.at(cluster).size()+1;
 
   // AXY sequence parameters
@@ -492,9 +492,10 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
   const vector<double> pulses = advanced_pulse_times(axy_pulses, advance);
 
   const MatrixXcd H = H_sys(nv, cluster) + H_ctl(nv, cluster, gB_ctl); // full Hamiltonian
-  const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
+  const MatrixXcd X = act_NV(nv, sx, spins).U; // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(H.rows(),H.cols()); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
+  uint pulse_count = 0;
 
   // if we need to start with a flipped NV center, flip it
   if (F_AXY(advance, axy_pulses) == -1) {
@@ -511,13 +512,17 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
       const double dx = pulses.at(i) - x;
       U_AXY = (X * exp(-j*dx*t_DD*H) * U_AXY).eval();
       U_NV_AXY = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV_AXY).eval();
+      if(dx > numerical_error) pulse_count++;
     }
     // "undo" the last pulse at x = 1
     U_AXY = (X * U_AXY).eval();
     U_NV_AXY = (sx * U_NV_AXY).eval();
+    pulse_count--;
 
-    U = (pow(U_AXY, int(simulation_time/t_DD)) * U).eval();
-    U_NV = (pow(U_NV_AXY, int(simulation_time/t_DD)) * U_NV).eval();
+    const long unsigned int sequences = (long unsigned int)(simulation_time/t_DD);
+    U = (U_AXY.pow(sequences) * U).eval();
+    U_NV = (U_NV_AXY.pow(sequences) * U_NV).eval();
+    pulse_count *= sequences;
   }
 
   // propagator for AXY sequence remainder
@@ -528,6 +533,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
     if (x + dx < remainder) {
       U = (X * exp(-j*dx*t_DD*H) * U).eval();
       U_NV = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV).eval();
+      if (dx > numerical_error) pulse_count++;
     } else {
       const double dx_f = remainder - x;
       U = (exp(-j*dx_f*t_DD*H) * U).eval();
@@ -536,23 +542,24 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
     }
   }
   // rotate into the frame of the NV center and normalize the propagator
-  U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
+  U = (act_NV(nv, U_NV.adjoint(), spins).U * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());
-  return U;
+
+  return protocol(U, simulation_time, pulse_count);
 }
 
 // simulate propagator with dynamic control fields
-MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
-                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const control_fields& controls, const double simulation_time,
-                       const double advance_time, const double phi_DD) {
+protocol simulate_AXY(const nv_system& nv, const uint cluster,
+                      const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                      const control_fields& controls, const double simulation_time,
+                      const double advance_time, const double phi_DD) {
   if (controls.all_fields_static()) {
     return simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, simulation_time,
                         advance_time - phi_DD/w_DD, controls.gB());
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
   const uint D = pow(2,spins);
-  if (simulation_time == 0) return MatrixXcd::Identity(D,D);
+  if (simulation_time == 0) return protocol::Identity(D);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -573,15 +580,17 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
     return max(largest_control_freq, gB_cap.norm());
   }();
 
+
   // integration step number and size
   const uint integration_steps =
     ceil(simulation_time*frequency_scale*nv.integration_factor);
   const double dx = simulation_time/t_DD / integration_steps;
 
   const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
-  const MatrixXcd X = act_NV(nv, sx, spins); // NV center spin flip (pi-)pulse
+  const MatrixXcd X = act_NV(nv, sx, spins).U; // NV center spin flip (pi-)pulse
   MatrixXcd U = MatrixXcd::Identity(D,D); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
+  uint pulse_count = 0;
 
   // if we need to start with a flipped NV center, flip it
   if (F_AXY(advance - phi_DD/(2*pi), axy_pulses) == -1) {
@@ -618,6 +627,7 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
       double x_0 = x;
       uint next_pulse = pulse;
+      bool even_pulses = true;
 
       // the following loop handles multiple pulses within a time period of dx
       do {
@@ -631,6 +641,13 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
 
         U = (X * exp(-j*dx_0*t_DD*H) * U).eval();
         U_NV = (sx * exp(-j*dx_0*t_DD*H_NV(nv,gB)) * U_NV).eval();
+        if(abs(dx_0) > numerical_error || even_pulses){
+          pulse_count++;
+          even_pulses = false;
+        } else {
+          pulse_count--;
+          even_pulses = true;
+        }
 
         x_0 += dx_0;
         next_pulse = next_pulse % (pulses.size()-2) + 1;
@@ -646,9 +663,9 @@ MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
     }
   }
   // rotate into the frame of the NV center and normalize the propagator
-  U = (act_NV(nv, U_NV.adjoint(), spins) * U).eval();
+  U = (act_NV(nv, U_NV.adjoint(), spins).U * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());
 
-  return U;
+  return protocol(U, simulation_time, pulse_count);
 }
 

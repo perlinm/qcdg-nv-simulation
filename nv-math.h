@@ -45,7 +45,7 @@ inline Vector3i xy_int_pos(const Vector3d& pos) {
 }
 
 // ---------------------------------------------------------------------------------------
-// Spin vectors and structs
+// Spin vectors
 // ---------------------------------------------------------------------------------------
 
 // spin vector for a spin-1/2 particle
@@ -68,6 +68,10 @@ inline Matrix2cd rotate(const Vector3d& axis_end, const Vector3d& axis_start) {
 
 // rotate into one basis from another
 Matrix2cd rotate(const vector<Vector3d>& basis_end, const vector<Vector3d>& basis_start);
+
+// ---------------------------------------------------------------------------------------
+// NV system struct
+// ---------------------------------------------------------------------------------------
 
 // harmonic for AXY sequence
 enum axy_harmonic { first = 1, third = 3 };
@@ -248,7 +252,7 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
                              const double scan_time);
 
 // ---------------------------------------------------------------------------------------
-// Control fields and simulation
+// Control field struct
 // ---------------------------------------------------------------------------------------
 
 struct control_fields {
@@ -305,55 +309,39 @@ struct control_fields {
   }
 };
 
-// return control field for decoupling a single nucleus from other nuclei
-control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
-                                        const double phi_rfd, const double theta_rfd);
-
-// perform given rotation on the NV center
-MatrixXcd rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
-
-// compute and perform rotation of NV center necessary to generate U
-MatrixXcd act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
-
-// simulate propagator with static control fields
-MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
-                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const double simulation_time, const double advance_time = 0,
-                       const Vector3d B_ctl = Vector3d::Zero());
-
-// simulate propagator with dynamic control fields
-MatrixXcd simulate_AXY(const nv_system& nv, const uint cluster,
-                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
-                       const control_fields& controls, const double simulation_time,
-                       const double advance_time = 0, const double phi_DD = 0);
-
 // ---------------------------------------------------------------------------------------
-// Protocol object
+// Protocol struct
 // ---------------------------------------------------------------------------------------
 
 struct protocol {
   MatrixXcd U;
-  double t;
+  double time;
   uint pulses;
 
   protocol(){};
-  protocol(const MatrixXcd& U, const double t = 0, const uint pulses = 0) {
+  protocol(const MatrixXcd& U, const double time = 0, const uint pulses = 0) {
     this->U = U;
-    this->t = t;
+    this->time = time;
     this->pulses = pulses;
   }
 
   bool operator==(const protocol& p) const {
-    return (t == p.t) && (U == p.U) && (pulses == p.pulses);
+    return (time == p.time) && (U == p.U) && (pulses == p.pulses);
   }
   bool operator!=(const protocol& p) const { return !(*this == p); }
 
   protocol operator*(const protocol& p) const {
-    return protocol(U * p.U, t + p.t, pulses + p.pulses);
+    return protocol(U * p.U, time + p.time, pulses + p.pulses);
   }
 
   protocol adjoint() const {
-    return protocol(U.adjoint(), t, pulses);
+    return protocol(U.adjoint(), time, pulses);
+  }
+  protocol pow(const uint n) const {
+    return protocol(U.pow(n), time*n, pulses*n);
+  }
+  protocol pow(const long unsigned int n) const {
+    return protocol(U.pow(n), time*n, pulses*n);
   }
 
   static protocol Identity(const uint D) {
@@ -361,7 +349,10 @@ struct protocol {
   }
 };
 
-// compute fidelity of a protocol
+// methods with protocol objects
+inline protocol pow(const protocol& U, const uint n) { return U.pow(n); }
+inline protocol pow(const protocol& U, const long unsigned int n) { return U.pow(n); }
+
 inline double gate_fidelity(const protocol& U, const protocol& G) {
   return gate_fidelity(U.U, G.U);
 }
@@ -369,3 +360,29 @@ inline double gate_fidelity(const protocol& U, const protocol& G,
                             const vector<uint>& nuclei) {
   return gate_fidelity(U.U, G.U, nuclei);
 }
+
+// ---------------------------------------------------------------------------------------
+// Simulation methods
+// ---------------------------------------------------------------------------------------
+
+// return control field for decoupling a single nucleus from other nuclei
+control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
+                                        const double phi_rfd, const double theta_rfd);
+
+// perform given rotation on the NV center
+protocol rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
+
+// compute and perform rotation of NV center necessary to generate U
+protocol act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
+
+// simulate propagator with static control fields
+protocol simulate_AXY(const nv_system& nv, const uint cluster,
+                      const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                      const double simulation_time, const double advance_time = 0,
+                      const Vector3d B_ctl = Vector3d::Zero());
+
+// simulate propagator with dynamic control fields
+protocol simulate_AXY(const nv_system& nv, const uint cluster,
+                      const double w_DD, const double f_DD, const axy_harmonic k_DD,
+                      const control_fields& controls, const double simulation_time,
+                      const double advance_time = 0, const double phi_DD = 0);

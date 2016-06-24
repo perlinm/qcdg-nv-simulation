@@ -1,6 +1,3 @@
-gB_z should be ~ 1 MHz, gB_dec should be ~ 10 kHz (check 3D positioning paper)
-  total pulses should be ~< 3000
-
 typical fluctuations in magnetic field
 comparison between larmor pair memory and individual nuclear spins
 implement T1 decay considerations; how does performance change with temperature
