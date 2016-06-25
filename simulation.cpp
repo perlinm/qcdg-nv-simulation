@@ -297,9 +297,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       ofstream lattice(lattice_path.string());
       lattice << "# cell radius: " << cell_radius << endl;
       for (uint i = 0; i < nuclei.size(); i++) {
-        lattice << nuclei.at(i) << ' '
-                << nuclei.at(i) << ' '
-                << nuclei.at(i) << endl;
+        lattice << nuclei.at(i)(0) << ' '
+                << nuclei.at(i)(1) << ' '
+                << nuclei.at(i)(2) << endl;
       }
       lattice.close();
     }
