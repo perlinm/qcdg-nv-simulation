@@ -239,6 +239,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   double phi_DD;
   double A_int;
 
+  // identify index of nucleus to decouple with a control field
   const int decouple_index = [&]() -> int {
     if (!decouple) return -1;
     else {
@@ -252,6 +253,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
     }
   }();
 
+  // if we have identified a nucleus to decouple
   if (decouple_index >= 0) {
     // set control field
     const double gB_ctl =

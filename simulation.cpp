@@ -125,9 +125,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target")
-    ("phase", po::value<double>(&phase_over_pi)->default_value(0.5,"0.5"),
+    ("phase", po::value<double>(&phase_over_pi)->default_value(1),
      "operation phase")
-    ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5,"0.5"),
+    ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5),
      "polar angle of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
      "azimuthal angle of target rotation axis")
