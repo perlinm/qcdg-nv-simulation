@@ -23,9 +23,10 @@ print_period = 1800 # seconds
 
 # identify some directories and names
 project_dir = os.path.dirname(os.path.realpath(__file__))
+data_dir = "data"
 sim_file = "simulate.exe"
-summary_script = "single-fidelity-simulation.py"
-out_file = "data/{}.txt".format(basename(sim_args))
+summary_script = "fidelity-summary.py"
+out_file = "{}/{}.txt".format(data_dir,basename(sim_args))
 
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
@@ -36,6 +37,7 @@ job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "-".join(sys.a
 os.makedirs(job_dir)
 shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
 os.chdir(job_dir)
+os.mkdir(data_dir)
 
 # define some variavles
 commands = ["./"+sim_file, "--no_output", "--"+sim_type,
@@ -60,7 +62,7 @@ def run_sample(s):
 
 # method to copy results back into the project directory
 def copy_results():
-    for f in glob.glob("data/*"):
+    for f in glob.glob(data_dir+"/*"):
         shutil.copy2(f, project_dir+"/"+f)
 
 unsigned_long_long_max = 2**64-1
@@ -86,8 +88,10 @@ for s in range(samples):
 while threading.active_count() > 1:
     time.sleep(1)
 
-# generate fidelity summary
-subprocess.call(["./"+summary_script,out_file])
-
 # copy final results into the project directory
 copy_results()
+
+# generate fidelity summary file
+os.chdir(project_dir)
+subprocess.call(["./"+summary_script,out_file])
+
