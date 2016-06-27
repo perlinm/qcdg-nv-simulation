@@ -97,13 +97,6 @@ bool can_address(const vector<Vector3d>& nuclei, const uint target) {
   return true;
 }
 
-// coupling strength between two C-13 nuclei; assumes strong magnetic field in zhat
-double coupling_strength(const Vector3d& p1, const Vector3d& p2) {
-  const Vector3d r = p2 - p1;
-  return abs(g_C13*g_C13/(8*pi*pow(r.norm()*a0/2,3))
-             * (1-3*dot(hat(r),zhat)*dot(hat(r),zhat)));
-}
-
 // group nuclei into clusters with intercoupling strengths >= coupling_strength
 vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
                                            const double min_coupling_strength,

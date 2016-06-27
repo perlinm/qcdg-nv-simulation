@@ -112,8 +112,10 @@ inline bool can_address(const nv_system& nv, const uint target) {
   return can_address(nv.nuclei, target);
 }
 
-// coupling strength between two C-13 nuclei; assumes strong magnetic field in zhat
-double coupling_strength(const Vector3d& p1, const Vector3d& p2);
+// coupling strength between two C-13 nuclei
+inline double coupling_strength(const Vector3d& p1, const Vector3d& p2) {
+  return g_C13*g_C13/(4*pi*pow((p2-p1).norm()*a0/2,3));
+}
 inline double coupling_strength(const vector<Vector3d>& nuclei,
                                 const uint idx1, const uint idx2) {
   return coupling_strength(nuclei.at(idx1), nuclei.at(idx2));
