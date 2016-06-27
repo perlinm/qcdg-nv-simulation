@@ -614,4 +614,33 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
+  // -------------------------------------------------------------------------------------
+  // Print info about target nuclei
+  // -------------------------------------------------------------------------------------
+
+  if (testing) {
+
+    for (uint n: target_nuclei) {
+      cout << endl
+           << "index: " << n << endl
+           << "position (nm): "
+           << in_crystal_basis(nv.nuclei.at(n)).transpose() * a0/2 / nm << endl
+           << "hyperfine (kHz): " << hyperfine(nv,n).norm() / kHz << endl
+           << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() / kHz << endl;
+    }
+
+    for (uint i = 0; i < target_nuclei.size(); i++) {
+      const Vector3d pos_i = nv.nuclei.at(target_nuclei.at(i));
+      for (uint j = i + 1; j < target_nuclei.size(); j++) {
+        const Vector3d pos_j = nv.nuclei.at(target_nuclei.at(j));
+        cout << endl
+             << "indices: " << i << " " << j << endl
+             << "displacement (nm): "
+             << in_crystal_basis(pos_j-pos_i).transpose() * a0/2 / nm << endl
+             << "coupling (Hz): " << coupling_strength(pos_i,pos_j) / Hz << endl;
+      }
+    }
+
+  }
+
 }

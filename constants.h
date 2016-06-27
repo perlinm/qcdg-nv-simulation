@@ -27,7 +27,8 @@ const double g_C13 = g_C13_SI * g_e/g_e_SI; // gyromagnetic ratio of C-13 (s)
 const double g_N15 = g_N15_SI * g_e/g_e_SI; // gyromagnetic ratio of N-15 (s)
 
 // SI values in natural units
-const double kHz = 1000; // one kilohertz (Hz)
+const double Hz = 1; // one hertz (Hz)
+const double kHz = Hz * 1e3; // one kilohertz (Hz)
 const double meter = 1 / c_SI; // one meter (s)
 const double nm = 1e-9*meter; // one nanometer (s)
 const double coulomb = q_e / q_e_SI; // one coulomb
