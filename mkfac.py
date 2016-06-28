@@ -15,10 +15,16 @@ for arg in sys.argv[1:]:
 executable = "simulate.exe"
 ignore_dirs = [ "~/.ccache/" ]
 
-std_flag = "-std=c++11"
-optimize_flag = "-O3"
-debug_flag = "-g"
+language_standard_flag = "-std=c++11"
 warning_flags = "-Wall -Werror"
+link_time_optimization_flag = "-flto"
+common_flags = " ".join([ language_standard_flag,
+                          warning_flags,
+                          link_time_optimization_flag ])
+
+debug_flag = "-g"
+optimization_flag = "-O3"
+ignored_warning_flags = "-Wno-unused-variable -Wno-unused-local-typedefs"
 
 eigen_dirs = ".eigen-dirs"
 mkl_root = ".mkl-root"
@@ -27,7 +33,7 @@ mkl_flags = ("-Wl,--no-as-needed,-rpath=$(cat {0})/lib/intel64/" + \
              " -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64" + \
              " -I $(cat {0})/include/").format(mkl_root)
 
-lib_flags = {"eigen3" : "$(cat {}) ".format(eigen_dirs) + mkl_flags,
+lib_flags = {"eigen3" : "$(cat {}) {}".format(eigen_dirs,mkl_flags),
              "boost/filesystem" : "-lboost_system -lboost_filesystem",
              "boost/program_options" : "-lboost_program_options"}
 
@@ -39,9 +45,9 @@ used_headers = []
 sim_files = sorted(glob.glob("*.cpp"))
 
 def fac_rule(libraries, headers, out_file, in_files, link=False):
-    rule_text = "| g++ {} {} -flto ".format(std_flag, (debug_flag if testing_mode
-                                                       else optimize_flag))
-    if not hide_warnings: rule_text += warning_flags + " "
+    rule_text = "| g++ {} {} ".format(common_flags, (debug_flag if testing_mode
+                                                     else optimization_flag))
+    if hide_warnings: rule_text += ignored_warning_flags + " "
     rule_text += " ".join(libraries) + " "
     if not link: rule_text += "-c "
     rule_text += "-o {} ".format(out_file)
