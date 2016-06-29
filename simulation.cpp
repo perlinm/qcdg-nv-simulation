@@ -39,8 +39,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   bool print_pairs;
   bool coherence_scan;
-  bool single_control;
-  bool single_coupling;
+  bool rotation;
+  bool coupling;
   bool iswap_fidelities;
   bool swap_fidelities;
   bool swap_nvst_fidelity;
@@ -53,11 +53,11 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
     ("control",
-     po::value<bool>(&single_control)->default_value(false)->implicit_value(true),
-     "control individual nucleus")
+     po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
+     "rotate an individual nucleus")
     ("couple",
-     po::value<bool>(&single_coupling)->default_value(false)->implicit_value(true),
-     "couple individual nucleus to NV center")
+     po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
+     "couple an individual nucleus to NV center")
     ("iswap",
      po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
      "compute expected iSWAP fidelities")
@@ -126,7 +126,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target")
     ("phase", po::value<double>(&phase_over_pi)->default_value(1),
-     "operation phase")
+     "phase of operation to perform")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5),
      "polar angle of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
@@ -198,8 +198,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   // run a sanity check on inputs
   if (!testing && (int(print_pairs)
                    + int(coherence_scan)
-                   + int(single_control)
-                   + int(single_coupling)
+                   + int(rotation)
+                   + int(coupling)
                    + int(iswap_fidelities)
                    + int(swap_fidelities)
                    + int(swap_nvst_fidelity)
@@ -513,7 +513,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Individual addressing -- control
   // -------------------------------------------------------------------------------------
 
-  if (single_control) {
+  if (rotation) {
     cout << "target fidelity time pulses\n";
     for (uint target: target_nuclei) {
       const Vector3d target_axis = axis(target_polar,target_azimuth);
@@ -533,7 +533,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Individual addressing -- NV coupling
   // -------------------------------------------------------------------------------------
 
-  if (single_coupling) {
+  if (coupling) {
     cout << "target fidelity time pulses\n";
     const Vector3d nv_axis = axis(nv_polar, nv_azimuth);
     for (uint target: target_nuclei) {
