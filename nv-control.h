@@ -48,11 +48,6 @@ inline MatrixXcd to_natural_frames(const nv_system& nv, const uint spin_in_clust
 // General control methods
 // ---------------------------------------------------------------------------------------
 
-// polarize an arbitrary state into the pure state psi; warning: not a unitary operation
-inline MatrixXcd polarize(const VectorXcd psi) {
-  return psi*VectorXcd::Ones(psi.size()).adjoint();
-}
-
 // propagator U = exp(-i * angle * I_{target}^{axis})
 protocol U_ctl(const nv_system& nv, const uint target, const double phase,
                const double target_azimuth, const bool adjust_AXY = true,
