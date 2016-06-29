@@ -24,36 +24,30 @@ results = []
 collect = False
 with open(fname,'r') as f:
     for line in f:
-        if "--seed" in line:
-            seed = int(line.split()[-1])
-        if " fidelity time\n" in line:
-            collect = True
-            continue
-        if line == "\n":
-            collect = False
-            continue
-        if collect:
-            line = line.split()
-            if len(line) == 4:
-                targets = [int(line[0])]
-            elif len(line) == 5:
-                targets = [int(line[0]),int(line[1])]
-            else:
-                print("invalid data")
-                exit(1)
-            results += [(float(line[-3]),float(line[-2]),int(line[-1]),seed,targets)]
+        if not collect:
+            if "--seed" in line:
+                seed = int(line.split()[line.split().index("--seed")+1])
+            elif " fidelity" in line:
+                description = line.replace("\n"," seed")
+                collect = True
+        else:
+            if line == "\n":
+                collect = False
+                continue
+            results += [ "{} {}".format(line.replace("\n",""),seed) ]
 
 if len(results) == 0:
     print("no simulation data in file: {}".format(fname))
     exit(1)
 
-cutoff_results = [ result for result in results if result[0] > fidelity_cutoff ]
-cutoff_results.sort(key = lambda x: -x[0])
+fidelity_column = description.split().index("fidelity")
+cutoff_results = [ result for result in results
+                   if float(result.split()[fidelity_column]) > fidelity_cutoff ]
+cutoff_results.sort(key = lambda r: -float(r.split()[fidelity_column]))
 
 with open(out_file,"w") as f:
     f.write("# samples: {}\n".format(samples))
     f.write("# total results: {}\n".format(len(results)))
-    f.write("# fidelity time pulses seed target(s)\n")
+    f.write("# {}\n".format(description))
     for result in cutoff_results:
-        f.write(" ".join([ str(r) for r in results[:-1] + results[-1] ]))
-        f.write("\n")
+        f.write(result+"\n")
