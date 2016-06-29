@@ -222,8 +222,9 @@ inline MatrixXcd H_nn(const Vector3d& p1, const Vector3d& p2) {
 // spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
-// nuclear Zeeman Hamiltonian
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB);
+// nuclear Zeeman Hamiltonian; default gB to the static control field
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index,
+               Vector3d gB = Vector3d::Zero());
 
 // NV Zeeman Hamiltonian
 inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& gB) {
@@ -242,14 +243,15 @@ inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& gB) {
 
 // total internal system Hamiltonian
 inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
-  return (H_int(nv,cluster) + H_nZ(nv,cluster,nv.static_gBz*zhat) +
+  return (H_int(nv,cluster) +
+          H_nZ(nv,cluster) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 }
 
 // total control Hamiltonian for the entire system
-inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& B_ctl) {
-  return H_nZ(nv,cluster,B_ctl) + act(H_NV_Z(nv,B_ctl), {0},
-                                      nv.clusters.at(cluster).size()+1);
+inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& gB_ctl) {
+  return (H_nZ(nv,cluster,gB_ctl) +
+          act(H_NV_Z(nv,gB_ctl), {0}, nv.clusters.at(cluster).size()+1));
 }
 
 // perform NV coherence measurement with a static magnetic field
@@ -384,7 +386,7 @@ protocol act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
 protocol simulate_AXY(const nv_system& nv, const uint cluster,
                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
                       const double simulation_time, const double advance_time = 0,
-                      const Vector3d B_ctl = Vector3d::Zero());
+                      const Vector3d gB_ctl = Vector3d::Zero());
 
 // simulate propagator with dynamic control fields
 protocol simulate_AXY(const nv_system& nv, const uint cluster,
