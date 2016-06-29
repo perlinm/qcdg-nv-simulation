@@ -34,14 +34,14 @@ with open(fname,'r') as f:
             continue
         if collect:
             line = line.split()
-            if len(line) == 3:
-                targets = int(line[0])
-            elif len(line) == 4:
+            if len(line) == 4:
+                targets = [int(line[0])]
+            elif len(line) == 5:
                 targets = [int(line[0]),int(line[1])]
             else:
                 print("invalid data")
                 exit(1)
-            results += [(float(line[-2]),float(line[-1]),seed,targets)]
+            results += [(float(line[-3]),float(line[-2]),int(line[-1]),seed,targets)]
 
 if len(results) == 0:
     print("no simulation data in file: {}".format(fname))
@@ -53,9 +53,7 @@ cutoff_results.sort(key = lambda x: -x[0])
 with open(out_file,"w") as f:
     f.write("# samples: {}\n".format(samples))
     f.write("# total results: {}\n".format(len(results)))
-    f.write("# fidelity time seed target(s)\n")
+    f.write("# fidelity time pulses seed target(s)\n")
     for result in cutoff_results:
-        f.write("{} {} {}".format(result[0],result[1],result[2]))
-        for target in result[3]:
-            f.write(" {}".format(target))
+        f.write(" ".join([ str(r) for r in results[:-1] + results[-1] ]))
         f.write("\n")
