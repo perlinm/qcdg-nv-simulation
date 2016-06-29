@@ -636,12 +636,6 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
-
-      cout << endl
-           << clean(P.at(false).U, 1e-2) << endl
-           << endl;
-
-      U_print(j*log(P.at(false).U)/pi);
     }
   }
 
