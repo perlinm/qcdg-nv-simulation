@@ -457,3 +457,20 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
             cNOT_AC_NV_adapted);
   }
 }
+
+// identity operation on the cluster containing a target nucleus
+//   assumes that the NV center is polarized to the |0> state
+protocol identity(const nv_system& nv, const uint target, const double time,
+                  const bool exact) {
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint cluster_spins = nv.clusters.at(cluster).size();
+
+  if (exact) return protocol::Identity(pow(2,cluster_spins));
+
+  const MatrixXcd H = H_sys(nv,cluster) - H_nZ(nv,cluster);
+  const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_spins+1); // |0><0|
+  const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
+
+  const MatrixXcd U = exp(-j*time*H_0);
+  return protocol(U);
+}

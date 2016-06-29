@@ -44,6 +44,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool iswap_fidelities;
   bool swap_fidelities;
   bool swap_nvst_fidelity;
+  bool identity_fidelity;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -67,6 +68,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("swap_nvst",
      po::value<bool>(&swap_nvst_fidelity)->default_value(false)->implicit_value(true),
      "compute expected SWAP_NVST fidelity")
+    ("identity",
+     po::value<bool>(&identity_fidelity)->default_value(false)->implicit_value(true),
+     "compute expected fidelity of an identity operation")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -81,6 +85,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   uint k_DD_int;
   axy_harmonic k_DD;
   double static_Bz_in_gauss;
+  double identity_time;
   double scale_factor;
   double integration_factor;
   bool no_nn;
@@ -99,6 +104,8 @@ int main(const int arg_num, const char *arg_vec[]) {
      "resonance harmonic used in spin addressing (1 or 3)")
     ("static_Bz", po::value<double>(&static_Bz_in_gauss)->default_value(140.1,"140.1"),
      "strength of static magnetic field along the NV axis (gauss)")
+    ("identity_time", po::value<double>(&identity_time)->default_value(1),
+     "time of identity operation (s)")
     ("scale_factor", po::value<double>(&scale_factor)->default_value(10),
      "factor used to define different scales (i.e. if a << b, then a = b/scale_factor)")
     ("integration_factor", po::value<double>(&integration_factor)->default_value(10),
@@ -203,6 +210,7 @@ int main(const int arg_num, const char *arg_vec[]) {
                    + int(iswap_fidelities)
                    + int(swap_fidelities)
                    + int(swap_nvst_fidelity)
+                   + int(identity_fidelity)
                    != 1)) {
     cout << "Please choose one simulation to perform\n";
     return -1;
@@ -611,6 +619,29 @@ int main(const int arg_num, const char *arg_vec[]) {
            << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Fidelity of identity operation
+  // -------------------------------------------------------------------------------------
+
+  if (identity_fidelity) {
+    cout << "target fidelity\n";
+    for (uint target: target_nuclei) {
+      vector<protocol> P(2);
+      for (bool exact : {true,false}) {
+        P.at(exact) = identity(nv, target, identity_time, exact);
+      }
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
+      cout << target << " "
+           << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
+
+      cout << endl
+           << clean(P.at(false).U, 1e-2) << endl
+           << endl;
+
+      U_print(j*log(P.at(false).U)/pi);
     }
   }
 

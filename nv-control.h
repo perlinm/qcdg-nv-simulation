@@ -91,3 +91,8 @@ protocol SWAP(const nv_system& nv, const uint target, const bool exact = false);
 //   where {x1,y1,z1} is the natural basis of spin 1
 protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
                    const bool exact = false);
+
+// identity operation on the cluster containing a target nucleus
+//   assumes that the NV center is polarized to the |0> state
+protocol identity(const nv_system& nv, const uint target, const double time,
+                  const bool exact = false);
