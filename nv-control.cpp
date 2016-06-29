@@ -40,7 +40,7 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster,
   const uint spins = cluster.size()+1;
   MatrixXcd rotation = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
   for (uint index: cluster) {
-    const uint index_in_cluster = get_index_in_cluster(index, cluster);
+    const uint subsystem_index = get_index_in_subsystem(nv, index);
     const Matrix2cd index_rotation = [&]() -> Matrix2cd {
       if (can_address(nv,index)) {
         if (target == (uint)(-1)) {
@@ -52,7 +52,7 @@ MatrixXcd to_natural_frames(const nv_system& nv, const vector<uint> cluster,
         return I2;
       }
     }();
-    rotation = (act(index_rotation, {index_in_cluster+1}, spins) * rotation).eval();
+    rotation = (act(index_rotation, {subsystem_index}, spins) * rotation).eval();
   }
   return rotation;
 }
@@ -154,7 +154,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   assert(exact || !decouple);
 
   const uint cluster = get_cluster_containing_target(nv,target);
-  const uint target_in_cluster = get_index_in_cluster(nv,target);
+  const uint subsystem_target = get_index_in_subsystem(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
   const uint D = pow(2,spins);
 
@@ -165,7 +165,7 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
 
     if (decouple) {
       // rotate only target nucleus
-      return protocol(act(rotation, {target_in_cluster+1}, spins));
+      return protocol(act(rotation, {subsystem_target}, spins));
     } else {
       // rotate all nuclei with the same effective larmor frequency as the target
       MatrixXcd G = MatrixXcd::Identity(D,D);
@@ -336,14 +336,14 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
   if (exact) {
     // identify cluster of target nucleus
     const uint cluster = get_cluster_containing_target(nv,target);
-    const uint target_in_cluster = get_index_in_cluster(nv,target);
+    const uint subsystem_target = get_index_in_subsystem(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
     const Matrix4cd U = exp(-j * phase * tp(dot(s_vec/2,hat(nv_axis)),
                                             dot(s_vec/2,hat(target_axis))));
     if (decouple) {
       const Matrix4cd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
-      return protocol(act(R.adjoint() * U * R, {0,target_in_cluster+1}, spins));
+      return protocol(act(R.adjoint() * U * R, {0,subsystem_target}, spins));
     } else {
       MatrixXcd G = MatrixXcd::Identity(pow(2,spins),pow(2,spins));
       for (uint s = 0; s < nv.clusters.at(cluster).size(); s++) {
@@ -378,12 +378,12 @@ protocol iSWAP(const nv_system& nv, const uint target, const bool exact) {
   assert(can_address(nv,target));
   if (exact) {
     const uint cluster = get_cluster_containing_target(nv,target);
-    const uint target_in_cluster = get_index_in_cluster(nv,target);
+    const uint subsystem_target = get_index_in_subsystem(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
     const MatrixXcd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
     return protocol(act(R.adjoint() * gates::iSWAP * R,
-                        {0,target_in_cluster+1}, spins));
+                        {0,subsystem_target}, spins));
   } else {
     return (couple_target(nv, target, -pi, xhat, xhat) *
             couple_target(nv, target, -pi, yhat, yhat));
@@ -395,12 +395,11 @@ protocol SWAP(const nv_system& nv, const uint target, const bool exact) {
   assert(can_address(nv,target));
   if (exact) {
     const uint cluster = get_cluster_containing_target(nv,target);
-    const uint target_in_cluster = get_index_in_cluster(nv,target);
+    const uint subsystem_target = get_index_in_subsystem(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
     const MatrixXcd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
-    return protocol(act(R.adjoint() * gates::SWAP * R,
-                        {0,target_in_cluster+1}, spins));
+    return protocol(act(R.adjoint() * gates::SWAP * R, {0,subsystem_target}, spins));
   } else {
     return (couple_target(nv, target, -pi, xhat, xhat) *
             couple_target(nv, target, -pi, yhat, yhat) *
@@ -421,8 +420,8 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   if (exact) {
     // return exact SWAP_NVST gate in the appropriate bases
-    const uint cidx1 = get_index_in_cluster(nv, idx1)+1;
-    const uint cidx2 = get_index_in_cluster(nv, idx2)+1;
+    const uint ss_idx1 = get_index_in_subsystem(nv, idx1);
+    const uint ss_idx2 = get_index_in_subsystem(nv, idx2);
 
     const vector<Vector3d> idx1_basis = natural_basis(nv, idx1);
     const Vector3d x1 = idx1_basis.at(0);
@@ -432,7 +431,7 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const Matrix2cd R2 = rotate({xhat,yhat,zhat}, {-y1,x1,z1});
     const MatrixXcd R = act(tp(R1,R2), {1,2}, 3);
 
-    return protocol(act(R.adjoint() * gates::SWAP_NVST * R, {0,cidx1,cidx2}, spins));
+    return protocol(act(R.adjoint() * gates::SWAP_NVST * R, {0,ss_idx1,ss_idx2}, spins));
 
   } else {
     // compute actual realization of the SWAP_NVST gate

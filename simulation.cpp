@@ -521,9 +521,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = rotate_target(nv, target, phase, target_axis, exact);
       }
-      const uint target_in_cluster = get_index_in_cluster(nv, target);
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -542,9 +542,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
       }
-      const uint target_in_cluster = get_index_in_cluster(nv, target);
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -561,9 +561,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = iSWAP(nv, target, exact);
       }
-      const uint target_in_cluster = get_index_in_cluster(nv, target);
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -580,9 +580,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = SWAP(nv, target, exact);
       }
-      const uint target_in_cluster = get_index_in_cluster(nv, target);
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, target_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -605,10 +605,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = SWAP_NVST(nv, idx1, idx2, exact);
       }
-      const uint idx1_in_cluster = get_index_in_cluster(nv,idx1);
-      const uint idx2_in_cluster = get_index_in_cluster(nv,idx2);
+      const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
+      const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, idx1_in_cluster, idx2_in_cluster}) << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }

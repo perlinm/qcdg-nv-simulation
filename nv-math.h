@@ -155,6 +155,9 @@ inline uint get_index_in_cluster(const nv_system& nv, const uint index) {
   const uint cluster = get_cluster_containing_target(nv,index);
   return get_index_in_cluster(index, nv.clusters.at(cluster));
 }
+inline uint get_index_in_subsystem(const nv_system& nv, const uint index) {
+  return get_index_in_cluster(nv, index) + 1;
+}
 
 // ---------------------------------------------------------------------------------------
 // AXY scanning methods
