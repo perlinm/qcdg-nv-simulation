@@ -7,23 +7,46 @@ if len(sys.argv) not in [2,3]:
     print('useage: %s file [show]' % sys.argv[0])
     exit(1)
 
-scan_fname = sys.argv[1]
+fname = sys.argv[1]
+output_fname = fname.replace(".txt","") + ".pdf"
+
 show = (len(sys.argv) == 3)
 
-if 'scan' not in scan_fname:
-    print('invalid input file')
-    exit(1)
+reading_larmor_data = False
+reading_scan_data = False
 
-w_scan, coherence = np.loadtxt(scan_fname,unpack=True)
-w_larmor, A_perp = np.loadtxt(scan_fname.replace('scan','larmor'),unpack=True)
+w_larmor = []
+hyperfine_perp = []
+w_scan = []
+coherence = []
 
-f_larmor = w_larmor/(2*np.pi*1e3) # in kHz
-f_scan = w_scan/(2*np.pi*1e3) # in kHz
-A_perp /= max(A_perp)
+with open(fname, "r") as f:
+    for line in f:
+        if line[0] == "#": continue
+
+        if "-----" in line:
+            if not reading_larmor_data:
+                reading_larmor_data = True
+            elif not reading_scan_data:
+                reading_scan_data = True
+                reading_larmor_data = False
+            continue
+
+        if reading_larmor_data:
+            w_larmor.append(float(line.split()[0]))
+            hyperfine_perp.append(float(line.split()[1]))
+            continue
+        if reading_scan_data:
+            w_scan.append(float(line.split()[0]))
+            coherence.append(float(line.split()[1]))
+
+f_larmor = np.array(w_larmor)/(2*np.pi*1e3)
+f_scan = np.array(w_scan)/(2*np.pi*1e3)
+relative_hyperfine = np.array(hyperfine_perp)/max(hyperfine_perp)
 
 plt.plot(f_scan,coherence,'k-',linewidth=2)
 for i in range(len(f_larmor)):
-    dot = 1-A_perp[i]
+    dot = 1 - relative_hyperfine[i]
     plt.plot([f_larmor[i],f_larmor[i]],[1,dot],'b-',linewidth=2)
     plt.plot(f_larmor[i],dot,'bo',markersize=8)
 
@@ -34,7 +57,7 @@ plt.xlabel(r'$f_{\mathrm{scan}}$ (kHz)')
 plt.ylabel('Coherence')
 
 plt.tight_layout()
-plt.savefig(scan_fname.replace('.txt','.pdf'))
+plt.savefig(output_fname)
 
 if show:
     plt.show()
