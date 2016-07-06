@@ -129,11 +129,11 @@ int main(const int arg_num, const char *arg_vec[]) {
                                              " (all angles are in units of pi radians)",
                                              help_text_length);
   addressing_options.add_options()
-    ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
+    ("target", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target")
     ("target_pairs",
      po::value<bool>(&target_pairs)->default_value(false)->implicit_value(true),
-     "target only larmor pairs")
+     "target only one nucleus in each larmor pair")
     ("phase", po::value<double>(&phase_over_pi)->default_value(1),
      "phase of operation to perform")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5),
@@ -202,7 +202,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_output_suffix = inputs.count("output_suffix");
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
   bool set_c13_abundance = !inputs["c13_percentage"].defaulted();
-  bool set_target_nuclei = inputs.count("targets");
+  bool set_target_nuclei = inputs.count("target");
 
   // run a sanity check on inputs
   if (!testing && (int(print_pairs)
@@ -220,6 +220,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   assert(!(using_input_lattice && set_hyperfine_cutoff));
   assert(!(using_input_lattice && set_c13_abundance));
+  assert(!(set_target_nuclei && target_pairs));
   assert(hyperfine_cutoff_in_kHz > 0);
   assert(c13_percentage >= 0 && c13_percentage <= 100);
 
@@ -371,25 +372,24 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // identify larmor pairs
-  vector<uint> paired_nuclei;
+  vector<uint> pair_nuclei;
   vector<vector<uint>> larmor_pairs;
   for (uint i = 0; i < addressable_nuclei.size(); i++) {
     const uint n_i = addressable_nuclei.at(i);
-    if (in_vector(n_i,paired_nuclei)) continue;
+    if (in_vector(n_i,pair_nuclei)) continue;
 
     for (uint j = i+1; j < addressable_nuclei.size(); j++) {
       const uint n_j = addressable_nuclei.at(j);
-      if (in_vector(n_j,paired_nuclei)) continue;
+      if (in_vector(n_j,pair_nuclei)) continue;
 
       if (is_larmor_pair(nuclei,n_i,n_j)) {
         larmor_pairs.push_back({n_i,n_j});
-        paired_nuclei.push_back(n_i);
-        paired_nuclei.push_back(n_j);
+        pair_nuclei.push_back(n_i);
         continue;
       }
     }
   }
-  sort(paired_nuclei.begin(), paired_nuclei.end());
+  sort(pair_nuclei.begin(), pair_nuclei.end());
 
   // if we wish to print pairs, do so
   if (print_pairs) {
@@ -406,14 +406,13 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // determine which nuclei to target
   if (!set_target_nuclei) {
-    if (target_pairs) target_nuclei = paired_nuclei;
+    if (target_pairs) target_nuclei = pair_nuclei;
     else target_nuclei = addressable_nuclei;
 
   } else { // if (set_target_nuclei)
     vector<uint> unaddressable_targets;
     for (uint t_i = 0; t_i < target_nuclei.size(); t_i++) {
-      if (in_vector(target_nuclei.at(t_i),unaddressable_nuclei) ||
-          (target_pairs && !in_vector(target_nuclei.at(t_i),paired_nuclei))) {
+      if (in_vector(target_nuclei.at(t_i),unaddressable_nuclei)) {
         unaddressable_targets.push_back(target_nuclei.at(t_i));
         target_nuclei.erase(target_nuclei.begin()+t_i);
         t_i--;
