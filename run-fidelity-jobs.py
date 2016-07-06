@@ -24,11 +24,6 @@ c13_factors = [ 0.1, 0.01 ]
 max_cluster_sizes = [ 5 ]
 scale_factors = [ 10, 13, 15 ]
 
-static_Bzs = [ 500 ]
-c13_factors = [ 0.01 ]
-max_cluster_sizes = [ 5 ]
-scale_factors = [ 15 ]
-
 project_dir = os.path.dirname(os.path.realpath(__file__))
 run_script = "fidelity-sweep-job.py"
 
