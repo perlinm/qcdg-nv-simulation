@@ -53,11 +53,9 @@ int main(const int arg_num, const char *arg_vec[]) {
      "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
-    ("control",
-     po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
+    ("rotate", po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
      "rotate an individual nucleus")
-    ("couple",
-     po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
+    ("couple", po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
      "couple an individual nucleus to NV center")
     ("iswap",
      po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
@@ -115,6 +113,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   vector<uint> target_nuclei;
+  bool target_pairs;
   double phase;
   double phase_over_pi;
   double target_polar;
@@ -132,6 +131,9 @@ int main(const int arg_num, const char *arg_vec[]) {
   addressing_options.add_options()
     ("targets", po::value<vector<uint>>(&target_nuclei)->multitoken(),
      "indices of nuclei to target")
+    ("target_pairs",
+     po::value<bool>(&target_pairs)->default_value(false)->implicit_value(true),
+     "target only larmor pairs")
     ("phase", po::value<double>(&phase_over_pi)->default_value(1),
      "phase of operation to perform")
     ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5),
@@ -346,10 +348,17 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
+  // -------------------------------------------------------------------------------------
+  // Characterize nuclei and targets
+  // -------------------------------------------------------------------------------------
+
   // identify nuclei which cannot be addressed
+  vector<uint> addressable_nuclei;
   vector<uint> unaddressable_nuclei;
   for (uint n = 0; n < nuclei.size(); n++) {
-    if (!can_address(nuclei,n)) {
+    if (can_address(nuclei,n)) {
+      addressable_nuclei.push_back(n);
+    } else {
       unaddressable_nuclei.push_back(n);
     }
   }
@@ -361,46 +370,28 @@ int main(const int arg_num, const char *arg_vec[]) {
     cout << endl << endl;
   }
 
-  // remove nuclei which cannot be addressed from the list of target nuclei
-  if (!set_target_nuclei) {
-    for (uint n = 0; n < nuclei.size(); n++) {
-      if (!in_vector(n,unaddressable_nuclei)) {
-        target_nuclei.push_back(n);
-      }
-    }
-  } else { // if (set_target_nuclei)
-    vector<uint> unaddressable_targets;
-    for (uint n = 0; n < target_nuclei.size(); n++) {
-      if (!can_address(nuclei,target_nuclei.at(n))) {
-        unaddressable_targets.push_back(target_nuclei.at(n));
-        target_nuclei.erase(target_nuclei.begin()+n);
-        n--;
-      }
-    }
-    if (unaddressable_targets.size() > 0) {
-      cout << "(WARNING) Ignoring following target nuclei:";
-      for (uint n: unaddressable_targets) {
-        cout << " " << n;
-      }
-      cout << endl << endl;
-    }
-  }
-
-  // -------------------------------------------------------------------------------------
-  // Identify larmor pairs
-  // -------------------------------------------------------------------------------------
-
+  // identify larmor pairs
+  vector<uint> paired_nuclei;
   vector<vector<uint>> larmor_pairs;
-  for (uint i = 0; i < target_nuclei.size(); i++) {
-    const uint n_i = target_nuclei.at(i);
-    for (uint j = i+1; j < target_nuclei.size(); j++) {
-      const uint n_j = target_nuclei.at(j);
+  for (uint i = 0; i < addressable_nuclei.size(); i++) {
+    const uint n_i = addressable_nuclei.at(i);
+    if (in_vector(n_i,paired_nuclei)) continue;
+
+    for (uint j = i+1; j < addressable_nuclei.size(); j++) {
+      const uint n_j = addressable_nuclei.at(j);
+      if (in_vector(n_j,paired_nuclei)) continue;
+
       if (is_larmor_pair(nuclei,n_i,n_j)) {
         larmor_pairs.push_back({n_i,n_j});
+        paired_nuclei.push_back(n_i);
+        paired_nuclei.push_back(n_j);
+        continue;
       }
     }
   }
+  sort(paired_nuclei.begin(), paired_nuclei.end());
 
+  // if we wish to print pairs, do so
   if (print_pairs) {
     if (larmor_pairs.size() > 0) {
       cout << "Larmor pairs:\n";
@@ -411,6 +402,30 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << "No larmor pairs found\n";
     }
     return larmor_pairs.size();
+  }
+
+  // determine which nuclei to target
+  if (!set_target_nuclei) {
+    if (target_pairs) target_nuclei = paired_nuclei;
+    else target_nuclei = addressable_nuclei;
+
+  } else { // if (set_target_nuclei)
+    vector<uint> unaddressable_targets;
+    for (uint t_i = 0; t_i < target_nuclei.size(); t_i++) {
+      if (in_vector(target_nuclei.at(t_i),unaddressable_nuclei) ||
+          (target_pairs && !in_vector(target_nuclei.at(t_i),paired_nuclei))) {
+        unaddressable_targets.push_back(target_nuclei.at(t_i));
+        target_nuclei.erase(target_nuclei.begin()+t_i);
+        t_i--;
+      }
+    }
+    if (unaddressable_targets.size() > 0) {
+      cout << "(WARNING) Ignoring following target nuclei:";
+      for (uint n: unaddressable_targets) {
+        cout << " " << n;
+      }
+      cout << endl << endl;
+    }
   }
 
   // -------------------------------------------------------------------------------------
