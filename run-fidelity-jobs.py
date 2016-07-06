@@ -2,26 +2,32 @@
 import sys, os, numpy, subprocess, glob
 from basename import basename
 
-def input_error():
-    print("usage: " + sys.argv[0] + " sim_type [test] [mkfac.py args]")
+test_flag = "test"
+whide_flag = "whide"
+
+if len(sys.argv) < 3:
+    print("usage: {} [{}] [{}] sim_type [sim_opts]"
+          .format(sys.argv[0], test_flag,whide_flag))
     exit(1)
 
-if len(sys.argv) < 3: input_error()
-
-sim_type = sys.argv[1]
-if sys.argv[2] == "test":
-    test_jobs = True
-    mkfac_args = sys.argv[3:]
-else:
-    test_jobs = False
-    mkfac_args = sys.argv[2:]
+test_jobs = test_flag in sys.argv
+if test_jobs: sys.argv.remove(test_flag)
+whide = whide_flag in sys.argv
+if whide: sys.argv.remove(whide_flag)
 
 c13_natural_percentage = 1.07
 
+sim_type = sys.argv[1]
+sim_opts = sys.argv[2:]
 static_Bzs = [ 50, 100, 200, 500 ]
 c13_factors = [ 0.1, 0.01 ]
 max_cluster_sizes = [ 5 ]
-scale_factors = [ 5, 8, 10 ]
+scale_factors = [ 10, 13, 15 ]
+
+static_Bzs = [ 500 ]
+c13_factors = [ 0.01 ]
+max_cluster_sizes = [ 5 ]
+scale_factors = [ 15 ]
 
 project_dir = os.path.dirname(os.path.realpath(__file__))
 run_script = "fidelity-sweep-job.py"
@@ -29,7 +35,8 @@ run_script = "fidelity-sweep-job.py"
 def cmd_args(sim_args, walltime):
     return ([ "{}/{}".format(project_dir,run_script) ]
             + [ str(a) for a in sim_args]
-            + [ str(walltime) ] + mkfac_args)
+            + [ str(walltime) ]
+            + ([ whide_flag ] if whide else []))
 
 for static_Bz in static_Bzs:
     for c13_factor in c13_factors:
@@ -38,8 +45,8 @@ for static_Bz in static_Bzs:
                 log10_samples = int(numpy.round(3 - numpy.log10(c13_factor)))
                 c13_percentage = str(numpy.around(c13_natural_percentage*c13_factor,
                                                   int(3 - numpy.log10(c13_factor))))
-                sim_args = [ sim_type, static_Bz, c13_percentage,
-                             max_cluster_size, scale_factor, log10_samples ]
+                sim_args = [ sim_type, static_Bz, c13_percentage, max_cluster_size,
+                             scale_factor, log10_samples ] + sim_opts
 
                 if test_jobs:
                     subprocess.call(cmd_args(sim_args,3))

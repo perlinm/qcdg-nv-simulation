@@ -4,7 +4,7 @@ from basename import basename
 
 if len(sys.argv) < 8:
     print("usage: " + sys.argv[0] + " sim_type static_Bz c13_percentage" + \
-          " max_cluster_size scale_factor log10_samples task_num [seed_text]")
+          " max_cluster_size scale_factor log10_samples [sim_opts] task_num")
     exit(1)
 
 # process inputs
@@ -14,10 +14,11 @@ c13_percentage = sys.argv[3]
 max_cluster_size = sys.argv[4]
 scale_factor = sys.argv[5]
 log10_samples = sys.argv[6]
-sim_args = sys.argv[1:7]
-task_num = int(sys.argv[7])
+sim_opts = sys.argv[7:-1]
+task_num = int(sys.argv[-1])
 assert task_num > 1
-seed_text = " ".join(sys.argv[8:])
+
+sim_args = sys.argv[1:-1]
 
 print_period = 1800 # seconds
 
@@ -40,15 +41,15 @@ os.chdir(job_dir)
 os.mkdir(data_dir)
 
 # define some variavles
-commands = ["./"+sim_file, "--no_output", "--"+sim_type,
+commands = ["./"+sim_file, "--"+sim_type,
             "--static_Bz", static_Bz,
             "--c13_percentage", c13_percentage,
             "--max_cluster_size", max_cluster_size,
-            "--scale_factor", scale_factor]
+            "--scale_factor", scale_factor] + [ "--"+opt for opt in sim_opts ]
 
 # method to execute a single simulation
 def run_sample(s):
-    random.seed("".join(sys.argv[1:-1]) + str(s))
+    random.seed("".join(sim_args) + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
     process = subprocess.Popen(commands + seed,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)

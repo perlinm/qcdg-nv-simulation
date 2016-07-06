@@ -18,7 +18,8 @@ if not os.path.isfile(fname):
 
 out_file = "{}/fidelities-{}".format(os.path.dirname(fname),os.path.basename(fname))
 
-samples = 10**int(re.split("-|\.",fname)[-2])
+split_name = re.split("-|\.",fname)
+samples = int(10**float(split_name[split_name.index("ls")+1]))
 
 results = []
 collect = False
