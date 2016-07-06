@@ -376,12 +376,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   vector<vector<uint>> larmor_pairs;
   for (uint i = 0; i < addressable_nuclei.size(); i++) {
     const uint n_i = addressable_nuclei.at(i);
-    if (in_vector(n_i,pair_nuclei)) continue;
-
     for (uint j = i+1; j < addressable_nuclei.size(); j++) {
       const uint n_j = addressable_nuclei.at(j);
-      if (in_vector(n_j,pair_nuclei)) continue;
-
       if (is_larmor_pair(nuclei,n_i,n_j)) {
         larmor_pairs.push_back({n_i,n_j});
         pair_nuclei.push_back(n_i);
@@ -424,6 +420,19 @@ int main(const int arg_num, const char *arg_vec[]) {
         cout << " " << n;
       }
       cout << endl << endl;
+    }
+  }
+
+  // identify targeted larmor pairs
+  vector<vector<uint>> targeted_larmor_pairs;
+  for (uint i = 0; i < target_nuclei.size(); i++) {
+    const uint n_i = target_nuclei.at(i);
+    for (uint j = i+1; j < target_nuclei.size(); j++) {
+      const uint n_j = target_nuclei.at(j);
+      if (is_larmor_pair(nuclei,n_i,n_j)) {
+        targeted_larmor_pairs.push_back({n_i,n_j});
+        continue;
+      }
     }
   }
 
@@ -615,12 +624,16 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -------------------------------------------------------------------------------------
 
   if (swap_nvst_fidelity) {
-    if (larmor_pairs.size() == 0) {
-      cout << "There are no larmor pairs in this system\n";
+    if (targeted_larmor_pairs.size() == 0) {
+      if (larmor_pairs.size() == 0) {
+        cout << "There are no larmor pairs in this system\n";
+      } else {
+        cout << "No larmor pairs are targeted\n";
+      }
       return -1;
     }
     cout << "idx1 idx2 fidelity time pulses\n";
-    for (vector<uint> idxs: larmor_pairs) {
+    for (vector<uint> idxs: targeted_larmor_pairs) {
       const uint idx1 = idxs.at(0);
       const uint idx2 = idxs.at(1);
       vector<protocol> P(2);
