@@ -85,7 +85,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
-  int cell_radius = 0; // requires a default value which will be overwritten later
   int ms;
   uint k_DD_int;
   axy_harmonic k_DD;
@@ -261,6 +260,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   vector<Vector3d> nuclei;
 
   if (!using_input_lattice) { // place nuclei at lattice sites
+
+    // number of fcc cells to simulate out from the origin
+    const int cell_radius
+      = round(pow(abs(g_e*g_C13)/(4*pi*a0*a0*a0*hyperfine_cutoff),1.0/3));
+
     // set positions of nuclei at lattice sites
     for (uint b: {0,1}) {
       for (int l = -2*cell_radius; l <= 2*cell_radius; l++) {
@@ -295,13 +299,6 @@ int main(const int arg_num, const char *arg_vec[]) {
 
     string line;
     ifstream lattice(lattice_file);
-
-    // get cell_radius
-    getline(lattice,line,' ');
-    getline(lattice,line,' ');
-    getline(lattice,line,' ');
-    getline(lattice,line);
-    cell_radius = stoi(line);
 
     // get C-13 positions
     double x,y,z;
