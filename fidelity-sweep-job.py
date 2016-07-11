@@ -4,7 +4,7 @@ from basename import basename
 
 whide_flag = "whide"
 
-if len(sys.argv) < 8:
+if len(sys.argv) < 5:
     print("usage: {} [{}] walltime_in_hours [sim_args...]".format(sys.argv[0],whide_flag))
     exit(1)
 
@@ -18,7 +18,12 @@ nodes = 1
 tasks_per_node = 16
 task_num = str(int(nodes)*tasks_per_node)
 
-log10_samples = sim_args[sim_args.index("--log10_samples")+1]
+log10_samples_hook = "--log10_samples"
+if not log10_samples_hook in sim_args:
+    print("must specify number of samples to simulate (via {} [num])"
+          .format(log10_samples_hook))
+    exit(1)
+log10_samples = sim_args[sim_args.index(log10_samples_hook)+1]
 mem_per_task_estimate_in_mb = int(0.5 * 4**float(log10_samples))
 
 project_dir = os.path.dirname(os.path.realpath(__file__))

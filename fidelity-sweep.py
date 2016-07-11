@@ -2,17 +2,23 @@
 import sys, os, shutil, subprocess, random, threading, time, glob
 from basename import basename
 
-if len(sys.argv) < 8:
+if len(sys.argv) < 5:
     print("usage: " + sys.argv[0] + " task_num [sim_args...]")
     exit(1)
 
 # process inputs
 task_num = int(sys.argv[1])
-assert task_num > 1
+if task_num < 2:
+    print("task number must be >= 2")
+    exit(1)
 
 sim_args = sys.argv[2:]
 
 log10_samples_hook = "--log10_samples"
+if not log10_samples_hook in sim_args:
+    print("must specify number of samples to simulate (via {} [num])"
+          .format(log10_samples_hook))
+    exit(1)
 log10_samples = sim_args[sim_args.index(log10_samples_hook)+1]
 del sim_args[sim_args.index(log10_samples_hook)+1]
 del sim_args[sim_args.index(log10_samples_hook)]
