@@ -44,7 +44,7 @@ for static_Bz in static_Bzs:
                 sim_args = [ sim_type,
                              "--static_Bz", static_Bz,
                              "--c13_percentage", c13_percentage,
-                             "--max_cluster_sizes", max_cluster_size,
+                             "--max_cluster_size", max_cluster_size,
                              "--scale_factor", scale_factor ] + sim_opts \
                              + [ "--log10_samples", log10_samples ]
 
