@@ -5,8 +5,8 @@ from basename import basename
 test_flag = "test"
 whide_flag = "whide"
 
-if len(sys.argv) < 3:
-    print("usage: {} [{}] [{}] sim_type [sim_opts]"
+if len(sys.argv) < 2:
+    print("usage: {} [{}] [{}] --sim_type [sim_opts...]"
           .format(sys.argv[0], test_flag,whide_flag))
     exit(1)
 
@@ -19,6 +19,7 @@ c13_natural_percentage = 1.07
 
 sim_type = sys.argv[1]
 sim_opts = sys.argv[2:]
+
 static_Bzs = [ 50, 100, 200, 500 ]
 c13_factors = [ 0.1, 0.01 ]
 max_cluster_sizes = [ 5 ]
@@ -40,8 +41,12 @@ for static_Bz in static_Bzs:
                 log10_samples = int(numpy.round(3 - numpy.log10(c13_factor)))
                 c13_percentage = str(numpy.around(c13_natural_percentage*c13_factor,
                                                   int(3 - numpy.log10(c13_factor))))
-                sim_args = [ sim_type, static_Bz, c13_percentage, max_cluster_size,
-                             scale_factor, log10_samples ] + sim_opts
+                sim_args = [ sim_type,
+                             "--static_Bz", static_Bz,
+                             "--c13_percentage", c13_percentage,
+                             "--max_cluster_sizes", max_cluster_size,
+                             "--scale_factor", scale_factor ] + sim_opts \
+                             + [ "--log10_samples", log10_samples ]
 
                 if test_jobs:
                     subprocess.call(cmd_args(sim_args,3))

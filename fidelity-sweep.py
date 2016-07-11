@@ -3,22 +3,14 @@ import sys, os, shutil, subprocess, random, threading, time, glob
 from basename import basename
 
 if len(sys.argv) < 8:
-    print("usage: " + sys.argv[0] + " sim_type static_Bz c13_percentage" + \
-          " max_cluster_size scale_factor log10_samples [sim_opts] task_num")
+    print("usage: " + sys.argv[0] + " [sim_args...] task_num")
     exit(1)
 
 # process inputs
-sim_type = sys.argv[1]
-static_Bz = sys.argv[2]
-c13_percentage = sys.argv[3]
-max_cluster_size = sys.argv[4]
-scale_factor = sys.argv[5]
-log10_samples = sys.argv[6]
-sim_opts = sys.argv[7:-1]
 task_num = int(sys.argv[-1])
 assert task_num > 1
-
-sim_args = sys.argv[1:-1]
+log10_samples = sys.argv[-2]
+sim_args = sys.argv[1:-3]
 
 print_period = 1800 # seconds
 
@@ -28,6 +20,7 @@ data_dir = "data"
 sim_file = "simulate.exe"
 summary_script = "fidelity-summary.py"
 out_file = "{}/{}.txt".format(data_dir,basename(sim_args))
+base_cmd = ["./"+sim_file] + sim_args
 
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
@@ -40,23 +33,16 @@ shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
 os.chdir(job_dir)
 os.mkdir(data_dir)
 
-# define some variavles
-commands = ["./"+sim_file, "--"+sim_type,
-            "--static_Bz", static_Bz,
-            "--c13_percentage", c13_percentage,
-            "--max_cluster_size", max_cluster_size,
-            "--scale_factor", scale_factor] + [ "--"+opt for opt in sim_opts ]
-
 # method to execute a single simulation
 def run_sample(s):
     random.seed("".join(sim_args) + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
-    process = subprocess.Popen(commands + seed,
+    process = subprocess.Popen(base_cmd + seed,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     with lock:
         with open(out_file,"a") as f:
-            f.write(" ".join(commands + seed)+"\n\n")
+            f.write(" ".join(base_cmd + seed)+"\n\n")
             f.write(out.decode("utf-8")+"\n")
             f.write(err.decode("utf-8")+"\n")
             f.write("-"*90 + "\n\n")
