@@ -393,6 +393,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << endl << endl;
     }
   }
+  if (target_nuclei.size() == 0) {
+    cout << "There are no target nuclei." << endl;
+    return 0;
+  }
 
   // identify targeted larmor pairs
   vector<vector<uint>> targeted_larmor_pairs;
