@@ -19,7 +19,7 @@ nodes = 1
 tasks_per_node = 16
 task_num = str(int(nodes)*tasks_per_node)
 
-log10_samples = sim_args[-1]
+log10_samples = sim_args[sim_args.index("--log10_samples")+1]
 mem_per_task_estimate_in_mb = int(0.5 * 4**float(log10_samples))
 
 project_dir = os.path.dirname(os.path.realpath(__file__))

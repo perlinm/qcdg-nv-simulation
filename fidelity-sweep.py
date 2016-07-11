@@ -9,8 +9,14 @@ if len(sys.argv) < 8:
 # process inputs
 task_num = int(sys.argv[-1])
 assert task_num > 1
-log10_samples = sys.argv[-2]
-sim_args = sys.argv[1:-3]
+del sys.argv[-1]
+
+log10_samples_hook = "--log10_samples"
+log10_samples = sys.argv[sys.argv.index(log10_samples_hook)+1]
+del sys.argv[sys.argv.index(log10_samples_hook)+1]
+del sys.argv[sys.argv.index(log10_samples_hook)]
+
+sim_args = sys.argv[1:]
 
 print_period = 1800 # seconds
 
