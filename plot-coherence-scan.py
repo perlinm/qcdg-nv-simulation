@@ -20,22 +20,28 @@ hyperfine_perp = []
 w_scan = []
 coherence = []
 
-with open(fname, "r") as f:
+with open(fname,"r") as f:
     for line in f:
-        if line[0] == "#": continue
-
-        if "-----" in line:
-            if not reading_larmor_data:
-                reading_larmor_data = True
-            elif not reading_scan_data:
-                reading_scan_data = True
-                reading_larmor_data = False
+        if "Larmor and hyperfine frequency data" in line:
+            reading_larmor_data = True
+            reading_scan_data = False
             continue
+        if "Coherence scan results" in line:
+            reading_scan_data = True
+            reading_larmor_data = False
+            continue
+        if not reading_larmor_data and not reading_scan_data: continue
+
+        # verify that line consists only of two numbers
+        invalid_line = (len(line.split()) != 2)
+        for l in line.split():
+            try: float(l.strip())
+            except: invalid_line = True
+        if invalid_line: continue
 
         if reading_larmor_data:
             w_larmor.append(float(line.split()[0]))
             hyperfine_perp.append(float(line.split()[1]))
-            continue
         if reading_scan_data:
             w_scan.append(float(line.split()[0]))
             coherence.append(float(line.split()[1]))

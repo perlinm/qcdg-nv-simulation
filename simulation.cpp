@@ -20,8 +20,6 @@ using namespace Eigen;
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
-void line_break();
-
 int main(const int arg_num, const char *arg_vec[]) {
 
   // -------------------------------------------------------------------------------------
@@ -159,7 +157,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   po::options_description scan_options("Coherence scanning options",help_text_length);
   scan_options.add_options()
-    ("scan_bins", po::value<uint>(&scan_bins)->default_value(100),
+    ("scan_bins", po::value<uint>(&scan_bins)->default_value(500),
      "number of bins in coherence scanning range")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
@@ -465,15 +463,17 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
 
     // print effective larmor frequencies and NV couping strengths
-    line_break();
-    cout << "# w_larmor A_perp\n";
+    cout << endl
+         << "Larmor and hyperfine frequency data:" << endl
+         << "# w_larmor A_perp" << endl;
     for (uint i = 0; i < nv.nuclei.size(); i++) {
       cout << w_larmor.at(i) << " " << A_perp.at(i) << endl;
     }
 
     // perform coherence scan
-    line_break();
-    cout << "# w_scan coherence\n";
+    cout << endl
+         << "Coherence scan results:" << endl
+         << "# w_scan coherence" << endl;
     vector<double> w_scan(scan_bins);
     vector<double> coherence(scan_bins);
 
@@ -643,9 +643,4 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   }
 
-}
-
-void line_break() {
-  for (uint i = 0; i < 90; i++) cout << "-";
-  cout << endl;
 }
