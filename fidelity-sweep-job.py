@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, os, subprocess
-from basename import basename
+from basename import *
 
 whide_flag = "whide"
 
@@ -18,7 +18,6 @@ nodes = 1
 tasks_per_node = 16
 task_num = str(int(nodes)*tasks_per_node)
 
-log10_samples_hook = "--log10_samples"
 if not log10_samples_hook in sim_args:
     print("must specify number of samples to simulate (via {} [num])"
           .format(log10_samples_hook))

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, os, numpy, subprocess, glob
-from basename import basename
+from basename import *
 
 test_flag = "test"
 whide_flag = "whide"
@@ -46,7 +46,7 @@ for static_Bz in static_Bzs:
                              "--c13_percentage", c13_percentage,
                              "--max_cluster_size", max_cluster_size,
                              "--scale_factor", scale_factor ] + sim_opts \
-                             + [ "--log10_samples", log10_samples ]
+                             + [ log10_samples_hook, log10_samples ]
 
                 if test_jobs:
                     subprocess.call(cmd_args(sim_args,3))
@@ -54,7 +54,9 @@ for static_Bz in static_Bzs:
                 else:
                     test_job_name = "./jobs/" + basename(sim_args) + ".o_feedback"
                     fname_candidates = glob.glob(test_job_name)
-                    assert (len(fname_candidates) == 1)
+                    if not len(fname_candidates) == 1:
+                        print("please run test jobs first")
+                        exit(1)
                     fname = fname_candidates[0]
 
                     with open(fname,"r") as f:
