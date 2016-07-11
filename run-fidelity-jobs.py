@@ -30,9 +30,9 @@ run_script = "fidelity-sweep-job.py"
 
 def cmd_args(sim_args, walltime):
     return ([ "{}/{}".format(project_dir,run_script) ]
-            + [ str(a) for a in sim_args]
+            + ([ whide_flag ] if whide else [])
             + [ str(walltime) ]
-            + ([ whide_flag ] if whide else []))
+            + [ str(a) for a in sim_args])
 
 for static_Bz in static_Bzs:
     for c13_factor in c13_factors:

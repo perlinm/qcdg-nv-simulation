@@ -3,20 +3,19 @@ import sys, os, shutil, subprocess, random, threading, time, glob
 from basename import basename
 
 if len(sys.argv) < 8:
-    print("usage: " + sys.argv[0] + " [sim_args...] task_num")
+    print("usage: " + sys.argv[0] + " task_num [sim_args...]")
     exit(1)
 
 # process inputs
-task_num = int(sys.argv[-1])
+task_num = int(sys.argv[1])
 assert task_num > 1
-del sys.argv[-1]
+
+sim_args = sys.argv[2:]
 
 log10_samples_hook = "--log10_samples"
-log10_samples = sys.argv[sys.argv.index(log10_samples_hook)+1]
-del sys.argv[sys.argv.index(log10_samples_hook)+1]
-del sys.argv[sys.argv.index(log10_samples_hook)]
-
-sim_args = sys.argv[1:]
+log10_samples = sim_args[sim_args.index(log10_samples_hook)+1]
+del sim_args[sim_args.index(log10_samples_hook)+1]
+del sim_args[sim_args.index(log10_samples_hook)]
 
 print_period = 1800 # seconds
 
@@ -31,7 +30,7 @@ base_cmd = ["./"+sim_file] + sim_args
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
     exit(1)
-job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "-".join(sys.argv[1:])
+job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "".join(sys.argv[1:])
 
 # move into job directory
 os.makedirs(job_dir)

@@ -5,15 +5,14 @@ from basename import basename
 whide_flag = "whide"
 
 if len(sys.argv) < 8:
-    print("usage: " + sys.argv[0] + " [sim_args...] walltime_in_hours" + \
-          " [{}]".format(whide_flag))
+    print("usage: {} [{}] walltime_in_hours [sim_args...]".format(sys.argv[0],whide_flag))
     exit(1)
 
 whide = whide_flag in sys.argv
 if whide: sys.argv.remove(whide_flag)
 
-walltime_in_hours = sys.argv[-1]
-sim_args = sys.argv[1:-1]
+walltime_in_hours = sys.argv[1]
+sim_args = sys.argv[2:]
 
 nodes = 1
 tasks_per_node = 16
@@ -40,8 +39,7 @@ job_text = "#!/usr/bin/env sh\n"
 for option in options:
     job_text += "#MSUB {}\n".format(option)
 job_text += "\n"
-job_text += "python {}/{} {} {}\n".format(project_dir,script," ".join(sim_args),task_num)
-
+job_text += "python {}/{} {} {}\n".format(project_dir,script,task_num," ".join(sim_args))
 
 with open(job_file,"w") as f: f.write(job_text)
 
