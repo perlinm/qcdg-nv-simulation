@@ -12,15 +12,16 @@ if task_num < 2:
     print("task number must be >= 2")
     exit(1)
 
-sim_args = sys.argv[2:]
+sim_args = sys.argv[2:] # args passed on to this script
+cmd_args = sim_args[:] # args to pass on to individual simulations
 
-if not log10_samples_hook in sim_args:
+if not log10_samples_hook in cmd_args:
     print("must specify number of samples to simulate (via {} [num])"
           .format(log10_samples_hook))
     exit(1)
-log10_samples = sim_args[sim_args.index(log10_samples_hook)+1]
-del sim_args[sim_args.index(log10_samples_hook)+1]
-del sim_args[sim_args.index(log10_samples_hook)]
+log10_samples = cmd_args[cmd_args.index(log10_samples_hook)+1]
+del cmd_args[cmd_args.index(log10_samples_hook)+1]
+del cmd_args[cmd_args.index(log10_samples_hook)]
 
 print_period = 1800 # seconds
 
@@ -30,7 +31,7 @@ data_dir = "data"
 sim_file = "simulate.exe"
 summary_script = "fidelity-summary.py"
 out_file = "{}/{}.txt".format(data_dir,basename(sim_args))
-base_cmd = ["./"+sim_file] + sim_args
+base_cmd = ["./"+sim_file] + cmd_args
 
 if "TMPDIR" not in os.environ:
     print("please set the TMPDIR environment variable")
@@ -45,7 +46,7 @@ os.mkdir(data_dir)
 
 # method to execute a single simulation
 def run_sample(s):
-    random.seed("".join(sim_args) + str(s))
+    random.seed("".join(cmd_args) + str(s))
     seed = ["--seed", str(random.randint(0,unsigned_long_long_max))]
     process = subprocess.Popen(base_cmd + seed,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
