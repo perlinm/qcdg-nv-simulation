@@ -153,7 +153,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace) {
       }
     }
   }
-  return B;
+  return B  / sqrt(real(trace(B.adjoint()*B)) / B.rows());
 }
 
 // extract sub-matrix which acts only on the given qbits
