@@ -55,14 +55,13 @@ protocol U_ctl(const nv_system& nv, const uint target, const double phase,
 
 // compute and perform operationc necessary to act U on target nucleus
 protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
-                    const bool exact = false, const bool decouple = false,
-                    const bool adjust_AXY = true);
+                    const bool exact = false, const bool adjust_AXY = true);
 
 // perform given rotation on a target nucleus
 inline protocol rotate_target(const nv_system& nv, const uint target, const double angle,
                               const Vector3d& axis, const bool exact = false,
-                              const bool decouple = false, const bool adjust_AXY = true) {
-  return act_target(nv, target, rotate(angle, axis), exact, decouple, adjust_AXY);
+                              const bool adjust_AXY = true) {
+  return act_target(nv, target, rotate(angle, axis), exact, adjust_AXY);
 }
 
 // propagator U = exp(-i * phase * I_{NV}^{n_1}*I_{target}^{n_2})

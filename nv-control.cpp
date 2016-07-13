@@ -148,13 +148,9 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
 
 // determine and simulate operations necessary to act U on target nucleus
 protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
-                    const bool exact, const bool decouple, const bool adjust_AXY) {
-  // when performing this operation on larmor sets, we cannot "decouple",
-  //   i.e. act on only one spin
-  assert(exact || !decouple);
+                    const bool exact, const bool adjust_AXY) {
 
   const uint cluster = get_cluster_containing_target(nv,target);
-  const uint subsystem_target = get_index_in_subsystem(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
   const uint D = pow(2,spins);
 
@@ -163,19 +159,14 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
     const Matrix2cd to_target_basis = rotate(natural_basis(nv,target), {xhat,yhat,zhat});
     const Matrix2cd rotation = to_target_basis * U * to_target_basis.adjoint();
 
-    if (decouple) {
-      // rotate only target nucleus
-      return protocol(act(rotation, {subsystem_target}, spins));
-    } else {
-      // rotate all nuclei with the same effective larmor frequency as the target
-      MatrixXcd G = MatrixXcd::Identity(D,D);
-      for (uint s = 0; s < nv.clusters.at(cluster).size(); s++) {
-        if (is_larmor_pair(nv,target,nv.clusters.at(cluster).at(s))) {
-          G *= act(rotation, {s+1}, spins);
-        }
+    // rotate all nuclei with the same effective larmor frequency as the target
+    MatrixXcd G = MatrixXcd::Identity(D,D);
+    for (uint s = 0; s < nv.clusters.at(cluster).size(); s++) {
+      if (is_larmor_pair(nv,target,nv.clusters.at(cluster).at(s))) {
+        G *= act(rotation, {s+1}, spins);
       }
-      return protocol(G);
     }
+    return protocol(G);
   }
 
   const Vector4cd H_vec = U_decompose(j*log(U)*2);
