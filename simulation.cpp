@@ -46,6 +46,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool swap_fidelities;
   bool swap_nvst_fidelity;
   bool identity_fidelity;
+  bool target_info;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -74,6 +75,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("identity",
      po::value<bool>(&identity_fidelity)->default_value(false)->implicit_value(true),
      "compute expected fidelity of an identity operation")
+    ("target_info",
+     po::value<bool>(&target_info)->default_value(false)->implicit_value(true),
+     "print information about target nuclei")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -208,6 +212,7 @@ int main(const int arg_num, const char *arg_vec[]) {
                    + int(swap_fidelities)
                    + int(swap_nvst_fidelity)
                    + int(identity_fidelity)
+                   + int(target_info)
                    != 1)) {
     cout << "Please choose one simulation to perform\n";
     return -1;
@@ -622,7 +627,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Print info about target nuclei
   // -------------------------------------------------------------------------------------
 
-  if (testing) {
+  if (target_info) {
 
     for (uint n: target_nuclei) {
       cout << endl
