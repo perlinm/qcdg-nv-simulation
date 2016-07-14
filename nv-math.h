@@ -223,9 +223,8 @@ inline MatrixXcd H_nn(const Vector3d& p1, const Vector3d& p2) {
 // spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
-// nuclear Zeeman Hamiltonian; default gB to the static control field
-MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index,
-               Vector3d gB = Vector3d::Zero());
+// nuclear Zeeman Hamiltonian
+MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB);
 
 // NV Zeeman Hamiltonian
 inline MatrixXcd H_NV_Z(const nv_system& nv, const Vector3d& gB) {
@@ -245,7 +244,7 @@ inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& gB) {
 // total internal system Hamiltonian
 inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
   return (H_int(nv,cluster) +
-          H_nZ(nv,cluster) +
+          H_nZ(nv,cluster, nv.static_gBz*zhat) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 }
 
