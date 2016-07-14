@@ -125,11 +125,13 @@ int main(const int arg_num, const char *arg_vec[]) {
   double phase;
   double phase_over_pi;
   double target_polar;
-  double target_polar_over_pi;
+  double target_pitch;
+  double target_pitch_over_pi;
   double target_azimuth;
   double target_azimuth_over_pi;
   double nv_polar;
-  double nv_polar_over_pi;
+  double nv_pitch;
+  double nv_pitch_over_pi;
   double nv_azimuth;
   double nv_azimuth_over_pi;
 
@@ -144,12 +146,12 @@ int main(const int arg_num, const char *arg_vec[]) {
      "target only one nucleus in each larmor pair")
     ("phase", po::value<double>(&phase_over_pi)->default_value(1),
      "phase of operation to perform")
-    ("target_polar", po::value<double>(&target_polar_over_pi)->default_value(0.5),
-     "polar angle of target rotation axis")
+    ("target_pitch", po::value<double>(&target_pitch_over_pi)->default_value(0),
+     "pitch (angle above x-y plane) of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
      "azimuthal angle of target rotation axis")
-    ("nv_polar", po::value<double>(&nv_polar_over_pi)->default_value(0),
-     "polar angle of NV rotation axis")
+    ("nv_pitch", po::value<double>(&nv_pitch_over_pi)->default_value(0),
+     "pitch (angle above x-y plane) of NV rotation axis")
     ("nv_azimuth", po::value<double>(&nv_azimuth_over_pi)->default_value(0),
      "azimuthal angle of NV rotation axis")
     ;
@@ -248,9 +250,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   scan_time = scan_time_in_ms*1e-3;
 
   phase = phase_over_pi*pi;
-  target_polar = target_polar_over_pi*pi;
+  target_pitch = target_pitch_over_pi*pi;
+  target_polar = pi/2 - target_pitch;
   target_azimuth = target_azimuth_over_pi*pi;
-  nv_polar = nv_polar_over_pi*pi;
+  nv_pitch = nv_pitch_over_pi*pi;
+  nv_polar = pi/2 - target_pitch;
   nv_azimuth = nv_azimuth_over_pi*pi;
 
   uniform_real_distribution<double> rnd(0.0,1.0); // uniform distribution on [0,1)
