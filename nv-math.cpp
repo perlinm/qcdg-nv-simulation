@@ -386,7 +386,7 @@ MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, Vector3d gB) {
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for (uint s = 0; s < cluster.size(); s++) {
     // interaction of spin s with magnetic field
-    H -= act(dot(gB,s_vec/2), {s+1}, spins);
+    H -= act(dot(gB,I_vec), {s+1}, spins);
   }
   return H;
 }

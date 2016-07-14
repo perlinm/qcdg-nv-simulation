@@ -95,13 +95,14 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
   double gB_ctl = min(dw_min/nv.scale_factor, max_gB_ctl);
 
   // coupling strength and rotation period
-  const double h_ctl = -gB_ctl/2;
+  double h_ctl = -gB_ctl/2;
   const double t_rot = abs(2*pi/h_ctl);
 
   // time for which to apply the control field
   double control_time = mod(angle/h_ctl, t_rot); // control operation time
   if (control_time > t_rot/2) {
     gB_ctl *= -1;
+    h_ctl *= -1;
     control_time = t_rot - control_time;
   }
 
@@ -280,13 +281,14 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   }
 
   // coupling strength and rotation period
-  const double h_int = f_DD*nv.ms*A_int/2;
+  double h_int = f_DD*nv.ms*A_int/2;
   const double t_rot = abs(4*pi/h_int);
 
   // time for which to interact
   double interaction_time = mod(phase/h_int, t_rot);
   if (interaction_time > t_rot/2) {
     f_DD *= -1;
+    h_int *= -1;
     interaction_time = t_rot - interaction_time;
   }
 
@@ -330,8 +332,8 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
     const uint subsystem_target = get_index_in_subsystem(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
-    const Matrix4cd U = exp(-j * phase * tp(dot(s_vec/2,hat(nv_axis)),
-                                            dot(s_vec/2,hat(target_axis))));
+    const Matrix4cd U = exp(-j * phase * tp(dot(I_vec,hat(nv_axis)),
+                                            dot(I_vec,hat(target_axis))));
     if (decouple) {
       const Matrix4cd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
       return protocol(act(R.adjoint() * U * R, {0,subsystem_target}, spins));

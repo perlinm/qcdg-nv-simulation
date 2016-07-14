@@ -48,12 +48,13 @@ inline Vector3i xy_int_pos(const Vector3d& pos) {
 // Spin vectors
 // ---------------------------------------------------------------------------------------
 
-// spin vector for a spin-1/2 particle
+// pauli spin vector and spin-1/2 operator
 const mvec s_vec = mvec(sx,xhat) + mvec(sy,yhat) + mvec(sz,zhat);
+const mvec I_vec = s_vec/2;
 
 // perform spin-1/2 rotation about arbitrary axis
 inline Matrix2cd rotate(const Vector3d& axis) {
-  if (axis.squaredNorm() > 0) return exp(-j*dot(s_vec/2.,axis));
+  if (axis.squaredNorm() > 0) return exp(-j*dot(I_vec,axis));
   else return I2;
 }
 inline Matrix2cd rotate(const double angle, const Vector3d& axis) {
@@ -211,12 +212,12 @@ MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
 
 // Hamiltonian coupling NV electron to a C-13 nucleus located at pos
 inline MatrixXcd H_en(const nv_system& nv, const Vector3d& pos) {
-  return H_ss(e_pos, g_e, nv.e_S(), pos, g_C13, s_vec/2);
+  return H_ss(e_pos, g_e, nv.e_S(), pos, g_C13, I_vec);
 }
 
 // Hamiltonian coupling two C-13 nuclei
 inline MatrixXcd H_nn(const Vector3d& p1, const Vector3d& p2) {
-  return H_ss(p1, g_C13, s_vec/2, p2, g_C13, s_vec/2);
+  return H_ss(p1, g_C13, I_vec, p2, g_C13, I_vec);
 }
 
 // spin-spin coupling Hamiltonian for the entire system
