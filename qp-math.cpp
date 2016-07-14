@@ -269,10 +269,9 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
     }
   }
 
-  const MatrixXcd U_err = G.adjoint() * U;
-  const MatrixXcd U_env = submatrix(U_err,environment_qbits);
-
-  return gate_fidelity(U_env.adjoint()*U, G);
+  const MatrixXcd U_sys = ptrace(U, environment_qbits);
+  const MatrixXcd G_sys = ptrace(G, environment_qbits);
+  return gate_fidelity(U_sys, G_sys);
 }
 
 // ---------------------------------------------------------------------------------------
