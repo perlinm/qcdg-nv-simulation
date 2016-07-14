@@ -217,9 +217,8 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
     }
   }
 
-  const MatrixXcd U_sys = ptrace(U, environment_qbits);
-  const MatrixXcd G_sys = ptrace(G, environment_qbits);
-  return gate_fidelity(U_sys, G_sys);
+  const MatrixXcd M = ptrace(G * U.adjoint(), environment_qbits);
+  return gate_fidelity(M, MatrixXcd::Identity(M.rows(),M.cols()));
 }
 
 // ---------------------------------------------------------------------------------------
