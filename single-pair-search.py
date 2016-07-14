@@ -3,11 +3,11 @@ import sys, os, subprocess, random, threading
 
 if len(sys.argv) != 5:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz" + \
-          " c13_percentage samples task_num")
+          " c13_factor samples task_num")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
-c13_percentage = float(sys.argv[2])
+c13_factor = float(sys.argv[2])
 samples = int(sys.argv[3])
 task_num = int(sys.argv[4])
 assert task_num > 1
@@ -18,7 +18,7 @@ unsigned_long_long_max = 2**64-1
 
 commands = [sim_file, "--no_output", "--pair",
             "--hyperfine_cutoff", str(hyperfine_cutoff),
-            "--c13_percentage", str(c13_percentage)]
+            "--c13_factor", str(c13_factor)]
 
 lock = threading.RLock()
 

@@ -15,8 +15,6 @@ if test_jobs: sys.argv.remove(test_flag)
 whide = whide_flag in sys.argv
 if whide: sys.argv.remove(whide_flag)
 
-c13_natural_percentage = 1.07
-
 sim_type = sys.argv[1]
 sim_opts = sys.argv[2:]
 
@@ -39,11 +37,10 @@ for static_Bz in static_Bzs:
         for max_cluster_size in max_cluster_sizes:
             for scale_factor in scale_factors:
                 log10_samples = int(numpy.round(3 - numpy.log10(c13_factor)))
-                c13_percentage = str(numpy.around(c13_natural_percentage*c13_factor,
-                                                  int(3 - numpy.log10(c13_factor))))
+
                 sim_args = [ sim_type,
                              "--static_Bz", static_Bz,
-                             "--c13_percentage", c13_percentage,
+                             "--c13_factor", c13_factor,
                              "--max_cluster_size", max_cluster_size,
                              "--scale_factor", scale_factor ] + sim_opts \
                              + [ log10_samples_hook, log10_samples ]

@@ -83,7 +83,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   double c13_abundance;
-  double c13_percentage;
+  double c13_factor;
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
@@ -98,8 +98,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   po::options_description simulation_options("Simulation options",help_text_length);
   simulation_options.add_options()
-    ("c13_percentage", po::value<double>(&c13_percentage)->default_value(1.07,"1.07"),
-     "unweigheted isotopic abundance of C-13 as a percentage")
+    ("c13_factor", po::value<double>(&c13_factor)->default_value(1),
+     "abundance of C-13 relative to its natural abundance")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
@@ -199,7 +199,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // determine whether certain options were used
   bool using_input_lattice = inputs.count("lattice_file");
   bool set_hyperfine_cutoff = !inputs["hyperfine_cutoff"].defaulted();
-  bool set_c13_abundance = !inputs["c13_percentage"].defaulted();
+  bool set_c13_factor = !inputs["c13_factor"].defaulted();
   bool set_target_nuclei = inputs.count("target");
 
   // run a sanity check on inputs
@@ -222,14 +222,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   assert(!(print_lattice && using_input_lattice));
   assert(!(using_input_lattice && !fs::exists(lattice_file)));
   assert(!(using_input_lattice && set_hyperfine_cutoff));
-  assert(!(using_input_lattice && set_c13_abundance));
+  assert(!(using_input_lattice && set_c13_factor));
 
   // check targeting options
   assert(!(set_target_nuclei && target_pairs));
 
   // verify validity of other values
   assert(hyperfine_cutoff_in_kHz > 0);
-  assert(c13_percentage >= 0 && c13_percentage <= 100);
+  assert(c13_factor >= 0);
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert((k_DD_int == 1) || (k_DD_int == 3));
@@ -242,7 +242,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // set some variables based on iputs
-  c13_abundance = c13_percentage/100;
+  c13_abundance = c13_factor*c13_natural_abundance;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;

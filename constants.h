@@ -39,6 +39,7 @@ const double volt = 1/(q_e*hbar_SI); // one volt (Hz)
 // NV system constants
 const double NV_ZFS = 2*pi*2.87e9; // NV center zero field splitting energy (Hz)
 const double a0 = 0.35668 * nm; // diamond lattice parameter at 300 K
+const double c13_natural_abundance = 0.0107; // by number
 
 // experimental considerations
 const double max_gB_ctl = 5e4; // maximum strength of control field (times g_C13) (Hz)

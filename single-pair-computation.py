@@ -3,12 +3,12 @@ import sys
 import numpy as np
 
 if len(sys.argv) != 3:
-    print("usage: {} hyperfine_cutoff_in_kHz c13_percentage".format(sys.argv[0]))
+    print("usage: {} hyperfine_cutoff_in_kHz c13_factor".format(sys.argv[0]))
     exit(1)
 
 # process inputs
 hyperfine_cutoff = float(sys.argv[1])*1000  # cutoff for hyperfine field strength; Hz
-c13_abundance = float(sys.argv[2])/100
+c13_abundance = float(sys.argv[2])*0.0107
 
 # physical constants in SI
 c_SI = 299792458. # speed of light (meters/second)

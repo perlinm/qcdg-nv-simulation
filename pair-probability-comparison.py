@@ -3,7 +3,7 @@ import sys, os, subprocess, numpy
 
 if len(sys.argv) not in [5,6,7]:
     print("usage: " + sys.argv[0] + " cutoff_start cutoff_end" + \
-          " c13_percentage log10_samples [task_num] [plot]")
+          " c13_factor log10_samples [task_num] [plot]")
     exit(1)
 
 make_plot = True if sys.argv[-1] == "plot" else False
@@ -13,7 +13,7 @@ if make_plot:
 
 start = int(sys.argv[1])
 end = int(sys.argv[2])
-c13_percentage = float(sys.argv[3])
+c13_factor = float(sys.argv[3])
 log10_samples = int(sys.argv[4])
 try:
     task_num = int(sys.argv[5])
@@ -41,8 +41,8 @@ else:
     actual = numpy.zeros(len(cutoffs))
     for i in range(len(cutoffs)):
         print("starting cutoff: {} kHz".format(cutoffs[i]))
-        compute_cmds = [compute_script,str(cutoffs[i]),str(c13_percentage)]
-        search_cmds = [search_script,str(cutoffs[i]),str(c13_percentage),
+        compute_cmds = [compute_script,str(cutoffs[i]),str(c13_factor)]
+        search_cmds = [search_script,str(cutoffs[i]),str(c13_factor),
                        str(10**log10_samples),str(task_num)]
         predicted[i] = subprocess.check_output(compute_cmds)
         actual[i] = subprocess.check_output(search_cmds)
