@@ -156,58 +156,6 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace) {
   return B  / sqrt(real(trace(B.adjoint()*B)) / B.rows());
 }
 
-// extract sub-matrix which acts only on the given qbits
-MatrixXcd submatrix(const MatrixXcd& A, const vector<uint>& qbits) {
-  assert(A.rows() == A.cols());
-
-  const uint total_spins = log2(A.rows());
-  vector<uint> ignored_qbits = {};
-  for (uint n = 0; n < total_spins; n++) {
-    if (!in_vector(n,qbits)) {
-      ignored_qbits.push_back(n);
-    }
-  }
-
-  MatrixXcd B = MatrixXcd::Identity(pow(2,qbits.size()),pow(2,qbits.size()));
-
-  for (uint e = 0; e < pow(2,ignored_qbits.size()); e++) {
-    uint A_start = 0;
-    for (uint q = 0; q < ignored_qbits.size(); q++) {
-      if (qbit_state(q, ignored_qbits.size(), e)) {
-        A_start += bit_int(ignored_qbits.at(q), total_spins);
-      }
-    }
-
-    MatrixXcd C = MatrixXcd::Identity(B.rows(),B.cols());
-
-    for (uint C_row = 0; C_row < C.rows(); C_row++) {
-      uint A_row = A_start;
-      for (uint q = 0; q < qbits.size(); q++) {
-        if (qbit_state(q, qbits.size(), C_row)) {
-          A_row += bit_int(qbits.at(q), total_spins);
-        }
-      }
-
-      for (uint C_col = 0; C_col < C.cols(); C_col++) {
-        uint A_col = A_start;
-        for (uint q = 0; q < qbits.size(); q++) {
-          if (qbit_state(q, qbits.size(), C_col)) {
-            A_col += bit_int(qbits.at(q), total_spins);
-          }
-        }
-
-        C(C_row,C_col) = A(A_row,A_col);
-      }
-    }
-
-    B += remove_phase(C);
-  }
-
-  B /= sqrt(real(trace(B.adjoint()*B)) / B.rows());
-
-  return act(B,qbits,total_spins);
-}
-
 // ---------------------------------------------------------------------------------------
 // Gate decomposition and fidelity
 // ---------------------------------------------------------------------------------------

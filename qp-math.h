@@ -94,9 +94,6 @@ MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_n
 // perform a partial trace over qbits qs_trace
 MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace);
 
-// extract sub-matrix which acts only on the given qbits
-MatrixXcd submatrix(const MatrixXcd& A, const vector<uint>& qbits);
-
 // ---------------------------------------------------------------------------------------
 // Gate decomposition and fidelity
 // ---------------------------------------------------------------------------------------
