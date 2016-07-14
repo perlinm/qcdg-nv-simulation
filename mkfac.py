@@ -24,7 +24,9 @@ common_flags = " ".join([ language_standard_flag,
 
 debug_flag = "-g"
 optimization_flag = "-O3"
-ignored_warning_flags = "-Wno-unused-variable -Wno-unused-local-typedefs"
+ignored_warning_flags = " ".join(["-Wno-unused-variable",
+                                  "-Wno-unused-but-set-variable",
+                                  "-Wno-unused-local-typedefs"])
 
 eigen_dirs = ".eigen-dirs"
 mkl_root = ".mkl-root"
