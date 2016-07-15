@@ -93,5 +93,5 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
 // identity operation on the cluster containing a target nucleus
 //   assumes that the NV center is polarized to the |0> state
-protocol identity(const nv_system& nv, const uint target, const double time,
-                  const bool exact = false);
+protocol target_identity(const nv_system& nv, const uint target, const double time,
+                         const bool exact = false);

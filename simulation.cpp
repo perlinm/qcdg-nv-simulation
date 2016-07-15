@@ -40,11 +40,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool coherence_scan;
   bool rotation;
   bool coupling;
-  bool iswap_fidelities;
-  bool swap_fidelities;
-  bool swap_nvst_fidelity;
-  bool identity_fidelity;
-  bool testing;
+  bool iswap;
+  bool swap;
+  bool swap_nvst;
+  bool identity;
+  bool testing_mode;
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
@@ -54,19 +54,15 @@ int main(const int arg_num, const char *arg_vec[]) {
      "rotate an individual nucleus")
     ("couple", po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
      "couple an individual nucleus to NV center")
-    ("iswap",
-     po::value<bool>(&iswap_fidelities)->default_value(false)->implicit_value(true),
+    ("iswap", po::value<bool>(&iswap)->default_value(false)->implicit_value(true),
      "compute expected iSWAP fidelities")
-    ("swap",
-     po::value<bool>(&swap_fidelities)->default_value(false)->implicit_value(true),
+    ("swap", po::value<bool>(&swap)->default_value(false)->implicit_value(true),
      "compute expected SWAP fidelities")
-    ("swap_nvst",
-     po::value<bool>(&swap_nvst_fidelity)->default_value(false)->implicit_value(true),
+    ("swap_nvst", po::value<bool>(&swap_nvst)->default_value(false)->implicit_value(true),
      "compute expected SWAP_NVST fidelity")
-    ("identity",
-     po::value<bool>(&identity_fidelity)->default_value(false)->implicit_value(true),
+    ("identity", po::value<bool>(&identity)->default_value(false)->implicit_value(true),
      "compute expected fidelity of an identity operation")
-    ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
+    ("test" ,po::value<bool>(&testing_mode)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
 
@@ -209,16 +205,16 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_target_nuclei = inputs.count("target");
 
   // run a sanity check on inputs
-  if (!testing) {
+  if (!testing_mode) {
     const bool printing = print_lattice || print_pairs || target_info;
     if (!printing) {
       if (int(coherence_scan)
           + int(rotation)
           + int(coupling)
-          + int(iswap_fidelities)
-          + int(swap_fidelities)
-          + int(swap_nvst_fidelity)
-          + int(identity_fidelity)
+          + int(iswap)
+          + int(swap)
+          + int(swap_nvst)
+          + int(identity)
           != 1) {
         cout << "Please choose one simulation to perform\n";
         return -1;
@@ -435,7 +431,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     !(coherence_scan || (max_cluster_size < min_cluster_size_cap));
   if (!coherence_scan) {
     cout << "The minimum cluster size cap is " << min_cluster_size_cap << endl;
-    if (!testing && (max_cluster_size < min_cluster_size_cap)) return -1;
+    if (!testing_mode && (max_cluster_size < min_cluster_size_cap)) return -1;
   }
 
   const vector<vector<uint>> clusters = cluster_nuclei(nuclei, max_cluster_size,
@@ -459,6 +455,34 @@ int main(const int arg_num, const char *arg_vec[]) {
   // initialize nv_system object
   const nv_system nv(nuclei, clusters, ms, g_C13*static_Bz_in_gauss*gauss, k_DD,
                      scale_factor, integration_factor, no_nn);
+
+  // -------------------------------------------------------------------------------------
+  // Print info about target nuclei
+  // -------------------------------------------------------------------------------------
+
+  if (target_info) {
+    cout << "Target info:\n\n";
+    for (uint n: target_nuclei) {
+      cout << "index: " << n << endl
+           << "position (nm): "
+           << in_crystal_basis(nv.nuclei.at(n)).transpose() * a0/2 / nm << endl
+           << "hyperfine (kHz): " << hyperfine(nv,n).norm() / kHz << endl
+           << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() / kHz << endl
+           << endl;
+    }
+    for (uint i = 0; i < target_nuclei.size(); i++) {
+      const Vector3d pos_i = nv.nuclei.at(target_nuclei.at(i));
+      for (uint j = i + 1; j < target_nuclei.size(); j++) {
+        const Vector3d pos_j = nv.nuclei.at(target_nuclei.at(j));
+        cout << "indices: " << i << " " << j << endl
+             << "displacement (nm): "
+             << in_crystal_basis(pos_j-pos_i).transpose() * a0/2 / nm << endl
+             << "coupling (Hz): " << coupling_strength(pos_i,pos_j) / Hz << endl
+             << endl;
+      }
+    }
+  }
+
 
   // -------------------------------------------------------------------------------------
   // Coherence scan
@@ -549,7 +573,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // NV/nucleus iSWAP fidelity
   // -------------------------------------------------------------------------------------
 
-  if (iswap_fidelities) {
+  if (iswap) {
     cout << "target fidelity time pulses\n";
     for (uint target: target_nuclei) {
       vector<protocol> P(2);
@@ -568,7 +592,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // SWAP fidelity: NV electron spin and single nuclear spin
   // -------------------------------------------------------------------------------------
 
-  if (swap_fidelities) {
+  if (swap) {
     cout << "target fidelity time pulses\n";
     for (uint target: target_nuclei) {
       vector<protocol> P(2);
@@ -587,7 +611,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // SWAP fidelity: NV electron spin and singlet-triplet subspace of two nuclear spins
   // -------------------------------------------------------------------------------------
 
-  if (swap_nvst_fidelity) {
+  if (swap_nvst) {
     if (targeted_larmor_pairs.size() == 0) {
       if (larmor_pairs.size() == 0) {
         cout << "There are no larmor pairs in this system\n";
@@ -617,12 +641,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Fidelity of identity operation
   // -------------------------------------------------------------------------------------
 
-  if (identity_fidelity) {
+  if (identity) {
     cout << "target fidelity\n";
     for (uint target: target_nuclei) {
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = identity(nv, target, identity_time, exact);
+        P.at(exact) = target_identity(nv, target, identity_time, exact);
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
@@ -631,32 +655,15 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // -------------------------------------------------------------------------------------
-  // Print info about target nuclei
+  // Fidelity of initializing a thermalized nucleus into |d>
   // -------------------------------------------------------------------------------------
 
-  if (target_info) {
+  // -------------------------------------------------------------------------------------
+  // Fidelity of probabalistically initializing a thermalized nucleus into |u> +/- |d>
+  // -------------------------------------------------------------------------------------
 
-    for (uint n: target_nuclei) {
-      cout << endl
-           << "index: " << n << endl
-           << "position (nm): "
-           << in_crystal_basis(nv.nuclei.at(n)).transpose() * a0/2 / nm << endl
-           << "hyperfine (kHz): " << hyperfine(nv,n).norm() / kHz << endl
-           << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() / kHz << endl;
-    }
-
-    for (uint i = 0; i < target_nuclei.size(); i++) {
-      const Vector3d pos_i = nv.nuclei.at(target_nuclei.at(i));
-      for (uint j = i + 1; j < target_nuclei.size(); j++) {
-        const Vector3d pos_j = nv.nuclei.at(target_nuclei.at(j));
-        cout << endl
-             << "indices: " << i << " " << j << endl
-             << "displacement (nm): "
-             << in_crystal_basis(pos_j-pos_i).transpose() * a0/2 / nm << endl
-             << "coupling (Hz): " << coupling_strength(pos_i,pos_j) / Hz << endl;
-      }
-    }
-
-  }
+  // -------------------------------------------------------------------------------------
+  // Fidelity of probabalistically initializing a |dd> larmor pair into |ud> + |du>
+  // -------------------------------------------------------------------------------------
 
 }
