@@ -226,6 +226,12 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
   const Vector3d A_perp = hyperfine_perp(nv,target);
   const double f_DD_max = axy_f_max(nv.k_DD);
 
+  // AXY sequence parameters
+  const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
+  const double t_DD = 2*pi/w_DD; // AXY protocol period
+  const double dw_min = larmor_resolution(nv,target);
+  double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), f_DD_max);
+
   // control fields, AXY sequence phase, and effective hyperfine coupling strength
   control_fields controls;
   double phi_DD;
@@ -266,18 +272,12 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
     const Vector3d A_perp_rot = rotate(A_perp, phi_DD, w_hat);
     A_int = dot(A_perp_rot, axis_ctl);
 
+    // enforce additional limit on allowed values of f_DD
+    f_DD = min(f_DD, gB_ctl/(A_perp.norm()*nv.scale_factor));
+
   } else { // there is nothing to decouple
     phi_DD = target_azimuth;
     A_int = A_perp.norm();
-  }
-
-  // AXY sequence parameters
-  const double w_DD = w_larmor/nv.k_DD; // AXY protocol angular frequency
-  const double t_DD = 2*pi/w_DD; // AXY protocol period
-  double f_DD = min(larmor_resolution(nv,target)/(abs(A_int)*nv.scale_factor), f_DD_max);
-  if (decouple_index >= 0 &&
-      controls.gB().norm() / (f_DD*abs(A_int)) < nv.scale_factor) {
-    f_DD = controls.gB().norm() / (nv.scale_factor*abs(A_int));
   }
 
   // coupling strength and rotation period
