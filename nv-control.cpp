@@ -218,7 +218,7 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
 
-  // effective larmor frequency and rotation axis,
+  // effective larmor frequency and precession axis,
   //   perpendicular component of hyperfine field,
   //   and maximum possible value of f_DD
   const double w_larmor = effective_larmor(nv,target).norm();
@@ -232,10 +232,13 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
   const double dw_min = larmor_resolution(nv,target);
   double f_DD = min(dw_min/(A_perp.norm()*nv.scale_factor), f_DD_max);
 
-  // control fields, AXY sequence phase, and effective hyperfine coupling strength
+  // control field and frequency of precession about its axis
   control_fields controls;
-  double phi_DD;
-  double A_int;
+  double w_ctl = 0;
+
+  // default values for AXY sequence phase and effective hyperfine coupling strength
+  double phi_DD = target_azimuth;
+  double A_int = A_perp.norm();
 
   // identify index of nucleus to decouple with a control field
   const int decouple_index = [&]() -> int {
@@ -253,13 +256,14 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
 
   // if we have identified a nucleus to decouple
   if (decouple_index >= 0) {
-    // set control field
+    // set control field and precession frequency
     const double gB_ctl =
       min({ exp( (log(2*w_larmor) + log(f_DD_max*A_perp.norm())) / 2),
             2*w_larmor / nv.scale_factor,
             max_gB_ctl});
     const Vector3d axis_ctl = hat(rotate(A_perp, target_azimuth, w_hat));
     controls.add(gB_ctl*axis_ctl, w_larmor);
+    w_ctl = gB_ctl/2;
 
     // set AXY sequence phase
     const Vector3d axis_ctl_rot = rotate(axis_ctl, pi/2, w_hat);
@@ -274,10 +278,6 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
 
     // enforce additional limit on allowed values of f_DD
     f_DD = min(f_DD, gB_ctl/(A_perp.norm()*nv.scale_factor));
-
-  } else { // there is nothing to decouple
-    phi_DD = target_azimuth;
-    A_int = A_perp.norm();
   }
 
   // coupling strength and rotation period
@@ -313,7 +313,6 @@ protocol U_int(const nv_system& nv, const uint target, const double angle,
 
   // correct for larmor precession of the nucleus
   const double z_angle = mod(interaction_time*w_larmor, 2*pi);
-  const double w_ctl = controls.gB().norm()/2;
   const double xy_angle = mod(interaction_time*w_ctl, 2*pi);
   const Vector3d xy_axis = rotate(xhat, target_azimuth, zhat);
   const protocol flush_target =
