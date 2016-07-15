@@ -41,6 +41,7 @@ job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "".join(sys.ar
 # move into job directory
 os.makedirs(job_dir)
 shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
+shutil.copy2(project_dir+"/"+summary_script, job_dir+"/"+summary_script)
 os.chdir(job_dir)
 os.mkdir(data_dir)
 
@@ -86,10 +87,8 @@ for s in range(samples):
 while threading.active_count() > 1:
     time.sleep(1)
 
-# copy final results into the project directory
-copy_results()
-
 # generate fidelity summary file
-os.chdir(project_dir)
 subprocess.call(["./"+summary_script,out_file])
 
+# copy final results into the project directory
+copy_results()
