@@ -64,13 +64,13 @@ inline protocol rotate_target(const nv_system& nv, const uint target, const doub
   return act_target(nv, target, rotate(angle, axis), exact, adjust_AXY);
 }
 
-// propagator U = exp(-i * phase * I_{NV}^{n_1}*I_{target}^{n_2})
-protocol U_int(const nv_system& nv, const uint target, const double phase,
+// propagator U = exp(-i * angle * sigma_{NV}^{n_1}*I_{target}^{n_2})
+protocol U_int(const nv_system& nv, const uint target, const double angle,
                const Vector3d& nv_axis, const double target_azimuth,
                const bool decouple = true);
 
 // perform given NV coupling operation on a target nucleus
-protocol couple_target(const nv_system& nv, const uint target, const double phase,
+protocol couple_target(const nv_system& nv, const uint target, const double angle,
                        const Vector3d& nv_axis, const Vector3d& target_axis,
                        const bool exact = false, const bool decouple = true,
                        const bool adjust_AXY = true);

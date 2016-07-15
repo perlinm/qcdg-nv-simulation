@@ -210,8 +210,8 @@ protocol act_target(const nv_system& nv, const uint target, const Matrix2cd& U,
   else return equatorial_rotation;
 }
 
-// propagator U = exp(-i * phase * I_{NV}^{n_1}*I_{target}^{n_2})
-protocol U_int(const nv_system& nv, const uint target, const double phase,
+// propagator U = exp(-i * angle * sigma_{NV}^{n_1}*I_{target}^{n_2})
+protocol U_int(const nv_system& nv, const uint target, const double angle,
                const Vector3d& nv_axis, const double target_azimuth,
                const bool decouple) {
   // identify cluster of target nucleus
@@ -281,11 +281,11 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
   }
 
   // coupling strength and rotation period
-  double h_int = f_DD*nv.ms*A_int/2;
-  const double t_rot = abs(4*pi/h_int);
+  double h_int = f_DD*nv.ms*A_int/4;
+  const double t_rot = abs(2*pi/h_int);
 
   // time for which to interact
-  double interaction_time = mod(phase/h_int, t_rot);
+  double interaction_time = mod(angle/h_int, t_rot);
   if (interaction_time > t_rot/2) {
     f_DD *= -1;
     h_int *= -1;
@@ -323,7 +323,7 @@ protocol U_int(const nv_system& nv, const uint target, const double phase,
 }
 
 // perform given NV coupling operation on a target nucleus
-protocol couple_target(const nv_system& nv, const uint target, const double phase,
+protocol couple_target(const nv_system& nv, const uint target, const double angle,
                        const Vector3d& nv_axis, const Vector3d& target_axis,
                        const bool exact, const bool decouple, const bool adjust_AXY) {
   if (exact) {
@@ -332,7 +332,7 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
     const uint subsystem_target = get_index_in_subsystem(nv,target);
     const uint spins = nv.clusters.at(cluster).size()+1;
 
-    const Matrix4cd U = exp(-j * phase * tp(dot(I_vec,hat(nv_axis)),
+    const Matrix4cd U = exp(-j * angle * tp(dot(s_vec,hat(nv_axis)),
                                             dot(I_vec,hat(target_axis))));
     if (decouple) {
       const Matrix4cd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
@@ -357,7 +357,7 @@ protocol couple_target(const nv_system& nv, const uint target, const double phas
   const protocol target_to_equator =
     U_ctl(nv, target, target_pitch, target_azimuth+pi/2, adjust_AXY);
   const protocol coupling_xy =
-    U_int(nv, target, phase, nv_axis, target_azimuth, decouple);
+    U_int(nv, target, angle, nv_axis, target_azimuth, decouple);
 
   return target_to_equator.adjoint() * coupling_xy * target_to_equator;
 }
@@ -378,8 +378,8 @@ protocol iSWAP(const nv_system& nv, const uint target, const bool exact) {
     return protocol(act(R.adjoint() * gates::iSWAP * R,
                         {0,subsystem_target}, spins));
   } else {
-    return (couple_target(nv, target, -pi, xhat, xhat) *
-            couple_target(nv, target, -pi, yhat, yhat));
+    return (couple_target(nv, target, -pi/2, xhat, xhat) *
+            couple_target(nv, target, -pi/2, yhat, yhat));
   }
 }
 
@@ -394,9 +394,9 @@ protocol SWAP(const nv_system& nv, const uint target, const bool exact) {
     const MatrixXcd R = act(rotate({xhat,yhat,zhat}, natural_basis(nv,target)), {1}, 2);
     return protocol(act(R.adjoint() * gates::SWAP * R, {0,subsystem_target}, spins));
   } else {
-    return (couple_target(nv, target, -pi, xhat, xhat) *
-            couple_target(nv, target, -pi, yhat, yhat) *
-            couple_target(nv, target, -pi, zhat, zhat));
+    return (couple_target(nv, target, -pi/2, xhat, xhat) *
+            couple_target(nv, target, -pi/2, yhat, yhat) *
+            couple_target(nv, target, -pi/2, zhat, zhat));
   }
 }
 
@@ -434,7 +434,7 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
     const protocol cNOT_AC_NV_adapted =
       hY_NV *
-      couple_target(nv, idx1, -pi, zhat, xhat) *
+      couple_target(nv, idx1, -pi/2, zhat, xhat) *
       rotate_target(nv, idx1, pi/2, yhat) *
       XmY_NV;
 
@@ -442,8 +442,8 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
     const protocol cNOT_NV_AC_adapted =
       Z_NV *
       rotate_target(nv, idx1, -pi/2, yhat) *
-      couple_target(nv, idx1, pi, zhat, yhat) *
-      couple_target(nv, idx2, pi, zhat, y1_in_idx2_basis);
+      couple_target(nv, idx1, pi/2, zhat, yhat) *
+      couple_target(nv, idx2, pi/2, zhat, y1_in_idx2_basis);
 
     return (cNOT_AC_NV_adapted.adjoint() *
             cNOT_NV_AC_adapted *

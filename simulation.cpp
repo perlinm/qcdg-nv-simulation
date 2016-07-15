@@ -122,8 +122,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   vector<uint> target_nuclei;
   bool target_pairs;
-  double phase;
-  double phase_over_pi;
+  double angle;
+  double angle_over_pi;
   double target_polar;
   double target_pitch_over_pi;
   double target_azimuth;
@@ -142,8 +142,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("target_pairs",
      po::value<bool>(&target_pairs)->default_value(false)->implicit_value(true),
      "target only one nucleus in each larmor pair")
-    ("phase", po::value<double>(&phase_over_pi)->default_value(1),
-     "phase of operation to perform")
+    ("angle", po::value<double>(&angle_over_pi)->default_value(1),
+     "angle of operation to perform")
     ("target_pitch", po::value<double>(&target_pitch_over_pi)->default_value(0),
      "pitch (angle above x-y plane) of target rotation axis")
     ("target_azimuth", po::value<double>(&target_azimuth_over_pi)->default_value(0),
@@ -247,7 +247,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   k_DD = (k_DD_int == 1 ? first : third);
   scan_time = scan_time_in_ms*1e-3;
 
-  phase = phase_over_pi*pi;
+  angle = angle_over_pi*pi;
   target_polar = pi/2 - target_pitch_over_pi*pi;
   target_azimuth = target_azimuth_over_pi*pi;
   nv_polar = pi/2 - nv_pitch_over_pi*pi;
@@ -507,7 +507,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const Vector3d target_axis = axis(target_polar,target_azimuth);
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = rotate_target(nv, target, phase, target_axis, exact);
+        P.at(exact) = rotate_target(nv, target, angle, target_axis, exact);
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
@@ -528,7 +528,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const Vector3d target_axis = axis(target_polar, target_azimuth);
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = couple_target(nv, target, phase, nv_axis, target_axis, exact);
+        P.at(exact) = couple_target(nv, target, angle, nv_axis, target_axis, exact);
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
