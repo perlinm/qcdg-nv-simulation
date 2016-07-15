@@ -37,8 +37,6 @@ int main(const int arg_num, const char *arg_vec[]) {
      "seed for random number generator")
     ;
 
-  bool print_lattice;
-  bool print_pairs;
   bool coherence_scan;
   bool rotation;
   bool coupling;
@@ -46,17 +44,10 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool swap_fidelities;
   bool swap_nvst_fidelity;
   bool identity_fidelity;
-  bool target_info;
   bool testing;
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
-    ("print_lattice",
-     po::value<bool>(&print_lattice)->default_value(false)->implicit_value(true),
-     "print C-13 lattice to a file")
-    ("print_pairs",
-     po::value<bool>(&print_pairs)->default_value(false)->implicit_value(true),
-     "search for larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
     ("rotate", po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
@@ -75,9 +66,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("identity",
      po::value<bool>(&identity_fidelity)->default_value(false)->implicit_value(true),
      "compute expected fidelity of an identity operation")
-    ("target_info",
-     po::value<bool>(&target_info)->default_value(false)->implicit_value(true),
-     "print information about target nuclei")
     ("test" ,po::value<bool>(&testing)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -177,6 +165,23 @@ int main(const int arg_num, const char *arg_vec[]) {
      "input file defining system configuration")
     ;
 
+  bool print_lattice;
+  bool print_pairs;
+  bool target_info;
+
+  po::options_description print_options("Available printing options",help_text_length);
+  print_options.add_options()
+    ("print_lattice",
+     po::value<bool>(&print_lattice)->default_value(false)->implicit_value(true),
+     "print C-13 lattice to a file")
+    ("print_pairs",
+     po::value<bool>(&print_pairs)->default_value(false)->implicit_value(true),
+     "print larmor pairs")
+    ("target_info",
+     po::value<bool>(&target_info)->default_value(false)->implicit_value(true),
+     "print information about target nuclei")
+    ;
+
   po::options_description all("Allowed options");
   all.add(general);
   all.add(simulations);
@@ -184,6 +189,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   all.add(addressing_options);
   all.add(scan_options);
   all.add(file_io);
+  all.add(print_options);
 
   // collect inputs
   po::variables_map inputs;
@@ -203,19 +209,21 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_target_nuclei = inputs.count("target");
 
   // run a sanity check on inputs
-  if (!testing && (int(print_lattice)
-                   + int(print_pairs)
-                   + int(coherence_scan)
-                   + int(rotation)
-                   + int(coupling)
-                   + int(iswap_fidelities)
-                   + int(swap_fidelities)
-                   + int(swap_nvst_fidelity)
-                   + int(identity_fidelity)
-                   + int(target_info)
-                   != 1)) {
-    cout << "Please choose one simulation to perform\n";
-    return -1;
+  if (!testing) {
+    const bool printing = print_lattice || print_pairs || target_info;
+    if (!printing) {
+      if (int(coherence_scan)
+          + int(rotation)
+          + int(coupling)
+          + int(iswap_fidelities)
+          + int(swap_fidelities)
+          + int(swap_nvst_fidelity)
+          + int(identity_fidelity)
+          != 1) {
+        cout << "Please choose one simulation to perform\n";
+        return -1;
+      }
+    }
   }
 
   // check lattice options
@@ -295,7 +303,6 @@ int main(const int arg_num, const char *arg_vec[]) {
              << nuclei.at(i)(1) << " "
              << nuclei.at(i)(2) << endl;
       }
-      return 0;
     }
 
   } else { // if using_input_lattice, read in the lattice
@@ -370,10 +377,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (vector<uint> pair: larmor_pairs) {
         cout << " " << pair.at(0) << " " << pair.at(1) << endl;
       }
+      cout << endl;
     } else {
       cout << "No larmor pairs found\n";
     }
-    return larmor_pairs.size();
   }
 
   // determine which nuclei to target
