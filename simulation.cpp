@@ -466,6 +466,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << "index: " << n << endl
            << "position (nm): "
            << in_crystal_basis(nv.nuclei.at(n)).transpose() * a0/2 / nm << endl
+           << "effective_larmor (kHz): " << effective_larmor(nv,n).norm() / kHz << endl
            << "hyperfine (kHz): " << hyperfine(nv,n).norm() / kHz << endl
            << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() / kHz << endl
            << endl;
