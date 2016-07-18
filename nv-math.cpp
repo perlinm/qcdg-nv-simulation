@@ -266,12 +266,12 @@ Vector3d hyperfine_perp(const nv_system&nv, const Vector3d& pos) {
 }
 
 // minimum difference in larmor frequencies between target nucleus and other nuclei
-//   i.e. min{ |w_s - w_{index}| for all s != index }
-double larmor_resolution(const nv_system& nv, const uint index) {
-  const double target_larmor = effective_larmor(nv,index).norm();
+//   i.e. min{ |w_s - w_{target}| for all s != index }
+double larmor_resolution(const nv_system& nv, const uint target) {
+  const double target_larmor = effective_larmor(nv,target).norm();
   double dw_min = target_larmor; // maximum allowable larmor resolution
   for (uint s = 0; s < nv.nuclei.size(); s++) {
-    if (is_larmor_pair(nv,s,index)) continue; // find dw_min for distinct frequencies only
+    if (is_larmor_pair(nv,s,target)) continue; // find dw_min for distinct frequencies only
     const double dw = abs(target_larmor - effective_larmor(nv,s).norm());
     if (dw < dw_min) dw_min = dw;
   }

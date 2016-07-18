@@ -99,7 +99,7 @@ protocol U_ctl(const nv_system& nv, const uint target, const double angle,
   const double t_rot = abs(2*pi/h_ctl);
 
   // time for which to apply the control field
-  double control_time = mod(angle/h_ctl, t_rot); // control operation time
+  double control_time = mod(angle/h_ctl, t_rot);
   if (control_time > t_rot/2) {
     gB_ctl *= -1;
     h_ctl *= -1;
