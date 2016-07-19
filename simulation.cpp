@@ -58,23 +58,23 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("couple", po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
      "couple an individual nucleus to NV center")
     ("iswap", po::value<bool>(&iswap)->default_value(false)->implicit_value(true),
-     "compute expected iSWAP fidelities")
+     "compute iSWAP fidelities")
     ("swap", po::value<bool>(&swap)->default_value(false)->implicit_value(true),
-     "compute expected SWAP fidelities")
+     "compute SWAP fidelities")
     ("identity", po::value<bool>(&identity)->default_value(false)->implicit_value(true),
-     "compute expected fidelity of an identity operation on a single spin")
+     "compute fidelity of an identity operation on a single spin")
     ("swap_nvst", po::value<bool>(&swap_nvst)->default_value(false)->implicit_value(true),
-     "compute expected SWAP_NVST fidelity")
+     "compute SWAP_NVST fidelity")
     ("larmor_identity",
      po::value<bool>(&larmor_identity)->default_value(false)->implicit_value(true),
-     "compute expected fidelity of an identity operation on a larmor qubit")
+     "compute fidelity of an identity operation on a larmor qubit")
     ("initialize_z",
      po::value<bool>(&initialize_z)->default_value(false)->implicit_value(true),
-     "compute expected fidelity of a deterministic initialization of"
+     "compute fidelity of a deterministic initialization of"
      " a thermalized nucleus into |u> or |d>")
     ("initialize_x",
      po::value<bool>(&initialize_x)->default_value(false)->implicit_value(true),
-     "compute expected fidelity of a probabalistic initialization of"
+     "compute fidelity of a probabalistic initialization of"
      " a thermalized nucleus into |u> +/- |d>")
     ("test" ,po::value<bool>(&testing_mode)->default_value(false)->implicit_value(true),
      "enable testing mode")
