@@ -108,7 +108,7 @@ MatrixXcd act(const MatrixXcd& A, const vector<uint>& qs_act, const uint qbits_n
       }
     }
   }
-  return B;
+  return B / sqrt(real(trace(B.adjoint()*B)) / B.rows());
 }
 
 // perform a partial trace over qbits qs_trace
@@ -155,7 +155,7 @@ MatrixXcd ptrace(const MatrixXcd& A, const vector<uint>& qs_trace) {
       }
     }
   }
-  return B  / sqrt(real(trace(B.adjoint()*B)) / B.rows());
+  return B / sqrt(real(trace(B.adjoint()*B)) / B.rows());
 }
 
 // ---------------------------------------------------------------------------------------
