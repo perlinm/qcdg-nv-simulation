@@ -707,10 +707,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(uint i = 0; i < cluster_size; i++) {
         if (i != idx1 && i != idx2) environment.push_back(i);
       }
-      const Matrix2cd larmor_operation =
-        ptrace(gates::SWAP_NVST * tp(I2, ptrace(P.at(false).U,environment)), {1,2});
+      const MatrixXcd U_error = P.at(true).U * P.at(false).U.adjoint();
+      const Matrix2cd larmor_error = ptrace(U_error, environment).block(1,1,2,2);
 
-      cout << idx1 << " " << idx2 << " " << gate_fidelity(larmor_operation, I2) << endl;
+      cout << idx1 << " " << idx2 << " " << gate_fidelity(larmor_error, I2) << endl;
     }
   }
 
