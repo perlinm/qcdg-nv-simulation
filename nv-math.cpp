@@ -520,7 +520,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
       const double dx = pulses.at(i) - x;
       U_AXY = (X * exp(-j*dx*t_DD*H) * U_AXY).eval();
       U_NV_AXY = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV_AXY).eval();
-      if(dx > numerical_error) pulse_count++;
+      if(abs(dx) > numerical_error) pulse_count++;
     }
     // "undo" the last pulse at x = 1
     U_AXY = (X * U_AXY).eval();
@@ -541,7 +541,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
     if (x + dx < remainder) {
       U = (X * exp(-j*dx*t_DD*H) * U).eval();
       U_NV = (sx * exp(-j*dx*t_DD*H_NV(nv,gB_ctl)) * U_NV).eval();
-      if (dx > numerical_error) pulse_count++;
+      if (abs(dx) > numerical_error) pulse_count++;
     } else {
       const double dx_f = remainder - x;
       U = (exp(-j*dx_f*t_DD*H) * U).eval();
