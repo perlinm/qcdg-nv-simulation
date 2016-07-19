@@ -30,6 +30,7 @@ project_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = "data"
 sim_file = "simulate.exe"
 summary_script = "fidelity-summary.py"
+basename_module = "basename.py"
 out_file = "{}/{}.txt".format(data_dir,basename(sim_args))
 base_cmd = ["./"+sim_file] + cmd_args
 
@@ -40,8 +41,8 @@ job_dir = os.environ["TMPDIR"] + "/" + os.environ["USER"] + "/" + "".join(sys.ar
 
 # move into job directory
 os.makedirs(job_dir)
-shutil.copy2(project_dir+"/"+sim_file, job_dir+"/"+sim_file)
-shutil.copy2(project_dir+"/"+summary_script, job_dir+"/"+summary_script)
+for fname in [ sim_file, summary_script, basename_module ]:
+    shutil.copy2(project_dir+"/"+fname, job_dir+"/"+fname)
 os.chdir(job_dir)
 os.mkdir(data_dir)
 
