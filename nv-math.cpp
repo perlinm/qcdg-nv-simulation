@@ -370,17 +370,16 @@ MatrixXcd H_en(const nv_system& nv, const uint cluster_index) {
   return H;
 }
 
-// Hamiltonian coupling C-13 nuclei in a cluster
+// Hamiltonian coupling C-13 nuclei in a cluster; acts only on cluster
 MatrixXcd H_nn(const nv_system& nv, const uint cluster_index){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
-  const int spins = cluster.size()+1;
-  MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
+  MatrixXcd H = MatrixXcd::Zero(pow(2,cluster.size()),pow(2,cluster.size()));
   for (uint n1 = 0; n1 < cluster.size(); n1++) {
     const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
     for (uint n2 = 0; n2 < n1; n2++) {
       const Vector3d n2_pos = nv.nuclei.at(cluster.at(n2));
       H += act(H_ss(n1_pos, g_C13, I_vec, n2_pos, g_C13, I_vec),
-               {0,n1+1}, spins);
+               {n1,n2}, cluster.size());
     }
   }
   return H;
@@ -389,19 +388,18 @@ MatrixXcd H_nn(const nv_system& nv, const uint cluster_index){
 // spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
   MatrixXcd H = H_en(nv, cluster_index);
-  if (!nv.no_nn) H += H_nn(nv, cluster_index);
+  if (!nv.no_nn) H += tp(I2,H_nn(nv, cluster_index));
   return H;
 }
 
-// nuclear Zeeman Hamiltonian
+// nuclear Zeeman Hamiltonian; acts only on cluster
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB) {
   const vector<uint> cluster = nv.clusters.at(cluster_index);
-  const int spins = cluster.size()+1;
   // zero-field splitting and interaction of NV center with magnetic field
-  MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
+  MatrixXcd H = MatrixXcd::Zero(pow(2,cluster.size()),pow(2,cluster.size()));
   for (uint s = 0; s < cluster.size(); s++) {
     // interaction of spin s with magnetic field
-    H -= act(dot(gB,I_vec), {s+1}, spins);
+    H -= act(dot(gB,I_vec), {s}, cluster.size());
   }
   return H;
 }

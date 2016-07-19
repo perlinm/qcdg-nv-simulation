@@ -213,13 +213,13 @@ MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
 // Hamiltonian coupling NV electron spin to C-13 nuclear spins in a cluster
 MatrixXcd H_en(const nv_system& nv, const uint cluster_index);
 
-// Hamiltonian coupling C-13 nuclear spins in a cluster
+// Hamiltonian coupling C-13 nuclear spins in a cluster; acts only on cluster
 MatrixXcd H_nn(const nv_system& nv, const uint cluster_index);
 
 // spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
 
-// nuclear Zeeman Hamiltonian
+// nuclear Zeeman Hamiltonian; acts only on cluster
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB);
 
 // NV Zeeman Hamiltonian
@@ -240,13 +240,13 @@ inline MatrixXcd H_NV(const nv_system& nv, const Vector3d& gB) {
 // total internal system Hamiltonian
 inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
   return (H_int(nv,cluster) +
-          H_nZ(nv,cluster, nv.static_gBz*zhat) +
+          tp(I2, H_nZ(nv,cluster, nv.static_gBz*zhat)) +
           act(H_NV_GS(nv), {0}, nv.clusters.at(cluster).size()+1));
 }
 
 // total control Hamiltonian for the entire system
 inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& gB_ctl) {
-  return (H_nZ(nv,cluster,gB_ctl) +
+  return (tp(I2, H_nZ(nv,cluster,gB_ctl)) +
           act(H_NV_Z(nv,gB_ctl), {0}, nv.clusters.at(cluster).size()+1));
 }
 
