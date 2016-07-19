@@ -213,8 +213,8 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
     }
   }
 
-  const uint D = pow(2,system.size());
   const MatrixXcd M = ptrace(G * U.adjoint(), environment);
+  const uint D = M.rows();
   return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
 }
 
