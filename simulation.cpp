@@ -42,8 +42,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool coupling;
   bool iswap;
   bool swap;
-  bool swap_nvst;
   bool identity;
+  bool swap_nvst;
   bool larmor_identity;
   bool testing_mode;
 
@@ -59,10 +59,10 @@ int main(const int arg_num, const char *arg_vec[]) {
      "compute expected iSWAP fidelities")
     ("swap", po::value<bool>(&swap)->default_value(false)->implicit_value(true),
      "compute expected SWAP fidelities")
-    ("swap_nvst", po::value<bool>(&swap_nvst)->default_value(false)->implicit_value(true),
-     "compute expected SWAP_NVST fidelity")
     ("identity", po::value<bool>(&identity)->default_value(false)->implicit_value(true),
      "compute expected fidelity of an identity operation on a single spin")
+    ("swap_nvst", po::value<bool>(&swap_nvst)->default_value(false)->implicit_value(true),
+     "compute expected SWAP_NVST fidelity")
     ("larmor_identity",
      po::value<bool>(&larmor_identity)->default_value(false)->implicit_value(true),
      "compute expected fidelity of an identity operation on a larmor qubit")
@@ -217,8 +217,8 @@ int main(const int arg_num, const char *arg_vec[]) {
           + int(coupling)
           + int(iswap)
           + int(swap)
-          + int(swap_nvst)
           + int(identity)
+          + int(swap_nvst)
           + int(larmor_identity)
           != 1) {
         cout << "Please choose one simulation to perform\n";
@@ -625,6 +625,23 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // -------------------------------------------------------------------------------------
+  // Fidelity of identity operation on a single spin
+  // -------------------------------------------------------------------------------------
+
+  if (identity) {
+    cout << "target fidelity\n";
+    for (uint target: target_nuclei) {
+      vector<protocol> P(2);
+      for (bool exact : {true,false}) {
+        P.at(exact) = target_identity(nv, target, identity_time, exact);
+      }
+      const uint subsystem_target = get_index_in_subsystem(nv, target);
+      cout << target << " "
+           << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
   // SWAP fidelity: NV electron spin and singlet-triplet subspace of two nuclear spins
   // -------------------------------------------------------------------------------------
 
@@ -643,23 +660,6 @@ int main(const int arg_num, const char *arg_vec[]) {
            << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
-    }
-  }
-
-  // -------------------------------------------------------------------------------------
-  // Fidelity of identity operation on a single spin
-  // -------------------------------------------------------------------------------------
-
-  if (identity) {
-    cout << "target fidelity\n";
-    for (uint target: target_nuclei) {
-      vector<protocol> P(2);
-      for (bool exact : {true,false}) {
-        P.at(exact) = target_identity(nv, target, identity_time, exact);
-      }
-      const uint subsystem_target = get_index_in_subsystem(nv, target);
-      cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
     }
   }
 
