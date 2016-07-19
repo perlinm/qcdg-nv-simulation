@@ -351,20 +351,20 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // identify larmor pairs
-  vector<uint> pair_nuclei;
+  vector<uint> larmor_nuclei;
   vector<vector<uint>> larmor_pairs;
   for (uint i = 0; i < addressable_nuclei.size(); i++) {
     const uint n_i = addressable_nuclei.at(i);
     for (uint j = i+1; j < addressable_nuclei.size(); j++) {
       const uint n_j = addressable_nuclei.at(j);
       if (is_larmor_pair(nuclei,n_i,n_j)) {
+        larmor_nuclei.push_back(n_i);
+        larmor_nuclei.push_back(n_j);
         larmor_pairs.push_back({n_i,n_j});
-        pair_nuclei.push_back(n_i);
         continue;
       }
     }
   }
-  sort(pair_nuclei.begin(), pair_nuclei.end());
 
   // if we wish to print pairs, do so
   if (print_pairs) {
@@ -381,7 +381,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // determine which nuclei to target
   if (!set_target_nuclei) {
-    if (target_pairs) target_nuclei = pair_nuclei;
+    if (target_pairs) target_nuclei = larmor_nuclei;
     else target_nuclei = addressable_nuclei;
 
   } else { // if (set_target_nuclei)
