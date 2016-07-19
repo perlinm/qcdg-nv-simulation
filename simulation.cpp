@@ -583,7 +583,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -604,7 +604,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -623,7 +623,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -642,7 +642,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -659,9 +659,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (bool exact : {true,false}) {
         P.at(exact) = target_identity(nv, target, identity_time, exact);
       }
-      const uint subsystem_target = get_index_in_subsystem(nv, target);
+      const uint cluster_target = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
+           << gate_fidelity(P, {cluster_target}) << endl;
     }
   }
 
@@ -681,7 +681,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
       const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
+           << gate_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -707,13 +707,10 @@ int main(const int arg_num, const char *arg_vec[]) {
       for(uint i = 0; i < cluster_size; i++) {
         if (i != idx1 && i != idx2) environment_qbits.push_back(i);
       }
-      vector<Matrix2cd> larmor_operation(2);
-      larmor_operation.at(true) = I2;
-      larmor_operation.at(false) =
+      const Matrix2cd larmor_operation =
         ptrace(gates::SWAP_NVST * tp(I2, ptrace(P.at(false).U,environment_qbits)), {1,2});
 
-      cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(larmor_operation.at(0), larmor_operation.at(1)) << endl;
+      cout << idx1 << " " << idx2 << " " << gate_fidelity(larmor_operation, I2) << endl;
     }
   }
 
@@ -730,7 +727,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -749,7 +746,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, subsystem_target}) << " "
+           << gate_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -771,7 +768,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
       const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
+           << gate_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }

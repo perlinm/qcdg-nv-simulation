@@ -198,15 +198,7 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast) {
   else return U_basis_matrix(N).fullPivHouseholderQr().solve(flatten(U));
 }
 
-// compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
-double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G) {
-  assert(U.size() == G.size());
-  const uint D = U.rows();
-  const MatrixXcd M = G.adjoint() * U;
-  return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
-}
-
-// compute mean fidelity of propagator acting on given qbits
+// compute mean fidelity of gate U with respect to G within a given subsystem
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
                      const vector<uint>& system_qbits) {
   assert(U.size() == G.size());
@@ -219,8 +211,9 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
     }
   }
 
+  const uint D = pow(2,system_qbits.size());
   const MatrixXcd M = ptrace(G * U.adjoint(), environment_qbits);
-  return gate_fidelity(M, MatrixXcd::Identity(M.rows(),M.cols()));
+  return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
 }
 
 // ---------------------------------------------------------------------------------------

@@ -455,11 +455,10 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 protocol target_identity(const nv_system& nv, const uint target, const double time,
                          const bool exact) {
   const uint cluster = get_cluster_containing_target(nv,target);
-  const uint cluster_spins = nv.clusters.at(cluster).size();
 
-  if (exact) return protocol::Identity(pow(2,cluster_spins));
+  MatrixXcd H = H_nZ(nv, cluster, nv.static_gBz*zhat);
+  if (!exact && !nv.no_nn) H += H_nn(nv, cluster);
 
-  const MatrixXcd H = H_nn(nv, cluster) + H_nZ(nv, cluster, nv.static_gBz*zhat);
   const MatrixXcd U = exp(-j*time*H);
   return protocol(U, time);
 }

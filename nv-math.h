@@ -356,12 +356,9 @@ struct protocol {
 inline protocol pow(const protocol& U, const uint n) { return U.pow(n); }
 inline protocol pow(const protocol& U, const long unsigned int n) { return U.pow(n); }
 
-inline double gate_fidelity(const protocol& U, const protocol& G) {
-  return gate_fidelity(U.U, G.U);
-}
-inline double gate_fidelity(const protocol& U, const protocol& G,
-                            const vector<uint>& nuclei) {
-  return gate_fidelity(U.U, G.U, nuclei);
+inline double gate_fidelity(const vector<protocol>& P, const vector<uint> nuclei = {}) {
+  assert(P.size() == 2);
+  return gate_fidelity(P.at(0).U, P.at(1).U, nuclei);
 }
 
 // ---------------------------------------------------------------------------------------

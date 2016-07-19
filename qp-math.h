@@ -116,12 +116,9 @@ MatrixXcd U_basis_matrix(const uint N);
 // decompose Hamiltonian into its basis elements
 VectorXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 
-// compute mean fidelity of gate U with respect to G, i.e. how well U approximates G
-double gate_fidelity(const MatrixXcd&  U, const MatrixXcd& G);
-
-// compute mean fidelity of propagator acting on given qbits
+// compute mean fidelity of gate U with respect to G within a given subsystem
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
-                     const vector<uint>& system_qbits);
+                     const vector<uint>& system_qbits = {});
 
 // compute fidelity of state rho with respect to state sigma
 inline double state_fidelity(const MatrixXcd& rho, const MatrixXcd& sigma) {
