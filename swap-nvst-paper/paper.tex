@@ -41,7 +41,7 @@
 
 \begin{document}
 
-\title{Realization of a Decoherence-Free Subspaces with
+\title{Qubit Storage in a Decoherence-Free Subspace with
   Nitrogen-Vacancy Centers and $^{13}$C Nuclear Spins}
 
 \author{Michael A. Perlin, Zhen-Yu Wang, and Martin B. Plenio}
@@ -69,7 +69,7 @@ nuclear spins, and the realization of universal set of high-fidelity
 quantum gates \cite{dobrovitski2013quantum, casanova2016noise}. These
 properties have prompted extensive studies of NV centers for quantum
 metrology and information processing applications
-\cite{mamin2013nanoscale, steinert2010high, wang2015positioning,
+\cite{mamin2013nanoscale, steinert2010high, wang2016positioning,
   chou2015optimal, childress2006fault, yao2012scalable}. \fixme{the
   first and last sentences of this paragraph are essentially the same}
 
@@ -92,18 +92,18 @@ logical qubits which are protected from various sources of system and
 environmental dephasing noise.
 
 In this letter, we present a means to address individual $^{13}$C
-nuclear spins which are normally indistinguishable due to symmetric
-coupling to the NV center. We use this addressing scheme to initialize
-qubits in a decoherence-free subspace (DFS) of nuclear spins, and
-propose a means for realizing a coherent SWAP operation between the NV
-center electron spin state and the DFS qubit.
+nuclear spins which are normally indistinguishable due to their
+symmetric coupling to the NV center. We use this addressing scheme to
+initialize qubits in a decoherence-free subspace (DFS) of nuclear
+spins, and propose a means for realizing a coherent SWAP operation
+between the NV center electron spin state and the DFS qubit.
 
 \section{Addressing symmetric $^{13}$C nuclear spins}
 
 Restricting the NV electron spin states to the subspace spanned by
 $\set{\ket0,\ket{m_s}}$ ($m_s=\pm1$), the AXY-$n$ pulse sequence
 developed in by Casanova et al. in \cite{casanova2015robust} and
-control scheme developed by Wang et al. in \cite{wang2015positioning}
+control scheme developed by Wang et al. in \cite{wang2016positioning}
 allows addressing individual $^{13}$C nuclear spins via Hamiltonians
 of the form
 \begin{align}
@@ -127,10 +127,12 @@ It is possible, however, for two nuclear spins (indexed by 1 and 2) to
 have identical larmor frequencies $\omega_1=\omega_2\equiv\omega$,
 which occurs when they couple symmetrically to the NV center with
 $A_1=A_2$. The state space of two such spins, which we call {\it
-  larmor pairs}, contains a decoherence-free subspace (DFS) with
-respect to spin-spin coupling to the NV center. This DFS is spanned by
-the singlet-triplet states $\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, or
-equivalently by $\set{\ket{\u\d},\ket{\d\u}}$.
+  larmor pairs}, contains a subspace free of decoherence via spin
+coupling to the NV center electron, i.e. a decoherence-free subspace
+(DFS). This DFS is spanned by the singlet-triplet states
+$\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, or equivalently by
+$\set{\ket{\u\d},\ket{\d\u}}$. \fixme{show that this subspace is
+  decoherence-free (in the supplementary material)}
 
 When trying to address one spin in a larmor pair, the protocols for
 (\ref{H_int}) will simultaneously couple $\sigma_\NV^z$ to both
@@ -143,30 +145,42 @@ of a magnetic decoupling field
 $\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega
   t-\phi_\t{dec}}$ during the AXY-$n$ addressing protocol suppresses
 components of $\uv n_j$ which are perpendicular to the vector
-$\v B_\t{dec}$ projected onto the plane perpendicular to precession
-axis $\v\omega_j$ and rotated about this axis by $\phi_\t{dec}$. One
-can therefore choose a direction $\v B_\t{dec}$ which completely
-suppresses NV electron spin coupling to spin 1 (2), leaving only
-coupling to spin 2 (1).
-
-\fixme{Comment on how likely are we to find larmor pairs?}
+$\v B_\t{dec}$ projected onto the plane perpendicular to $\v\omega_j$
+and rotated in this plane by $\phi_\t{dec}$. One can therefore choose
+a direction $\v B_\t{dec}$ which completely suppresses NV electron
+spin coupling to spin 1 (2), leaving only coupling to spin 2 (1).
 
 \section{Qubit initialization in a decoherence-free subspace}
 
+The protocols for addressing an individual nucleus in a larmor pair
+can be used to initialize a qubit in the DFS of a larmor pair. In
+particular, one can use the gate sequences in
+\cite{reiserer2016robust} to deterministically initialize the larmor
+pair into $\ket{\d\d}$, then probabilistically convert this state into
+$\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ for some phase $\phi$
+determined by the choice of bases for the nuclear spins. While the
+sequences to initialize into $\ket{\d\d}$ require individually
+addressing each nuclear spin, the conversion
+$\ket{\d\d}\to\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ can be
+performed with simultaneous coupling to both larmor pairs,
+i.e. without the magnetic decoupling field.
 
 
 
 \bibliography{\jobname}
 
+
 \pagebreak
 \clearpage
 \widetext
+\makeatletter
 \begin{center}
-  \textbf{\large Supplementary Information for ``Delayed entanglement
-    echo for individual control of a large number of nuclear spins''}
+  \large \bf Supplementary Information for ``\@title''
 \end{center}
-\setcounter{equation}{0} \setcounter{figure}{0} \setcounter{table}{0}
-\setcounter{page}{1} \makeatletter
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\setcounter{page}{1}
 \renewcommand{\theequation}{S\arabic{equation}}
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\bibnumfmt}[1]{[S#1]}
@@ -720,7 +734,7 @@ Note: the same simulations can also be used to generate similar
 histograms (as well as other info) about other operations,
 e.g. single-spin $\SWAP$ or $i\SWAP$ operations. Furthermore, the
 simulations can, without any modification, reproduce results such as
-Figure 2 in \cite{wang2015positioning} (``Positioning Nuclear Spins in
+Figure 2 in \cite{wang2016positioning} (``Positioning Nuclear Spins in
 Interacting Clusters for Quantum Technologies and
 Bio-imaging''). Minor additions to the codes might make them useful
 for comparing the efficacy of different spin-addressing protocols. Is
