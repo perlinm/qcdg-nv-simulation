@@ -357,9 +357,9 @@ inline protocol pow(const protocol& U, const uint n) { return U.pow(n); }
 inline protocol pow(const protocol& U, const long unsigned int n) { return U.pow(n); }
 
 inline double protocol_fidelity(const vector<protocol>& P,
-                                const vector<uint> nuclei = {}) {
+                                const vector<uint> system = {}) {
   assert(P.size() == 2);
-  return gate_fidelity(P.at(false).U, P.at(true).U, nuclei);
+  return gate_fidelity(P.at(false).U, P.at(true).U, system);
 }
 
 // ---------------------------------------------------------------------------------------
