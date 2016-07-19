@@ -44,6 +44,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool swap;
   bool swap_nvst;
   bool identity;
+  bool larmor_identity;
   bool testing_mode;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -61,7 +62,10 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("swap_nvst", po::value<bool>(&swap_nvst)->default_value(false)->implicit_value(true),
      "compute expected SWAP_NVST fidelity")
     ("identity", po::value<bool>(&identity)->default_value(false)->implicit_value(true),
-     "compute expected fidelity of an identity operation")
+     "compute expected fidelity of an identity operation on a single spin")
+    ("larmor_identity",
+     po::value<bool>(&larmor_identity)->default_value(false)->implicit_value(true),
+     "compute expected fidelity of an identity operation on a larmor qubit")
     ("test" ,po::value<bool>(&testing_mode)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -215,6 +219,7 @@ int main(const int arg_num, const char *arg_vec[]) {
           + int(swap)
           + int(swap_nvst)
           + int(identity)
+          + int(larmor_identity)
           != 1) {
         cout << "Please choose one simulation to perform\n";
         return -1;
@@ -419,6 +424,17 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
+  if (swap_nvst || larmor_identity) {
+    if (targeted_larmor_pairs.size() == 0) {
+      if (larmor_pairs.size() == 0) {
+        cout << "There are no larmor pairs in this system\n";
+      } else {
+        cout << "No larmor pairs are targeted\n";
+      }
+      return -1;
+    }
+  }
+
   // -------------------------------------------------------------------------------------
   // Cluster C-13 nuclei
   // -------------------------------------------------------------------------------------
@@ -613,14 +629,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -------------------------------------------------------------------------------------
 
   if (swap_nvst) {
-    if (targeted_larmor_pairs.size() == 0) {
-      if (larmor_pairs.size() == 0) {
-        cout << "There are no larmor pairs in this system\n";
-      } else {
-        cout << "No larmor pairs are targeted\n";
-      }
-      return -1;
-    }
     cout << "idx1 idx2 fidelity time pulses\n";
     for (vector<uint> idxs: targeted_larmor_pairs) {
       const uint idx1 = idxs.at(0);
@@ -639,7 +647,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // -------------------------------------------------------------------------------------
-  // Fidelity of identity operation
+  // Fidelity of identity operation on a single spin
   // -------------------------------------------------------------------------------------
 
   if (identity) {
@@ -652,6 +660,36 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
            << gate_fidelity(P.at(0), P.at(1), {subsystem_target}) << endl;
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Fidelity of identity operation on a larmor qubit
+  // -------------------------------------------------------------------------------------
+
+  if (larmor_identity) {
+    cout << "idx1 idx2 fidelity\n";
+    for (vector<uint> idxs: targeted_larmor_pairs) {
+      const uint idx1 = idxs.at(0);
+      const uint idx2 = idxs.at(1);
+      vector<protocol> P(2);
+      for (bool exact : {true,false}) {
+        P.at(exact) = target_identity(nv, idx1, identity_time, exact);
+      }
+
+      const uint cluster = get_cluster_containing_target(nv,idx1);
+      const uint cluster_size = nv.clusters.at(cluster).size();
+      vector<uint> environment_qbits = {}; // in cluster system
+      for(uint i = 0; i < cluster_size; i++) {
+        if (i != idx1 && i != idx2) environment_qbits.push_back(i);
+      }
+      vector<Matrix2cd> larmor_operation(2);
+      larmor_operation.at(true) = I2;
+      larmor_operation.at(false) =
+        ptrace(gates::SWAP_NVST * tp(I2, ptrace(P.at(false).U,environment_qbits)), {1,2});
+
+      cout << idx1 << " " << idx2 << " "
+           << gate_fidelity(larmor_operation.at(0), larmor_operation.at(1)) << endl;
     }
   }
 
