@@ -47,6 +47,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool larmor_identity;
   bool initialize_z;
   bool initialize_x;
+  bool initialize_larmor;
   bool testing_mode;
 
   po::options_description simulations("Available simulations",help_text_length);
@@ -70,12 +71,16 @@ int main(const int arg_num, const char *arg_vec[]) {
      "compute fidelity of an identity operation on a larmor qubit")
     ("initialize_z",
      po::value<bool>(&initialize_z)->default_value(false)->implicit_value(true),
-     "compute fidelity of a deterministic initialization of"
-     " a thermalized nucleus into |u> or |d>")
+     "compute fidelity of a deterministic initialization of a thermalized nucleus"
+     " into |u> or |d>")
     ("initialize_x",
      po::value<bool>(&initialize_x)->default_value(false)->implicit_value(true),
-     "compute fidelity of a probabalistic initialization of"
-     " a thermalized nucleus into |u> +/- |d>")
+     "compute fidelity of a probabalistic initialization of a thermalized nucleus"
+     " into |u> +/- |d>")
+    ("initialize_larmor",
+     po::value<bool>(&initialize_larmor)->default_value(false)->implicit_value(true),
+     "compute fidelity of a probabalistic initialization of a larmor pair"
+     " from |dd> into |ud> +/- |du>")
     ("test" ,po::value<bool>(&testing_mode)->default_value(false)->implicit_value(true),
      "enable testing mode")
     ;
@@ -238,6 +243,7 @@ int main(const int arg_num, const char *arg_vec[]) {
           + int(larmor_identity)
           + int(initialize_z)
           + int(initialize_x)
+          + int(initialize_larmor)
           != 1) {
         cout << "Please choose one simulation to perform\n";
         return -1;
@@ -750,7 +756,25 @@ int main(const int arg_num, const char *arg_vec[]) {
   }
 
   // -------------------------------------------------------------------------------------
-  // Fidelity of probabalistically initializing a |dd> larmor pair into |ud> + |du>
+  // Fidelity of probabalistically initializing a larmor pair from |dd> into |ud> +/- |du>
   // -------------------------------------------------------------------------------------
+
+  if (initialize_larmor) {
+    cout << "idx1 idx2 fidelity time pulses\n";
+    for (vector<uint> idxs: targeted_larmor_pairs) {
+      const uint idx1 = idxs.at(0);
+      const uint idx2 = idxs.at(1);
+      vector<protocol> P(2);
+      for (bool exact : {true,false}) {
+        P.at(exact) = initialize_larmor_qubit(nv, idx1, idx2, exact);
+      }
+      const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
+      const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
+      cout << idx1 << " " << idx2 << " "
+           << gate_fidelity(P.at(0), P.at(1), {0, ss_idx1, ss_idx2}) << " "
+           << P.at(false).time << " "
+           << P.at(false).pulses << endl;
+    }
+  }
 
 }

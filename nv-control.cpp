@@ -482,3 +482,17 @@ protocol initialize_spin_X(const nv_system& nv, const uint target, const bool ex
           couple_target(nv, target, pi/2, zhat, xhat, exact) *
           rotate_NV(nv, pi/2, yhat, spins));
 }
+
+// operation to probabalistically initialize a larmor pair from |dd> into |ud> +/- |du>
+protocol initialize_larmor_qubit(const nv_system& nv, const uint idx1, const uint idx2,
+                                 const bool exact) {
+  assert(is_larmor_pair(nv,idx1,idx2));
+  const uint cluster = get_cluster_containing_target(nv,idx1);
+  const uint spins = nv.clusters.at(cluster).size()+1;
+  assert(in_vector(idx2,nv.clusters.at(cluster)));
+
+  const bool decouple_spins = false;
+  return (rotate_NV(nv, pi/2, yhat, spins) *
+          couple_target(nv, idx1, pi/2, zhat, yhat, exact, decouple_spins) *
+          rotate_NV(nv, pi/2, yhat, spins));
+}

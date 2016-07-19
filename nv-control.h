@@ -103,3 +103,7 @@ protocol initialize_spin_Z(const nv_system& nv, const uint target,
 // operation to probabalistically initialize a thermalized nucleus into |u> +/- |d>
 protocol initialize_spin_X(const nv_system& nv, const uint target,
                            const bool exact = false);
+
+// operation to probabalistically initialize a larmor pair from |dd> into |S> or |T>
+protocol initialize_larmor_qubit(const nv_system& nv, const uint idx1, const uint idx2,
+                                 const bool exact = false);
