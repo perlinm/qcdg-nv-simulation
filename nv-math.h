@@ -210,15 +210,11 @@ int F_AXY(double x, const vector<double> pulses);
 MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
                const Vector3d& p2, const double g2, const mvec& S2);
 
-// Hamiltonian coupling NV electron to a C-13 nucleus located at pos
-inline MatrixXcd H_en(const nv_system& nv, const Vector3d& pos) {
-  return H_ss(e_pos, g_e, nv.e_S(), pos, g_C13, I_vec);
-}
+// Hamiltonian coupling NV electron spin to C-13 nuclear spins in a cluster
+MatrixXcd H_en(const nv_system& nv, const uint cluster_index);
 
-// Hamiltonian coupling two C-13 nuclei
-inline MatrixXcd H_nn(const Vector3d& p1, const Vector3d& p2) {
-  return H_ss(p1, g_C13, I_vec, p2, g_C13, I_vec);
-}
+// Hamiltonian coupling C-13 nuclear spins in a cluster
+MatrixXcd H_nn(const nv_system& nv, const uint cluster_index);
 
 // spin-spin coupling Hamiltonian for the entire system
 MatrixXcd H_int(const nv_system& nv, const uint cluster_index);

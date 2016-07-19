@@ -357,23 +357,39 @@ MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
     * (dot(S1,S2) - 3*tp(dot(S1,hat(r)), dot(S2,hat(r))));
 }
 
-// spin-spin coupling Hamiltonian for the entire system
-MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
+// Hamiltonian coupling NV electron to C-13 nuclei in a cluster
+MatrixXcd H_en(const nv_system& nv, const uint cluster_index) {
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   const int spins = cluster.size()+1;
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for (uint n1 = 0; n1 < cluster.size(); n1++) {
-    // interaction between NV center and nucleus n1
     const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
-    H += act(H_en(nv,n1_pos), {0,n1+1}, spins);
-    if (!nv.no_nn) {
-      // interaction betwen nuclei n1 and n2
-      for (uint n2 = 0; n2 < n1; n2++) {
-        const Vector3d n2_pos = nv.nuclei.at(cluster.at(n2));
-        H += act(H_nn(n1_pos,n2_pos), {n1+1,n2+1}, spins);
-      }
+    H += act(H_ss(e_pos, g_e, nv.e_S(), n1_pos, g_C13, I_vec),
+             {0,n1+1}, spins);
+  }
+  return H;
+}
+
+// Hamiltonian coupling C-13 nuclei in a cluster
+MatrixXcd H_nn(const nv_system& nv, const uint cluster_index){
+  const vector<uint> cluster = nv.clusters.at(cluster_index);
+  const int spins = cluster.size()+1;
+  MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
+  for (uint n1 = 0; n1 < cluster.size(); n1++) {
+    const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
+    for (uint n2 = 0; n2 < n1; n2++) {
+      const Vector3d n2_pos = nv.nuclei.at(cluster.at(n2));
+      H += act(H_ss(n1_pos, g_C13, I_vec, n2_pos, g_C13, I_vec),
+               {0,n1+1}, spins);
     }
   }
+  return H;
+}
+
+// spin-spin coupling Hamiltonian for the entire system
+MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
+  MatrixXcd H = H_en(nv, cluster_index);
+  if (!nv.no_nn) H += H_nn(nv, cluster_index);
   return H;
 }
 
