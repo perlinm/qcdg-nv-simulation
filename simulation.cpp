@@ -23,7 +23,7 @@ namespace po = boost::program_options;
 int main(const int arg_num, const char *arg_vec[]) {
 
   // -------------------------------------------------------------------------------------
-  // Parse and process input options
+  // Set input options
   // -------------------------------------------------------------------------------------
 
   const uint help_text_length = 90;
@@ -206,11 +206,17 @@ int main(const int arg_num, const char *arg_vec[]) {
   po::store(parse_command_line(arg_num, arg_vec, all), inputs);
   po::notify(inputs);
 
+
   // if requested, print help text
   if (inputs.count("help")) {
     cout << all;
     return 0;
   }
+
+
+  // -------------------------------------------------------------------------------------
+  // Run a sanity check on inputs
+  // -------------------------------------------------------------------------------------
 
   // determine whether certain options were used
   bool using_input_lattice = inputs.count("lattice_file");
@@ -218,7 +224,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool set_c13_factor = !inputs["c13_factor"].defaulted();
   bool set_target_nuclei = inputs.count("target");
 
-  // run a sanity check on inputs
+  // make sure we are either printing something, or performing a simulation
   if (!testing_mode) {
     const bool printing = print_lattice || print_pairs || target_info;
     if (!printing) {
