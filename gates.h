@@ -37,26 +37,21 @@ struct gates {
   // operations between NV and ST qbits
   static const MatrixXcd SWAP_NVST;
 
-  // spin propagators; Ua corresponds to a Hamiltonian H = h s_a
-  static MatrixXcd Ux(const double ht);
-  static MatrixXcd Uy(const double ht);
-  static MatrixXcd Uz(const double ht);
-
-  // rotation operators
+  // rotation operators; Ra corresponds to a Hamiltonian H = h I^a
   static MatrixXcd Rx(const double phi);
   static MatrixXcd Ry(const double phi);
   static MatrixXcd Rz(const double phi);
 
-  // spin coupling propagators; Uab corresponds to a Hamiltonian H = h s_a^0 s_b^1
-  static MatrixXcd Uxx(const double ht);
-  static MatrixXcd Uxy(const double ht);
-  static MatrixXcd Uxz(const double ht);
-  static MatrixXcd Uyx(const double ht);
-  static MatrixXcd Uyy(const double ht);
-  static MatrixXcd Uyz(const double ht);
-  static MatrixXcd Uzx(const double ht);
-  static MatrixXcd Uzy(const double ht);
-  static MatrixXcd Uzz(const double ht);
+  // conditional rotation operators; Rab corresponds to a Hamiltonian H = h s_0^a I_1^b
+  static MatrixXcd Rxx(const double phi);
+  static MatrixXcd Rxy(const double phi);
+  static MatrixXcd Rxz(const double phi);
+  static MatrixXcd Ryx(const double phi);
+  static MatrixXcd Ryy(const double phi);
+  static MatrixXcd Ryz(const double phi);
+  static MatrixXcd Rzx(const double phi);
+  static MatrixXcd Rzy(const double phi);
+  static MatrixXcd Rzz(const double phi);
 
   // controlled phase rotations
   static MatrixXcd cRuu(const double phi);

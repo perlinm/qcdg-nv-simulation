@@ -73,26 +73,21 @@ const MatrixXcd cNOT_STNV =
   act(gates::E,{1,2},3) * act(gates::cNOT,{1,0},3) * act(gates::E.adjoint(),{1,2},3);
 const MatrixXcd gates::SWAP_NVST = cNOT_NVST * cNOT_STNV * cNOT_NVST;
 
-// spin propagators; Ua corresponds to a Hamiltonian H = h s_a
-MatrixXcd gates::Ux(const double ht) { return cos(ht)*I2 - j*sin(ht)*sx; }
-MatrixXcd gates::Uy(const double ht) { return cos(ht)*I2 - j*sin(ht)*sy; }
-MatrixXcd gates::Uz(const double ht) { return cos(ht)*I2 - j*sin(ht)*sz; }
+// rotation operators; Ra corresponds to a Hamiltonian H = h I^a
+MatrixXcd gates::Rx(const double phi) { return cos(phi/2)*I2 - j*sin(phi/2)*sx; }
+MatrixXcd gates::Ry(const double phi) { return cos(phi/2)*I2 - j*sin(phi/2)*sy; }
+MatrixXcd gates::Rz(const double phi) { return cos(phi/2)*I2 - j*sin(phi/2)*sz; }
 
-// rotation operators
-MatrixXcd gates::Rx(const double phi) { return Ux(phi/2); }
-MatrixXcd gates::Ry(const double phi) { return Uy(phi/2); }
-MatrixXcd gates::Rz(const double phi) { return Uz(phi/2); }
-
-// spin coupling propagators; Uab corresponds to a Hamiltonian H = h s_a^0 s_b^1
-MatrixXcd gates::Uxx(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sx); }
-MatrixXcd gates::Uxy(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sy); }
-MatrixXcd gates::Uxz(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sx,sz); }
-MatrixXcd gates::Uyx(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sx); }
-MatrixXcd gates::Uyy(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sy); }
-MatrixXcd gates::Uyz(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sy,sz); }
-MatrixXcd gates::Uzx(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sx); }
-MatrixXcd gates::Uzy(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sy); }
-MatrixXcd gates::Uzz(const double ht) { return cos(ht)*I4 - j*sin(ht)*tp(sz,sz); }
+// conditional rotation operators; Rab corresponds to a Hamiltonian H = h s_0^a I_1^b
+MatrixXcd gates::Rxx(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sx,sx); }
+MatrixXcd gates::Rxy(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sx,sy); }
+MatrixXcd gates::Rxz(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sx,sz); }
+MatrixXcd gates::Ryx(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sy,sx); }
+MatrixXcd gates::Ryy(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sy,sy); }
+MatrixXcd gates::Ryz(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sy,sz); }
+MatrixXcd gates::Rzx(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sz,sx); }
+MatrixXcd gates::Rzy(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sz,sy); }
+MatrixXcd gates::Rzz(const double phi) { return cos(phi/2)*I4 - j*sin(phi/2)*tp(sz,sz); }
 
 // controlled phase rotations
 MatrixXcd gates::cRuu(const double phi) {
