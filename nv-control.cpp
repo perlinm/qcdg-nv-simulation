@@ -465,7 +465,7 @@ protocol target_identity(const nv_system& nv, const uint target, const double ti
 }
 
 // operation to deterministically initialize a thermalized nucleus into |u> or |d>
-protocol initialize_spin_Z(const nv_system& nv, const uint target, const bool exact) {
+protocol initialize_spin(const nv_system& nv, const uint target, const bool exact) {
   const uint cluster = get_cluster_containing_target(nv,target);
   const uint spins = nv.clusters.at(cluster).size()+1;
   return (couple_target(nv, target, pi/2, zhat, yhat, exact) *

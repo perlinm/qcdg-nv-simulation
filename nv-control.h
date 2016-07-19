@@ -97,8 +97,8 @@ protocol target_identity(const nv_system& nv, const uint target, const double ti
                          const bool exact = false);
 
 // operation to deterministically initialize a thermalized nucleus into |u> or |d>
-protocol initialize_spin_Z(const nv_system& nv, const uint target,
-                           const bool exact = false);
+protocol initialize_spin(const nv_system& nv, const uint target,
+                         const bool exact = false);
 
 // operation to probabalistically initialize a thermalized nucleus into |u> +/- |d>
 protocol initialize_spin_X(const nv_system& nv, const uint target,

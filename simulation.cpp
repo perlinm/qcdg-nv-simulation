@@ -45,7 +45,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   bool identity;
   bool swap_nvst;
   bool larmor_identity;
-  bool initialize_z;
+  bool initialize;
   bool initialize_x;
   bool initialize_larmor;
   bool testing_mode;
@@ -69,8 +69,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("larmor_identity",
      po::value<bool>(&larmor_identity)->default_value(false)->implicit_value(true),
      "compute fidelity of an identity operation on a larmor qubit")
-    ("initialize_z",
-     po::value<bool>(&initialize_z)->default_value(false)->implicit_value(true),
+    ("initialize",
+     po::value<bool>(&initialize)->default_value(false)->implicit_value(true),
      "compute fidelity of a deterministic initialization of a thermalized nucleus"
      " into |u> or |d>")
     ("initialize_x",
@@ -241,7 +241,7 @@ int main(const int arg_num, const char *arg_vec[]) {
           + int(identity)
           + int(swap_nvst)
           + int(larmor_identity)
-          + int(initialize_z)
+          + int(initialize)
           + int(initialize_x)
           + int(initialize_larmor)
           != 1) {
@@ -721,12 +721,12 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Fidelity of deterministically initializing a thermalized nucleus into |u> or |d>
   // -------------------------------------------------------------------------------------
 
-  if (initialize_z) {
+  if (initialize) {
     cout << "target fidelity time pulses\n";
     for (uint target: target_nuclei) {
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = initialize_spin_Z(nv, target, exact);
+        P.at(exact) = initialize_spin(nv, target, exact);
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
