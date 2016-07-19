@@ -583,7 +583,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -604,7 +604,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -623,7 +623,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -642,7 +642,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -661,7 +661,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint cluster_target = get_index_in_cluster(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {cluster_target}) << endl;
+           << protocol_fidelity(P, {cluster_target}) << endl;
     }
   }
 
@@ -681,7 +681,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
       const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
+           << protocol_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -727,7 +727,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -746,7 +746,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << gate_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {0, subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
@@ -768,7 +768,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const uint ss_idx1 = get_index_in_subsystem(nv,idx1);
       const uint ss_idx2 = get_index_in_subsystem(nv,idx2);
       cout << idx1 << " " << idx2 << " "
-           << gate_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
+           << protocol_fidelity(P, {0, ss_idx1, ss_idx2}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
