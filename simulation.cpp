@@ -703,12 +703,12 @@ int main(const int arg_num, const char *arg_vec[]) {
 
       const uint cluster = get_cluster_containing_target(nv,idx1);
       const uint cluster_size = nv.clusters.at(cluster).size();
-      vector<uint> environment_qbits = {}; // in cluster system
+      vector<uint> environment = {}; // in cluster system
       for(uint i = 0; i < cluster_size; i++) {
-        if (i != idx1 && i != idx2) environment_qbits.push_back(i);
+        if (i != idx1 && i != idx2) environment.push_back(i);
       }
       const Matrix2cd larmor_operation =
-        ptrace(gates::SWAP_NVST * tp(I2, ptrace(P.at(false).U,environment_qbits)), {1,2});
+        ptrace(gates::SWAP_NVST * tp(I2, ptrace(P.at(false).U,environment)), {1,2});
 
       cout << idx1 << " " << idx2 << " " << gate_fidelity(larmor_operation, I2) << endl;
     }

@@ -200,19 +200,21 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast) {
 
 // compute mean fidelity of gate U with respect to G within a given subsystem
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
-                     const vector<uint>& system_qbits) {
+                     const vector<uint>& system) {
   assert(U.size() == G.size());
 
   const uint spins = log2(G.rows());
-  vector<uint> environment_qbits = {};
-  for (uint n = 0; n < spins; n++) {
-    if (!in_vector(n,system_qbits)) {
-      environment_qbits.push_back(n);
+  vector<uint> environment = {};
+  if (system.size() > 0) {
+    for (uint n = 0; n < spins; n++) {
+      if (!in_vector(n,system)) {
+        environment.push_back(n);
+      }
     }
   }
 
-  const uint D = pow(2,system_qbits.size());
-  const MatrixXcd M = ptrace(G * U.adjoint(), environment_qbits);
+  const uint D = pow(2,system.size());
+  const MatrixXcd M = ptrace(G * U.adjoint(), environment);
   return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
 }
 
