@@ -372,11 +372,17 @@ inline double gate_fidelity(const protocol& U, const protocol& G,
 control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
                                         const double phi_rfd, const double theta_rfd);
 
-// perform given rotation on the NV center
-protocol rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
+// perform given rotation on the full NV electron spin
+protocol rotate_full_NV(const nv_system& nv, const Vector3d& rotation, const uint spins);
 
-// compute and perform rotation of NV center necessary to generate U
-protocol act_NV(const nv_system& nv, const Matrix2cd& U, const uint spins);
+// perform rotation of NV electron spin necessary to generate U_NV
+protocol act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins);
+
+// perform given rotation on the reduced 2-level NV electron spin
+inline protocol rotate_NV(const nv_system& nv, const double angle, const Vector3d& axis,
+                          const uint spins) {
+  return act_NV(nv, rotate(angle, axis), spins);
+};
 
 // simulate propagator with static control fields
 protocol simulate_AXY(const nv_system& nv, const uint cluster,

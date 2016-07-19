@@ -427,9 +427,9 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 
   } else {
     // compute actual realization of the SWAP_NVST gate
-    const protocol hY_NV = act_NV(nv, rotate(pi/2,yhat), spins);
-    const protocol Z_NV = act_NV(nv, rotate(pi,zhat), spins);
-    const protocol XmY_NV = act_NV(nv, rotate(pi,xhat-yhat), spins);
+    const protocol hY_NV = rotate_NV(nv, pi/2, yhat, spins);
+    const protocol Z_NV = rotate_NV(nv, pi, zhat, spins);
+    const protocol XmY_NV = rotate_NV(nv, pi, xhat-yhat, spins);
 
     const protocol cNOT_AC_NV_adapted =
       hY_NV *

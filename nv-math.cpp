@@ -467,8 +467,8 @@ control_fields nuclear_decoupling_field(const nv_system& nv, const uint index,
   return control_fields(gV_rfd*n_rfd, w_rfd, phi_rfd);
 }
 
-// perform given rotation on the NV center
-protocol rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spins) {
+// perform given rotation on the full NV electron spin
+protocol rotate_full_NV(const nv_system& nv, const Vector3d& rotation, const uint spins) {
   if (rotation.squaredNorm() > 0) {
     return protocol(act( exp(-j*dot(rotation,nv.e_S())), {0}, spins), 0, 1);
   } else {
@@ -476,13 +476,14 @@ protocol rotate_NV(const nv_system& nv, const Vector3d& rotation, const uint spi
   }
 }
 
-// compute and perform rotation of NV center necessary to generate U_NV
+// perform rotation of NV electron spin necessary to generate U_NV
 protocol act_NV(const nv_system& nv, const Matrix2cd& U_NV, const uint spins) {
-  const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
-  const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
-                                yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
-                                zhat*real(H_NV_vec(3))*nv.ms*2);
-  return rotate_NV(nv,nv_rotation,spins);
+  return protocol(tp(U_NV, MatrixXcd::Identity(pow(2,spins-1),pow(2,spins-1))));
+  // const Vector4cd H_NV_vec = U_decompose(j*log(U_NV));
+  // const Vector3d nv_rotation = (xhat*real(H_NV_vec(1))*sqrt(2) +
+                                // yhat*real(H_NV_vec(2))*nv.ms*sqrt(2) +
+                                // zhat*real(H_NV_vec(3))*nv.ms*2);
+  // return rotate_full_NV(nv,nv_rotation,spins);
 }
 
 // simulate propagator with static control fields
