@@ -460,9 +460,11 @@ protocol target_identity(const nv_system& nv, const uint target, const double ti
   if (exact) return protocol::Identity(pow(2,cluster_spins));
 
   const MatrixXcd H = H_sys(nv,cluster) - H_nZ(nv,cluster,nv.static_gBz*zhat);
-  const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_spins+1); // |0><0|
+  const MatrixXcd proj_0 = act(dn*dn.adjoint(), {0}, cluster_spins+1); // |0><0|
   const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
 
-  const MatrixXcd U = exp(-j*time*H_0);
-  return protocol(U);
+  const MatrixXcd U_cluster = exp(-j*time*H_0);
+  const MatrixXcd U = tp(I2, U_cluster);
+
+  return protocol(U,time);
 }
