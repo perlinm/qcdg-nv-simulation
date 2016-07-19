@@ -463,3 +463,22 @@ protocol target_identity(const nv_system& nv, const uint target, const double ti
   const MatrixXcd U = exp(-j*time*H);
   return protocol(U, time);
 }
+
+// operation to deterministically initialize a thermalized nucleus into |u> or |d>
+protocol initialize_spin_Z(const nv_system& nv, const uint target, const bool exact) {
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint spins = nv.clusters.at(cluster).size()+1;
+  return (couple_target(nv, target, pi/2, zhat, yhat, exact) *
+          rotate_NV(nv, pi/2, xhat, spins) *
+          couple_target(nv, target, pi/2, zhat, xhat, exact) *
+          rotate_NV(nv, pi/2, yhat, spins));
+}
+
+// operation to probabalistically initialize a thermalized nucleus into |u> +/- |d>
+protocol initialize_spin_X(const nv_system& nv, const uint target, const bool exact) {
+  const uint cluster = get_cluster_containing_target(nv,target);
+  const uint spins = nv.clusters.at(cluster).size()+1;
+  return (rotate_NV(nv, pi/2, xhat, spins) *
+          couple_target(nv, target, pi/2, zhat, xhat, exact) *
+          rotate_NV(nv, pi/2, yhat, spins));
+}

@@ -95,3 +95,11 @@ protocol SWAP_NVST(const nv_system& nv, const uint idx1, const uint idx2,
 //   assumes that the NV center is polarized to the |0> state
 protocol target_identity(const nv_system& nv, const uint target, const double time,
                          const bool exact = false);
+
+// operation to deterministically initialize a thermalized nucleus into |u> or |d>
+protocol initialize_spin_Z(const nv_system& nv, const uint target,
+                           const bool exact = false);
+
+// operation to probabalistically initialize a thermalized nucleus into |u> +/- |d>
+protocol initialize_spin_X(const nv_system& nv, const uint target,
+                           const bool exact = false);
