@@ -583,7 +583,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
       const uint subsystem_target = get_index_in_subsystem(nv, target);
       cout << target << " "
-           << protocol_fidelity(P, {0, subsystem_target}) << " "
+           << protocol_fidelity(P, {subsystem_target}) << " "
            << P.at(false).time << " "
            << P.at(false).pulses << endl;
     }
