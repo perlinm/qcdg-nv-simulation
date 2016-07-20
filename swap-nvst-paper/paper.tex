@@ -57,6 +57,9 @@
 
 \section{Introduction}
 
+\fixme{Write about NV centers, C-13 nuclei, introduction to larmor
+  pairs and DFS, quantum memory/networks, etc.}
+
 Nitrogen-vacancy (NV) centers in diamond have been recognized in
 recent years as a promising platform for quantum sensing and
 information technologies. The electronic ground and optically excited
@@ -98,7 +101,13 @@ initialize qubits in a decoherence-free subspace (DFS) of nuclear
 spins, and propose a means for realizing a coherent SWAP operation
 between the NV center electron spin state and the DFS qubit.
 
-\section{Addressing symmetric $^{13}$C nuclear spins}
+\section{Identifying symmetrically coupled $^{13}$C nuclear spins}
+
+\fixme{How do we identify and locate larmor pairs?}
+
+\section{Individually addressing larmor pairs}
+
+\fixme{How do we individually address larmor pairs?}
 
 Restricting the NV electron spin states to the subspace spanned by
 $\set{\ket0,\ket{m_s}}$ ($m_s=\pm1$), the AXY-$n$ pulse sequence
@@ -152,6 +161,9 @@ spin coupling to spin 1 (2), leaving only coupling to spin 2 (1).
 
 \section{Qubit initialization in a decoherence-free subspace}
 
+\fixme{Implement PRX\cite{reiserer2016robust} methods for initializing
+  a qubit in $\ket{\u\d}\pm\ket{\d\u}$}
+
 The protocols for addressing an individual nucleus in a larmor pair
 can be used to initialize a qubit in the DFS of a larmor pair. In
 particular, one can use the gate sequences in
@@ -164,6 +176,8 @@ addressing each nuclear spin, the conversion
 $\ket{\d\d}\to\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ can be
 performed with simultaneous coupling to both larmor pairs,
 i.e. without the magnetic decoupling field.
+
+\section{Coherent SWAP operation with DFS qubit}
 
 
 
