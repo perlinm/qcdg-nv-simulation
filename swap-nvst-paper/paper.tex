@@ -41,10 +41,10 @@
 
 \begin{document}
 
-\title{Qubit Storage in a Decoherence-Free Subspace with
+\title{Realization of a Decoherence-Free Subspace with
   Nitrogen-Vacancy Centers and $^{13}$C Nuclear Spins}
 
-\author{Michael A. Perlin, Zhen-Yu Wang, and Martin B. Plenio}
+\author{Michael A. Perlin, Zhen-Yu Wang, Jorge Casanova, and Martin B. Plenio}
 
 \affiliation{Institut f\"ur Theoretische Physik, Albert-Einstein-Allee
   11, Universit\"at Ulm, D-89069 Ulm, Germany}
@@ -61,25 +61,22 @@
   pairs and DFS, quantum memory/networks, etc.}
 
 Nitrogen-vacancy (NV) centers in diamond have been recognized in
-recent years as a promising platform for quantum sensing and
-information technologies. The electronic ground and optically excited
-states of NV$^-$ split into spin triplets which can be polarized,
-detected, and coherently manipulated with high fidelity with fields
-and microwave radiation \cite{dobrovitski2013quantum}. Hyperfine
-coupling between the NV center electron and $^{13}$C nuclei in bulk
-diamond allows for the coherent control and measurement of individual
-nuclear spins, and the realization of universal set of high-fidelity
-quantum gates \cite{dobrovitski2013quantum, casanova2016noise}. These
-properties have prompted extensive studies of NV centers for quantum
-metrology and information processing applications
-\cite{mamin2013nanoscale, steinert2010high, wang2016positioning,
-  chou2015optimal, childress2006fault, yao2012scalable}. \fixme{the
-  first and last sentences of this paragraph are essentially the same}
+recent years as a promising platform for quantum sensing and quantum
+information technologies\cite{mamin2013nanoscale, steinert2010high,
+  wang2016positioning, chou2015optimal, childress2006fault,
+  yao2012scalable}. The electronic ground and optically excited states
+of NV$^-$ split into spin triplets which can be polarized, detected,
+and coherently manipulated with high fidelity with fields and
+microwave radiation \cite{dobrovitski2013quantum}. Hyperfine coupling
+between the NV center electron and $^{13}$C nuclei in bulk diamond
+allows for the coherent control and measurement of individual nuclear
+spins, and the realization of universal set of high-fidelity quantum
+gates \cite{dobrovitski2013quantum, casanova2016noise}.
 
-One such application of the NV center is as a memory register to store
-quantum information. While typical control operations on the NV
-electron spin happen on the scale of nanoseconds, its room-temperature
-coherence time is on the scale of microseconds
+One promising application of the NV center is as a memory register for
+storing quantum information. While typical control operations on the
+NV electron spin happen on the scale of nanoseconds, its
+room-temperature coherence time is on the scale of microseconds
 \cite{dobrovitski2013quantum}. Dynamic decoupling schemes and the use
 of isotopically pure diamond samples can increase the NV electron spin
 coherence time by a few orders of magnitude
@@ -95,19 +92,13 @@ logical qubits which are protected from various sources of system and
 environmental dephasing noise.
 
 In this letter, we present a means to address individual $^{13}$C
-nuclear spins which are normally indistinguishable due to their
-symmetric coupling to the NV center. We use this addressing scheme to
+nuclear spins which are normally indistinguishable due to a symmetry
+in their coupling to the NV center. We use this addressing scheme to
 initialize qubits in a decoherence-free subspace (DFS) of nuclear
 spins, and propose a means for realizing a coherent SWAP operation
 between the NV center electron spin state and the DFS qubit.
 
 \section{Identifying symmetrically coupled $^{13}$C nuclear spins}
-
-\fixme{How do we identify and locate larmor pairs?}
-
-\section{Individually addressing larmor pairs}
-
-\fixme{How do we individually address larmor pairs?}
 
 Restricting the NV electron spin states to the subspace spanned by
 $\set{\ket0,\ket{m_s}}$ ($m_s=\pm1$), the AXY-$n$ pulse sequence
@@ -123,25 +114,38 @@ for a tunable coupling strength $h_\t{int}$ and direction $\uv n_j$,
 where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and $\v I_j$ is the spin
 operator for nuclear spin $j$. The protocol for realizing this
 effective Hamiltonian, however, is conditional on a sufficiently
-unique larmor frequency $\omega_j$, i.e. that for all $n\ne j$
+unique effective larmor frequency $\omega_j$, i.e. that for all
+$n\ne j$
 \begin{align}
   \abs{\omega_n-\omega_j} \gg \abs{f_{k_{DD}}\v A_j^\perp},
 \end{align}
 where $f_{k_{DD}}$ is the fourier component of the AXY-$n$ protocol on
-resonance with $\omega_j$ and $\v A_j^\perp$ is the component of the
-hyperfine vector $\v A_j$ perpendicular to the effective larmor
-precession axis $\v\omega_j$.
+resonance with $\omega_j$ and $\v A_j^\perp$ ($\v A_j^\parallel$) is
+the component of the hyperfine vector $\v A_j$ perpendicular
+(parallel) to the effective larmor precession axis $\uv\omega_j$.
 
 It is possible, however, for two nuclear spins (indexed by 1 and 2) to
 have identical larmor frequencies $\omega_1=\omega_2\equiv\omega$,
-which occurs when they couple symmetrically to the NV center with
-$A_1=A_2$. The state space of two such spins, which we call {\it
-  larmor pairs}, contains a subspace free of decoherence via spin
-coupling to the NV center electron, i.e. a decoherence-free subspace
-(DFS). This DFS is spanned by the singlet-triplet states
-$\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, or equivalently by
-$\set{\ket{\u\d},\ket{\d\u}}$. \fixme{show that this subspace is
-  decoherence-free (in the supplementary material)}
+which occurs when both nuclei lie along the edges of a cylinder
+centered on the NV center and oriented along the natural NV axis. We
+call such nuclei {\it larmor pairs}, and their geometry results in
+$A_1^\perp=A_2^\perp\equiv A^\perp$ and
+$A_1^\parallel=A_2^\parallel\equiv A^\parallel$ (see Supplementary
+Information) \fixme{prove in the SI}.
+
+\fixme{Reference \cite{wang2016positioning} for identifying and
+  location nuclei with unique larmor frequencies}
+
+\fixme{Provide derivation for NV coherence when on resonance with the
+  larmor frequency of a larmor pair}
+
+\fixme{Provide derivation for NV coherence when on resonance with a
+  larmor frequency when applying a control field for both the one- and
+  two-nucleus case}
+
+\fixme{Walk through protocol to identify and locate larmor pairs}
+
+\section{Individually addressing nuclei in larmor pairs}
 
 When trying to address one spin in a larmor pair, the protocols for
 (\ref{H_int}) will simultaneously couple $\sigma_\NV^z$ to both
@@ -155,18 +159,27 @@ $\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega
   t-\phi_\t{dec}}$ during the AXY-$n$ addressing protocol suppresses
 components of $\uv n_j$ which are perpendicular to the vector
 $\v B_\t{dec}$ projected onto the plane perpendicular to $\v\omega_j$
-and rotated in this plane by $\phi_\t{dec}$. One can therefore choose
-a direction $\v B_\t{dec}$ which completely suppresses NV electron
-spin coupling to spin 1 (2), leaving only coupling to spin 2 (1).
+and rotated about the axis $\uv\omega_j$ by the angle
+$\phi_\t{dec}$. One can therefore choose a direction $\v B_\t{dec}$
+which completely suppresses NV electron spin coupling to spin 1 (2),
+leaving only coupling to spin 2 (1).
+
+\fixme{Give more information or details about this protocol? Reference
+  SI}
 
 \section{Qubit initialization in a decoherence-free subspace}
 
 \fixme{Implement PRX\cite{reiserer2016robust} methods for initializing
   a qubit in $\ket{\u\d}\pm\ket{\d\u}$}
 
-The protocols for addressing an individual nucleus in a larmor pair
-can be used to initialize a qubit in the DFS of a larmor pair. In
-particular, one can use the gate sequences in
+The state space of larmor pairs contains a subspace free of
+decoherence via spin coupling to the NV center electron, i.e. a
+decoherence-free subspace (DFS). This DFS is spanned by the
+singlet-triplet states $\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, or
+equivalently by $\ket{\u\d}$ and $\ket{\d\u}$. \fixme{prove that this
+  subspace is decoherence-free in the SI} The protocols for addressing
+an individual nucleus in a larmor pair can be used to initialize a
+qubit in this DFS. In particular, one can use the gate sequences in
 \cite{reiserer2016robust} to deterministically initialize the larmor
 pair into $\ket{\d\d}$, then probabilistically convert this state into
 $\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ for some phase $\phi$
@@ -762,3 +775,16 @@ elsewhere)?
 \bibliography{\jobname}
 
 \end{document}
+
+
+notes:
+
+prove DFS
+
+how to locate spins?
+- identify larmor frequencies for C-13 nuclei
+- identify a frequency with two spins
+- locate two spins
+
+perform elementary gate on one spin
+implement PRX gates
