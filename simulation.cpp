@@ -554,7 +554,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     for (uint i = 0; i < nv.nuclei.size(); i++) {
       const double A_perp = hyperfine_perp(nv,i).norm();
       const double w_larmor = effective_larmor(nv,i).norm();
-      cout << w_larmor << " " << A_perp << endl;
+      cout << i << " " << w_larmor << " " << A_perp << endl;
 
       if (w_larmor < w_min) w_min = w_larmor;
       if (w_larmor > w_max) w_max = w_larmor;

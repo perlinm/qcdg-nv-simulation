@@ -12,6 +12,16 @@ output_fname = fname.replace(".txt","") + ".pdf"
 
 show = (len(sys.argv) == 3)
 
+# return number of valid floats in a line of text
+def nums_in(line):
+    n = 0
+    for l in line.split():
+        try:
+            float(l.strip())
+            n += 1
+        except: None
+    return n
+
 reading_larmor_data = False
 reading_scan_data = False
 
@@ -32,17 +42,12 @@ with open(fname,"r") as f:
             continue
         if not reading_larmor_data and not reading_scan_data: continue
 
-        # verify that line consists only of two numbers
-        invalid_line = (len(line.split()) != 2)
-        for l in line.split():
-            try: float(l.strip())
-            except: invalid_line = True
-        if invalid_line: continue
-
         if reading_larmor_data:
-            w_larmor.append(float(line.split()[0]))
-            hyperfine_perp.append(float(line.split()[1]))
+            if nums_in(line) != 3: continue
+            w_larmor.append(float(line.split()[1]))
+            hyperfine_perp.append(float(line.split()[2]))
         if reading_scan_data:
+            if nums_in(line) != 2: continue
             w_scan.append(float(line.split()[0]))
             coherence.append(float(line.split()[1]))
 
