@@ -38,6 +38,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   bool coherence_scan;
+  bool coherence_signal;
   bool rotation;
   bool coupling;
   bool iswap;
@@ -54,6 +55,10 @@ int main(const int arg_num, const char *arg_vec[]) {
   simulations.add_options()
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform coherence scan for effective larmor frequencies")
+    ("signal",
+     po::value<bool>(&coherence_signal)->default_value(false)->implicit_value(true),
+     "measure coherence signal as a function of the coupling constant"
+     " at the frequency of a target nucleus")
     ("rotate", po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
      "rotate an individual nucleus")
     ("couple", po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
@@ -158,18 +163,24 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   uint scan_bins;
+  uint signal_bins;
+  double measurement_time;
+  double measurement_time_in_ms;
   double f_DD;
-  double scan_time;
-  double scan_time_in_ms;
+  double signal_f_DD_max;
 
-  po::options_description scan_options("Coherence scanning options",help_text_length);
+  po::options_description scan_options("Coherence measurement options",help_text_length);
   scan_options.add_options()
     ("scan_bins", po::value<uint>(&scan_bins)->default_value(500),
      "number of bins in coherence scanning range")
+    ("signal_bins", po::value<uint>(&signal_bins)->default_value(100),
+     "number of bins in coherence signal range")
+    ("measurement_time", po::value<double>(&measurement_time_in_ms)->default_value(1),
+     "time for each coherence measurement (microseconds)")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
-     "time for each coherence measurement (microseconds)")
+    ("signal_f_DD_max", po::value<double>(&signal_f_DD_max)->default_value(0.5),
+     "maximum magnitude of fourier component used in coherence signal measurement")
     ;
 
   string lattice_file;
@@ -234,6 +245,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const bool printing = print_lattice || print_pairs || target_info;
     if (!printing) {
       if (int(coherence_scan)
+          + int(coherence_signal)
           + int(rotation)
           + int(coupling)
           + int(iswap)
@@ -271,14 +283,15 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if (coherence_scan) {
     assert(scan_bins > 0);
-    assert(scan_time_in_ms > 0);
+    assert(signal_bins > 0);
+    assert(measurement_time_in_ms > 0);
   }
 
   // set some variables based on iputs
   c13_abundance = c13_factor*c13_natural_abundance;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
-  scan_time = scan_time_in_ms*1e-3;
+  measurement_time = measurement_time_in_ms*1e-3;
 
   angle = angle_over_pi*pi;
   target_polar = pi/2 - target_pitch_over_pi*pi;
@@ -556,10 +569,29 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for (uint i = 0; i < scan_bins; i++) {
       const double w_scan = w_start + i*(w_end-w_start)/scan_bins;
-      const double coherence = coherence_measurement(nv, w_scan, f_DD, scan_time);
+      const double coherence = coherence_measurement(nv, w_scan, f_DD, measurement_time);
       cout << w_scan << " " << coherence << endl;
     }
 
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Coherence signal
+  // -------------------------------------------------------------------------------------
+
+  if (coherence_signal) {
+    cout << "Coherence signal results:" << endl
+         << "# f_DD coherence" << endl;
+    for (uint target: target_nuclei) {
+      cout << "# target: " << target << endl;
+      const double w_signal = effective_larmor(nv,target).norm();
+      for (uint i = 0; i < signal_bins; i++) {
+        const double f_DD = (i + 0.5)/signal_bins * signal_f_DD_max;
+        const double coherence = coherence_measurement(nv, w_signal, f_DD,
+                                                       measurement_time);
+        cout << f_DD << " " << coherence << endl;
+      }
+    }
   }
 
   // -------------------------------------------------------------------------------------
