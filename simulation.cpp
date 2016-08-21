@@ -530,41 +530,34 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -------------------------------------------------------------------------------------
 
   if (coherence_scan) {
-    // identify effictive larmor frequencies and NV coupling strengths
-    vector<double> w_larmor(nv.nuclei.size());
-    vector<double> A_perp(nv.nuclei.size());
 
-    double w_max = 0, w_min = DBL_MAX; // maximum and minimum effective larmor frequencies
-    for (uint i = 0; i < nv.nuclei.size(); i++) {
-      A_perp.at(i) = hyperfine_perp(nv,i).norm();
-      w_larmor.at(i) = effective_larmor(nv,i).norm();
-
-      if (w_larmor.at(i) < w_min) w_min = w_larmor.at(i);
-      if (w_larmor.at(i) > w_max) w_max = w_larmor.at(i);
-    }
+    // maximum and minimum effective larmor frequencies
+    double w_max = 0, w_min = DBL_MAX;
 
     // print effective larmor frequencies and NV couping strengths
     cout << endl
          << "Larmor and hyperfine frequency data:" << endl
          << "# w_larmor A_perp" << endl;
     for (uint i = 0; i < nv.nuclei.size(); i++) {
-      cout << w_larmor.at(i) << " " << A_perp.at(i) << endl;
+      const double A_perp = hyperfine_perp(nv,i).norm();
+      const double w_larmor = effective_larmor(nv,i).norm();
+      cout << w_larmor << " " << A_perp << endl;
+
+      if (w_larmor < w_min) w_min = w_larmor;
+      if (w_larmor > w_max) w_max = w_larmor;
     }
 
     // perform coherence scan
     cout << endl
          << "Coherence scan results:" << endl
          << "# w_scan coherence" << endl;
-    vector<double> w_scan(scan_bins);
-    vector<double> coherence(scan_bins);
-
     const double w_range = w_max - w_min;
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
     for (uint i = 0; i < scan_bins; i++) {
-      w_scan.at(i) = w_start + i*(w_end-w_start)/scan_bins;
-      coherence.at(i) = coherence_measurement(nv, w_scan.at(i), f_DD, scan_time);
-      cout << w_scan.at(i) << " " << coherence.at(i) << endl;
+      const double w_scan = w_start + i*(w_end-w_start)/scan_bins;
+      const double coherence = coherence_measurement(nv, w_scan, f_DD, scan_time);
+      cout << w_scan << " " << coherence << endl;
     }
 
   }
