@@ -162,25 +162,19 @@ int main(const int arg_num, const char *arg_vec[]) {
      "azimuthal angle of NV rotation axis")
     ;
 
-  uint scan_bins;
-  uint signal_bins;
+  uint coherence_bins;
   double measurement_time;
   double measurement_time_in_ms;
   double f_DD;
-  double signal_f_DD_max;
 
   po::options_description scan_options("Coherence measurement options",help_text_length);
   scan_options.add_options()
-    ("scan_bins", po::value<uint>(&scan_bins)->default_value(500),
-     "number of bins in coherence scanning range")
-    ("signal_bins", po::value<uint>(&signal_bins)->default_value(100),
-     "number of bins in coherence signal range")
+    ("bins", po::value<uint>(&coherence_bins)->default_value(500),
+     "number of bins in coherence measurements")
     ("measurement_time", po::value<double>(&measurement_time_in_ms)->default_value(1),
      "time for each coherence measurement (microseconds)")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("signal_f_DD_max", po::value<double>(&signal_f_DD_max)->default_value(0.5),
-     "maximum magnitude of fourier component used in coherence signal measurement")
     ;
 
   string lattice_file;
@@ -282,8 +276,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   assert(integration_factor > 1);
 
   if (coherence_scan) {
-    assert(scan_bins > 0);
-    assert(signal_bins > 0);
+    assert(coherence_bins > 0);
     assert(measurement_time_in_ms > 0);
   }
 
@@ -567,8 +560,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_range = w_max - w_min;
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
-    for (uint i = 0; i < scan_bins; i++) {
-      const double w_scan = w_start + i*(w_end-w_start)/scan_bins;
+    for (uint i = 0; i < coherence_bins; i++) {
+      const double w_scan = w_start + (i+0.5)*(w_end-w_start)/coherence_bins;
       const double coherence = coherence_measurement(nv, w_scan, f_DD, measurement_time);
       cout << w_scan << " " << coherence << endl;
     }
@@ -585,8 +578,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     for (uint target: target_nuclei) {
       cout << "# target: " << target << endl;
       const double w_signal = effective_larmor(nv,target).norm();
-      for (uint i = 0; i < signal_bins; i++) {
-        const double f_DD = (i + 0.5)/signal_bins * signal_f_DD_max;
+      for (uint i = 0; i < coherence_bins; i++) {
+        const double f_DD = (i+0.5)/coherence_bins * axy_f_max(nv.k_DD);
         const double coherence = coherence_measurement(nv, w_signal, f_DD,
                                                        measurement_time);
         cout << f_DD << " " << coherence << endl;
