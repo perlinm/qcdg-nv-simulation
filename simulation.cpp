@@ -574,6 +574,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if (coherence_signal) {
     cout << "Coherence signal results:" << endl
+         << "# k_DD: " << nv.k_DD << endl
          << "# f_DD coherence" << endl;
     for (uint target: target_nuclei) {
       cout << "# target: " << target << endl;

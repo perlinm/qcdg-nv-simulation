@@ -21,15 +21,15 @@ def nums_in(line):
         except: None
     return n
 
-def make_plot(target,f_DD,coherence):
+def make_plot(target,k_DD,f_DD,coherence):
 
     plt.plot(f_DD,coherence,'k-',linewidth=2)
 
     plt.xlim(0,f_DD[-1])
     plt.ylim(-1,1)
 
-    plt.xlabel(r'$f_{k_{DD}}$')
-    plt.ylabel('Coherence')
+    plt.xlabel("$f_{}$".format(k_DD))
+    plt.ylabel("Coherence")
 
     plt.tight_layout()
     plt.savefig(fname.replace(".txt","-{}.pdf".format(target)))
@@ -48,7 +48,11 @@ with open(fname,"r") as f:
 
             if "#" in line:
 
-                try: make_plot(target,f_DD,coherence)
+                if "k_DD" in line:
+                    k_DD = int(line.split()[2])
+                    continue
+
+                try: make_plot(target,k_DD,f_DD,coherence)
                 except: None
 
                 target = line.split()[2]
@@ -60,5 +64,5 @@ with open(fname,"r") as f:
                 f_DD.append(float(line.split()[0]))
                 coherence.append(float(line.split()[1]))
 
-try: make_plot(target,f_DD,coherence)
+try: make_plot(target,k_DD,f_DD,coherence)
 except: None
