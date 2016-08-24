@@ -374,6 +374,7 @@ MatrixXcd H_en(const nv_system& nv, const uint cluster_index) {
 MatrixXcd H_nn(const nv_system& nv, const uint cluster_index){
   const vector<uint> cluster = nv.clusters.at(cluster_index);
   MatrixXcd H = MatrixXcd::Zero(pow(2,cluster.size()),pow(2,cluster.size()));
+  if (nv.no_nn) return H;
   for (uint n1 = 0; n1 < cluster.size(); n1++) {
     const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
     for (uint n2 = 0; n2 < n1; n2++) {
@@ -382,13 +383,6 @@ MatrixXcd H_nn(const nv_system& nv, const uint cluster_index){
                {n1,n2}, cluster.size());
     }
   }
-  return H;
-}
-
-// spin-spin coupling Hamiltonian for the entire system
-MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
-  MatrixXcd H = H_en(nv, cluster_index);
-  if (!nv.no_nn) H += tp(I2,H_nn(nv, cluster_index));
   return H;
 }
 
@@ -566,8 +560,8 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
                         advance_time - phi_DD/w_DD, controls.gB());
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
-  const uint D = pow(2,spins);
-  if (simulation_time == 0) return protocol::Identity(D);
+  const uint dim = pow(2,spins);
+  if (simulation_time == 0) return protocol::Identity(dim);
 
   // AXY sequence parameters
   const double t_DD = 2*pi/w_DD;
@@ -588,15 +582,15 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
     return max(largest_control_freq, gB_cap.norm());
   }();
 
-
   // integration step number and size
   const uint integration_steps =
-    ceil(simulation_time*frequency_scale*nv.integration_factor);
+    ceil(simulation_time*frequency_scale*nv.integration_factor)
+    * ceil(simulation_time/t_DD);
   const double dx = simulation_time/t_DD / integration_steps;
 
   const MatrixXcd H_0 = H_sys(nv, cluster); // full system Hamiltonian
   const MatrixXcd X = act_NV(nv, sx, spins).U; // NV center spin flip (pi-)pulse
-  MatrixXcd U = MatrixXcd::Identity(D,D); // system propagator
+  MatrixXcd U = MatrixXcd::Identity(dim,dim); // system propagator
   Matrix2cd U_NV = I2; // NV-only propagator
   uint pulse_count = 0;
 
@@ -616,7 +610,6 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
         if (pulses.at(p) < x_AXY + dx) {
           if (pulses.at(p) >= x_AXY) {
             return p;
-
           }
         } else break;
       }
@@ -670,6 +663,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
       U_NV = (exp(-j*dx_f*t_DD*H_NV(nv,gB)) * U_NV).eval();
     }
   }
+
   // rotate into the frame of the NV center and normalize the propagator
   U = (act_NV(nv, U_NV.adjoint(), spins).U * U).eval();
   U /= sqrt(real(trace(U.adjoint()*U)) / U.rows());

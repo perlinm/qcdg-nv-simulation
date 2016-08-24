@@ -217,7 +217,9 @@ MatrixXcd H_en(const nv_system& nv, const uint cluster_index);
 MatrixXcd H_nn(const nv_system& nv, const uint cluster_index);
 
 // spin-spin coupling Hamiltonian for the entire system
-MatrixXcd H_int(const nv_system& nv, const uint cluster_index);
+inline MatrixXcd H_int(const nv_system& nv, const uint cluster_index) {
+  return H_en(nv, cluster_index) + tp(I2,H_nn(nv, cluster_index));
+}
 
 // nuclear Zeeman Hamiltonian; acts only on cluster
 MatrixXcd H_nZ(const nv_system& nv, const uint cluster_index, const Vector3d& gB);
