@@ -116,7 +116,10 @@ MatrixXcd U_basis_matrix(const uint N);
 // decompose Hamiltonian into its basis elements
 VectorXcd U_decompose(const MatrixXcd& U, const bool fast = false);
 
-// compute mean fidelity of gate U with respect to G within a given subsystem
+// return k-th kraus operator of U when acting on a given subsystem
+MatrixXcd kraus_element(const MatrixXcd& U, const vector<uint>& system, const uint k);
+
+// compute mean fidelity of propagator U within a given subsystem with respect to gate G
 double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
                      const vector<uint>& system = {});
 

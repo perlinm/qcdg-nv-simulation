@@ -712,24 +712,18 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if (larmor_identity) {
     cout << "idx1 idx2 fidelity\n";
+    const bool targeting_pair = true;
     for (vector<uint> idxs: targeted_larmor_pairs) {
       const uint idx1 = idxs.at(0);
       const uint idx2 = idxs.at(1);
       vector<protocol> P(2);
       for (bool exact : {true,false}) {
-        P.at(exact) = target_identity(nv, idx1, identity_time, exact);
+        P.at(exact) = target_identity(nv, idx1, identity_time, exact, targeting_pair);
       }
-
-      const uint cluster = get_cluster_containing_target(nv,idx1);
-      const uint cluster_size = nv.clusters.at(cluster).size();
-      vector<uint> environment = {}; // in cluster system
-      for(uint i = 0; i < cluster_size; i++) {
-        if (i != idx1 && i != idx2) environment.push_back(i);
-      }
-      const MatrixXcd U_error = P.at(true).U * P.at(false).U.adjoint();
-      const Matrix2cd larmor_error = ptrace(U_error, environment).block(1,1,2,2);
-
-      cout << idx1 << " " << idx2 << " " << gate_fidelity(larmor_error, I2) << endl;
+      const uint cluster_idx1 = get_index_in_cluster(nv,idx1);
+      const uint cluster_idx2 = get_index_in_cluster(nv,idx2);
+      cout << idx1 << " " << idx2 << " "
+           << protocol_fidelity(P, {cluster_idx1, cluster_idx2}) << endl;
     }
   }
 

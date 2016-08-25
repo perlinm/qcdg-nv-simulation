@@ -364,8 +364,7 @@ MatrixXcd H_en(const nv_system& nv, const uint cluster_index) {
   MatrixXcd H = MatrixXcd::Zero(pow(2,spins),pow(2,spins));
   for (uint n1 = 0; n1 < cluster.size(); n1++) {
     const Vector3d n1_pos = nv.nuclei.at(cluster.at(n1));
-    H += act(H_ss(e_pos, g_e, nv.e_S(), n1_pos, g_C13, I_vec),
-             {0,n1+1}, spins);
+    H += act(H_ss(e_pos, g_e, nv.e_S(), n1_pos, g_C13, I_vec), {0,n1+1}, spins);
   }
   return H;
 }

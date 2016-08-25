@@ -198,12 +198,48 @@ VectorXcd U_decompose(const MatrixXcd& U, const bool fast) {
   else return U_basis_matrix(N).fullPivHouseholderQr().solve(flatten(U));
 }
 
-// compute mean fidelity of gate U with respect to G within a given subsystem
-double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
-                     const vector<uint>& system) {
-  assert(U.size() == G.size());
+// return k-th kraus operator of U when acting on a given subsystem
+MatrixXcd kraus_element(const MatrixXcd& U, const vector<uint>& system, const uint k) {
+  const uint total_qbits = log2(U.rows());
+  const uint system_qbits = system.size();
+  const uint environment_qbits = total_qbits - system_qbits;
+  const uint dim_s = pow(2,system_qbits);
+  const uint dim_e = pow(2,environment_qbits);
+  assert(k < dim_e);
 
-  const uint spins = log2(G.rows());
+  // rearrange U so that the system qbits are separated from the environment qbits
+  vector<uint> qbit_order = {};
+  for (uint qq = 0; qq < total_qbits; qq++) {
+    if (in_vector(qq,system)) qbit_order.push_back(qq);
+  }
+  for (uint qq = 0; qq < total_qbits; qq++) {
+    if (!in_vector(qq,qbit_order)) qbit_order.push_back(qq);
+  }
+
+  vector<uint> qbit_permutation = {};
+  for (uint qq = 0; qq < total_qbits; qq++) {
+    for (uint pos = 0; pos < total_qbits; pos++) {
+      if (qbit_order.at(pos) == qq) {
+        qbit_permutation.push_back(pos);
+      }
+    }
+  }
+  const MatrixXcd M = act(U,qbit_permutation,total_qbits);
+
+  MatrixXcd E_k = MatrixXcd::Zero(dim_s,dim_s);
+  for (uint i = 0; i < E_k.rows(); i++) {
+    for (uint j = 0; j < E_k.cols(); j++) {
+      E_k(i,j) = M(i*dim_e+k,j*dim_e);
+    }
+  }
+  return E_k;
+}
+
+// compute mean fidelity of propagator U within a given subsystem with respect to gate G
+double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G, const vector<uint>& system) {
+  assert(U.size() >= G.size());
+
+  const uint spins = log2(U.rows());
   vector<uint> environment = {};
   if (system.size() > 0) {
     for (uint n = 0; n < spins; n++) {
@@ -213,9 +249,25 @@ double gate_fidelity(const MatrixXcd& U, const MatrixXcd& G,
     }
   }
 
-  const MatrixXcd M = ptrace(G * U.adjoint(), environment);
-  const uint D = M.rows();
-  return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
+  if (environment.size() == 0) {
+    // use straightforward fidelity formula
+    const MatrixXcd M = G * U.adjoint();
+    const uint D = M.rows();
+    return real( trace(M.adjoint()*M) + trace(M)*conj(trace(M)) ) / (D*(D+1));
+
+  } else {
+    // use fidelity formula with kraus operators for action of U on the given subsystem
+    const uint dim_s = pow(2,system.size());
+    const uint dim_e = pow(2,environment.size());
+    MatrixXcd sum_to_trace = MatrixXcd::Zero(dim_s,dim_s);
+    double sum_trace_squared = 0;
+    for (uint k = 0; k < dim_e; k++) {
+      const MatrixXcd M_k = G.adjoint() * kraus_element(U, system, k);
+      sum_to_trace += M_k.adjoint() * M_k;
+      sum_trace_squared += real(trace(M_k)*conj(trace(M_k)));
+    }
+    return (real(trace(sum_to_trace)) + sum_trace_squared) / (dim_s * (dim_s+1));
+  }
 }
 
 // ---------------------------------------------------------------------------------------
