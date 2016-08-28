@@ -161,7 +161,7 @@ inline uint get_index_in_subsystem(const nv_system& nv, const uint index) {
 }
 
 // ---------------------------------------------------------------------------------------
-// AXY scanning methods
+// Hyperfine fields and effective larmor vectors
 // ---------------------------------------------------------------------------------------
 
 // hyperfine field experienced by C-13 nucleus located at pos
@@ -173,12 +173,6 @@ inline Vector3d hyperfine(const nv_system& nv, const uint index) {
   return hyperfine(nv.nuclei.at(index));
 }
 
-// component of hyperfine field perpendicular to the larmor axis
-Vector3d hyperfine_perp(const nv_system&nv, const Vector3d& pos);
-inline Vector3d hyperfine_perp(const nv_system&nv, const uint index) {
-  return hyperfine_perp(nv,nv.nuclei.at(index));
-}
-
 // effective larmor frequency of target C-13 nucleus located at pos
 inline Vector3d effective_larmor(const nv_system& nv, const Vector3d& pos) {
   return nv.static_gBz*zhat - nv.ms/2.*hyperfine(pos);
@@ -187,24 +181,23 @@ inline Vector3d effective_larmor(const nv_system& nv, const uint index) {
   return effective_larmor(nv,nv.nuclei.at(index));
 }
 
+// component of hyperfine field perpendicular to the larmor axis
+inline Vector3d hyperfine_perp(const nv_system&nv, const Vector3d& pos) {
+  const Vector3d w_eff_hat = hat(effective_larmor(nv,pos));
+  const Vector3d A = hyperfine(pos);
+  return A - dot(A,w_eff_hat)*w_eff_hat;
+}
+inline Vector3d hyperfine_perp(const nv_system&nv, const uint index) {
+  return hyperfine_perp(nv,nv.nuclei.at(index));
+}
+
 // minimum difference in larmor frequencies between target nucleus and other nuclei
 //   i.e. min{ |w_s - w_{index}| for all s != index }
 double larmor_resolution(const nv_system& nv, const uint index);
 
-// return maximum allowable value of f_k for the AXY sequence
-inline double axy_f_max(const axy_harmonic k) {
-  if (k == first) return (8*cos(pi/9) - 4) / pi;
-  else return 4/pi; // if k == third
-}
-
-// pulse times for harmonic h and fourier component f
-vector<double> axy_pulse_times(const double f, const axy_harmonic k);
-
-// advance pulses by a given (normalized) time
-vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance);
-
-// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
-int F_AXY(double x, const vector<double> pulses);
+// ---------------------------------------------------------------------------------------
+// Hamiltonians
+// ---------------------------------------------------------------------------------------
 
 // Hamiltoninan coupling two spins
 MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
@@ -247,14 +240,7 @@ inline MatrixXcd H_sys(const nv_system& nv, const uint cluster) {
 }
 
 // total control Hamiltonian for the entire system
-inline MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& gB_ctl) {
-  return (tp(I2, H_nZ(nv,cluster,gB_ctl)) +
-          act(H_NV_Z(nv,gB_ctl), {0}, nv.clusters.at(cluster).size()+1));
-}
-
-// perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
-                             const double scan_time);
+MatrixXcd H_ctl(const nv_system& nv, const uint cluster, const Vector3d& gB_ctl);
 
 // ---------------------------------------------------------------------------------------
 // Control field struct
@@ -365,6 +351,25 @@ inline double protocol_fidelity(const vector<protocol>& P,
 }
 
 // ---------------------------------------------------------------------------------------
+// AXY protocol methods
+// ---------------------------------------------------------------------------------------
+
+// return maximum allowable value of f_k for the AXY sequence
+inline double axy_f_max(const axy_harmonic k) {
+  if (k == first) return (8*cos(pi/9) - 4) / pi;
+  else return 4/pi; // if k == third
+}
+
+// pulse times for harmonic h and fourier component f
+vector<double> axy_pulse_times(const double f, const axy_harmonic k);
+
+// advance pulses by a given (normalized) time
+vector<double> advanced_pulse_times(const vector<double> pulse_times, double advance);
+
+// evaluate F(x) (i.e. sign in front of sigma_z^{NV}) for given AXY pulses
+int F_AXY(double x, const vector<double> pulses);
+
+// ---------------------------------------------------------------------------------------
 // Simulation methods
 // ---------------------------------------------------------------------------------------
 
@@ -395,3 +400,13 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
                       const double w_DD, const double f_DD, const axy_harmonic k_DD,
                       const control_fields& controls, const double simulation_time,
                       const double advance_time = 0, const double phi_DD = 0);
+
+// perform NV coherence measurement with a static magnetic field
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const double scan_time,
+                             const Vector3d& gB_ctl = Vector3d::Zero());
+
+// perform NV coherence measurement with control fields
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const double scan_time, const control_fields& controls,
+                             const double phi_DD);
