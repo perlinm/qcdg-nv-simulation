@@ -686,8 +686,30 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 // perform NV coherence measurement with control fields
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time, const control_fields& controls,
-                             const double phi_DD) {
+                             const double phi_DD, const double precision_factor) {
   // AXY sequence parameters
   const double w_DD = w_scan/nv.k_DD;
-  return w_DD;
+  const double axy_advance = 0;
+
+  // initial NV state
+  const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
+
+  double coherence = 1;
+  for (uint cluster = 0; cluster < nv.clusters.size(); cluster++) {
+    if (1 - coherence_measurement(nv,w_scan,f_DD,scan_time)
+        > precision_factor/nv.clusters.size()) {
+
+      const uint spins = nv.clusters.at(cluster).size()+1;
+
+      const MatrixXcd rho_0 = act(rho_NV_0,{0},spins) / pow(2,spins-1);
+      const MatrixXcd proj_x = act(rho_NV_0,{0},spins);
+
+      const MatrixXcd U = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                                       controls, scan_time, axy_advance, phi_DD).U;
+
+      const double population_x = real(trace(U * rho_0 * U.adjoint() * proj_x));
+      coherence *= 2*population_x - 1;
+    }
+  }
+  return coherence;
 }

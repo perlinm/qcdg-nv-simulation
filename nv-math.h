@@ -409,4 +409,4 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 // perform NV coherence measurement with control fields
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time, const control_fields& controls,
-                             const double phi_DD);
+                             const double phi_DD, const double precision_factor = 0.05);
