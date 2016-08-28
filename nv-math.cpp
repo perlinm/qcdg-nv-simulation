@@ -519,7 +519,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
                       const double advance_time, const double phi_DD) {
   if (controls.all_fields_static()) {
     return simulate_AXY(nv, cluster, w_DD, f_DD, k_DD, simulation_time,
-                        advance_time - phi_DD/w_DD, controls.gB());
+                        advance_time - phi_DD/(w_DD*nv.k_DD), controls.gB());
   }
   const uint spins = nv.clusters.at(cluster).size()+1;
   const uint dim = pow(2,spins);
@@ -529,7 +529,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
   const double t_DD = 2*pi/w_DD;
   const double advance = advance_time/t_DD;
   const vector<double> axy_pulses = axy_pulse_times(f_DD,k_DD);
-  const vector<double> pulses = advanced_pulse_times(axy_pulses, -phi_DD/(2*pi));
+  const vector<double> pulses = advanced_pulse_times(axy_pulses, -phi_DD/(2*pi*nv.k_DD));
 
   // largest frequency scale of simulation
   const double frequency_scale = [&]() -> double {
@@ -557,7 +557,7 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
   uint pulse_count = 0;
 
   // if we need to start with a flipped NV center, flip it
-  if (F_AXY(advance - phi_DD/(2*pi), axy_pulses) == -1) {
+  if (F_AXY(advance - phi_DD/(2*pi*nv.k_DD), axy_pulses) == -1) {
     U = (X * U).eval();
     U_NV = (sx * U_NV).eval();
   }
