@@ -39,6 +39,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   bool coherence_scan;
   bool coherence_signal;
+  bool angular_coherence_signal;
   bool rotation;
   bool coupling;
   bool iswap;
@@ -54,11 +55,15 @@ int main(const int arg_num, const char *arg_vec[]) {
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
-     "perform coherence scan for effective larmor frequencies")
+     "perform NV coherence scan for effective larmor frequencies")
     ("signal",
      po::value<bool>(&coherence_signal)->default_value(false)->implicit_value(true),
-     "measure coherence signal as a function of the coupling constant"
+     "measure NV coherence signal as a function of the coupling constant"
      " at the frequency of a target nucleus")
+    ("angular_signal",
+     po::value<bool>(&angular_coherence_signal)->default_value(false)->implicit_value(true),
+     "measure NV coherence signal as a function of the coupling constant"
+     " and angle of a control field at the frequency of a target nucleus")
     ("rotate", po::value<bool>(&rotation)->default_value(false)->implicit_value(true),
      "rotate an individual nucleus")
     ("couple", po::value<bool>(&coupling)->default_value(false)->implicit_value(true),
@@ -166,7 +171,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   double measurement_time;
   double measurement_time_in_ms;
   double f_DD;
-  bool signal_field;
   uint angular_resolution;
   double signal_gB_factor;
   double max_f_factor;
@@ -179,9 +183,6 @@ int main(const int arg_num, const char *arg_vec[]) {
      "time for each coherence measurement (microseconds)")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
-    ("signal_field",
-     po::value<bool>(&signal_field)->default_value(false)->implicit_value(true),
-     "apply magnetic field during coherence signal measurement")
     ("angular_resolution", po::value<uint>(&angular_resolution)->default_value(20),
      "angular resolution for magnetic field direction during signal measurement"
      " (1/[pi radians])")
@@ -254,6 +255,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     if (!printing) {
       if (int(coherence_scan)
           + int(coherence_signal)
+          + int(angular_coherence_signal)
           + int(rotation)
           + int(coupling)
           + int(iswap)
@@ -293,7 +295,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     assert(coherence_bins > 0);
     assert(measurement_time_in_ms > 0);
   }
-  assert(!(signal_field && !coherence_signal));
   assert(angular_resolution > 2);
   assert(signal_gB_factor > 1);
   assert(max_f_factor <= 1);
@@ -586,14 +587,14 @@ int main(const int arg_num, const char *arg_vec[]) {
   // Coherence signal
   // -------------------------------------------------------------------------------------
 
-  if (coherence_signal) {
+  if (coherence_signal || angular_coherence_signal) {
     cout << "Coherence signal results:" << endl
          << "# k_DD: " << nv.k_DD << endl;
     cout << "# format: f_DD coherence(s)" << endl;
 
     for (uint target: target_nuclei) {
       cout << "# target: " << target << endl;
-      if (signal_field) {
+      if (angular_coherence_signal) {
         const double angular_pos = atan2(dot(nv.nuclei.at(target),yhat),
                                          dot(nv.nuclei.at(target),xhat));
         cout << "# azimuth/pi: " << angular_pos/pi << endl;
@@ -604,7 +605,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (uint ii = 0; ii < coherence_bins; ii++) {
         const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
-        if (!signal_field) {
+        if (!angular_coherence_signal) {
           const double coherence =
             coherence_measurement(nv, w_signal, f_DD, measurement_time);
           cout << f_DD << " " << coherence << endl;
