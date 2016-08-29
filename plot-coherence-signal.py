@@ -4,13 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if len(sys.argv) not in [2,3,4]:
-    print("useage: %s file [show_plot] [show_azimuths]" % sys.argv[0])
+    print("useage: %s file [show] [azimuths]" % sys.argv[0])
     exit(1)
 
 fname = sys.argv[1]
 
-show_plot = "show_plot" in sys.argv
-show_azimuths = "show_azimuths" in sys.argv
+show = "show" in sys.argv
+show_azimuths = "azimuths" in sys.argv
 
 # return number of valid floats in a line of text
 def nums_in(line):
@@ -38,7 +38,7 @@ def line_plot(targets,k_DD,f_DD,coherence):
     plt.tight_layout()
     plt.savefig(figname(targets))
 
-    if show_plot: plt.show()
+    if show: plt.show()
 
 def color_plot(targets,k_DD,f_DD,coherence,azimuths):
 
@@ -67,7 +67,7 @@ def color_plot(targets,k_DD,f_DD,coherence,azimuths):
     plt.tight_layout()
     plt.savefig(figname(targets))
 
-    if show_plot: plt.show()
+    if show: plt.show()
 
 def make_plot(targets,k_DD,f_DD,coherence,azimuths):
     f_DD = np.array(f_DD)
