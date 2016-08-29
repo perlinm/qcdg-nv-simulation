@@ -294,6 +294,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     assert(measurement_time_in_ms > 0);
   }
   assert(!(signal_field && !coherence_signal));
+  assert(angular_resolution > 2);
+  assert(signal_gB_factor > 1);
+  assert(max_f_factor <= 1);
 
   // set some variables based on iputs
   c13_abundance = c13_factor*c13_natural_abundance;
