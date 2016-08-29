@@ -758,9 +758,9 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
       }();
       const uint spins = nv.clusters.at(cluster).size()+1;
       const MatrixXcd rho_0 = act(rho_NV_0,{0},spins) / pow(2,spins-1);
-      const MatrixXcd proj_x = act(rho_NV_0,{0},spins);
-      const double population_x = real(trace(U * rho_0 * U.adjoint() * proj_x));
-      coherence *= 2*population_x - 1;
+      const MatrixXcd proj_0 = act(rho_NV_0,{0},spins);
+      const double population_0 = real(trace(U * rho_0 * U.adjoint() * proj_0));
+      coherence *= 2*population_0 - 1;
     }
   }
   return coherence;
