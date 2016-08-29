@@ -724,9 +724,9 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
             if (cycles == 0) return 0;
             else return t_DD - leading_time;
           }();
-          const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_scan, f_DD, nv.k_DD,
+          const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                    controls, leading_time, 0, phi_DD).U;
-          const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_scan, f_DD, nv.k_DD,
+          const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
                                                     controls, trailing_time,
                                                     leading_time, phi_DD).U;
           return U_leading * pow(U_trailing*U_leading, cycles);
