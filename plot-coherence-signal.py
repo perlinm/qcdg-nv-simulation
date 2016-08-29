@@ -41,13 +41,14 @@ def line_plot(target,k_DD,f_DD,coherence):
 
 def color_plot(target,k_DD,f_DD,coherence):
 
+    f_DD_boundaries = f_DD - (f_DD[1]-f_DD[0])/2
     d_phi = 1/coherence.shape[1]
     angles_over_pi = np.arange(0,1+d_phi,1/coherence.shape[1])
 
-    plt.pcolor(angles_over_pi,f_DD,coherence)
+    plt.pcolor(angles_over_pi,f_DD_boundaries,coherence)
 
     plt.xlim(0,1)
-    plt.ylim(0,f_DD[-1])
+    plt.ylim(0,f_DD_boundaries[-1])
 
     plt.xlabel(r"$\phi_{DD}/\pi$")
     plt.ylabel("$f_{}$".format(k_DD))
