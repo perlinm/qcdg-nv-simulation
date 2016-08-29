@@ -3,13 +3,14 @@ import sys, matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
-if len(sys.argv) not in [2,3]:
-    print('useage: %s file [show]' % sys.argv[0])
+if len(sys.argv) not in [2,3,4]:
+    print("useage: %s file [show_plot] [show_azimuths]" % sys.argv[0])
     exit(1)
 
 fname = sys.argv[1]
 
-show = (len(sys.argv) == 3)
+show_plot = "show_plot" in sys.argv
+show_azimuths = "show_azimuths" in sys.argv
 
 # return number of valid floats in a line of text
 def nums_in(line):
@@ -37,15 +38,21 @@ def line_plot(targets,k_DD,f_DD,coherence):
     plt.tight_layout()
     plt.savefig(figname(targets))
 
-    if show: plt.show()
+    if show_plot: plt.show()
 
-def color_plot(targets,k_DD,f_DD,coherence):
+def color_plot(targets,k_DD,f_DD,coherence,azimuths):
 
     f_DD_boundaries = ( f_DD - (f_DD[1]-f_DD[0])/2 )
     d_phi = 1/coherence.shape[1]
     angles_over_pi = np.arange(0,1+d_phi,1/coherence.shape[1])
 
     plt.pcolor(angles_over_pi,f_DD_boundaries,coherence)
+    if show_azimuths:
+        for azimuth in azimuths:
+            pi_phi = azimuth
+            while pi_phi < 0: pi_phi +=1
+            while pi_phi >= 1: ip_phi -= 1
+            plt.axvline(pi_phi,color='k')
 
     plt.xlim(0,1)
     plt.ylim(0,f_DD_boundaries[-1])
@@ -60,9 +67,9 @@ def color_plot(targets,k_DD,f_DD,coherence):
     plt.tight_layout()
     plt.savefig(figname(targets))
 
-    if show: plt.show()
+    if show_plot: plt.show()
 
-def make_plot(targets,k_DD,f_DD,coherence):
+def make_plot(targets,k_DD,f_DD,coherence,azimuths):
     f_DD = np.array(f_DD)
     coherence = np.array(coherence)
 
@@ -70,7 +77,7 @@ def make_plot(targets,k_DD,f_DD,coherence):
     if coherence.shape[1] == 1:
         line_plot(targets,k_DD,f_DD,coherence)
     else:
-        color_plot(targets,k_DD,f_DD,coherence)
+        color_plot(targets,k_DD,f_DD,coherence,azimuths)
 
 reading_data = False
 
@@ -85,8 +92,11 @@ with open(fname,"r") as f:
                 if "k_DD" in line:
                     k_DD = int(line.split()[-1])
                     continue
+                if "azimuths" in line:
+                    azimuths = [ float(a) for a in line.split()[2:]]
+                    continue
                 if "targets" in line:
-                    try: make_plot(targets,k_DD,f_DD,coherence)
+                    try: make_plot(targets,k_DD,f_DD,coherence,azimuths)
                     except: None
                     targets = line.split()[2:]
                     f_DD = []
@@ -95,4 +105,4 @@ with open(fname,"r") as f:
                 f_DD.append(float(line.split()[0]))
                 coherence.append([ float(n) for n in line.split()[1:]])
 
-make_plot(targets,k_DD,f_DD,coherence)
+make_plot(targets,k_DD,f_DD,coherence,azimuths)
