@@ -584,9 +584,6 @@ int main(const int arg_num, const char *arg_vec[]) {
   if (coherence_signal) {
     cout << "Coherence signal results:" << endl
          << "# k_DD: " << nv.k_DD << endl;
-    if (signal_field) {
-      cout << "# angular bins: " << angular_resolution << endl;
-    }
     cout << "# format: f_DD coherence(s)" << endl;
 
     for (uint target: target_nuclei) {
@@ -599,8 +596,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
       const double w_signal = effective_larmor(nv,target).norm();
       const control_fields controls(nv.static_gBz/nv.scale_factor*xhat, w_signal);
-      for (uint i = 0; i < coherence_bins; i++) {
-        const double f_DD = (i+0.5)/coherence_bins * axy_f_max(nv.k_DD);
+      for (uint ii = 0; ii < coherence_bins; ii++) {
+        const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD);
 
         if (!signal_field) {
           const double coherence =
@@ -609,8 +606,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
         } else {
           cout << f_DD;
-          for (uint angular_bin = 0; angular_bin < angular_resolution; angular_bin++) {
-            const double phi_DD = angular_bin/pi;
+          for (uint jj = 0; jj < angular_resolution; jj++) {
+            const double phi_DD = (jj+0.5)/pi;
             const double coherence =
               coherence_measurement(nv, w_signal, f_DD, measurement_time,
                                     controls, phi_DD);
