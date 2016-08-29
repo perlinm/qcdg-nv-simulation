@@ -551,14 +551,11 @@ int main(const int arg_num, const char *arg_vec[]) {
   // -------------------------------------------------------------------------------------
 
   if (coherence_scan) {
-
-    // maximum and minimum effective larmor frequencies
-    double w_max = 0, w_min = DBL_MAX;
-
-    // print effective larmor frequencies and NV couping strengths
     cout << endl
          << "Larmor and hyperfine frequency data:" << endl
          << "# format: w_larmor A_perp" << endl;
+
+    double w_max = 0, w_min = DBL_MAX;
     for (uint i = 0; i < nv.nuclei.size(); i++) {
       const double A_perp = hyperfine_perp(nv,i).norm();
       const double w_larmor = effective_larmor(nv,i).norm();
@@ -568,7 +565,6 @@ int main(const int arg_num, const char *arg_vec[]) {
       if (w_larmor > w_max) w_max = w_larmor;
     }
 
-    // perform coherence scan
     cout << endl
          << "Coherence scan results:" << endl
          << "# format: w_scan coherence" << endl;
@@ -613,7 +609,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         } else {
           cout << f_DD;
           for (uint jj = 0; jj < angular_resolution; jj++) {
-            const double phi_DD = (jj+0.5)/pi;
+            const double phi_DD = (jj+0.5)/angular_resolution * pi;
             const double coherence =
               coherence_measurement(nv, w_signal, f_DD, measurement_time,
                                     controls, phi_DD);
