@@ -593,7 +593,17 @@ int main(const int arg_num, const char *arg_vec[]) {
     cout << "# format: f_DD coherence(s)" << endl;
 
     for (uint target: target_nuclei) {
-      cout << "# target: " << target << endl;
+      // only perform this measurement once for larmor pairs
+      vector<uint> targets = {target};
+      for (uint nn: target_nuclei) {
+        if (nn == target) continue;
+        if (is_larmor_pair(nv,nn,target)) targets.push_back(nn);
+      }
+      if (targets.size() == 2 && targets.at(0) > targets.at(1)) continue;
+
+      cout << "# targets:";
+      for (uint nn: targets) cout << " " << nn;
+      cout << endl;
       if (angular_coherence_signal) {
         const double angular_pos = atan2(dot(nv.nuclei.at(target),yhat),
                                          dot(nv.nuclei.at(target),xhat));

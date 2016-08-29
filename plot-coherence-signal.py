@@ -21,10 +21,10 @@ def nums_in(line):
         except: None
     return n
 
-def figname(target):
-    return fname.replace(".txt","-{}.pdf".format(target))
+def figname(targets):
+    return fname.replace(".txt","-{}.pdf".format("-".join(targets)))
 
-def line_plot(target,k_DD,f_DD,coherence):
+def line_plot(targets,k_DD,f_DD,coherence):
 
     plot = plt.plot(f_DD,coherence,'k-',linewidth=2)
 
@@ -35,11 +35,11 @@ def line_plot(target,k_DD,f_DD,coherence):
     plt.ylabel("Coherence")
 
     plt.tight_layout()
-    plt.savefig(figname(target))
+    plt.savefig(figname(targets))
 
     if show: plt.show()
 
-def color_plot(target,k_DD,f_DD,coherence):
+def color_plot(targets,k_DD,f_DD,coherence):
 
     f_DD_boundaries = ( f_DD - (f_DD[1]-f_DD[0])/2 )
     d_phi = 1/coherence.shape[1]
@@ -58,19 +58,19 @@ def color_plot(target,k_DD,f_DD,coherence):
     cbar.set_label("Coherence")
 
     plt.tight_layout()
-    plt.savefig(figname(target))
+    plt.savefig(figname(targets))
 
     if show: plt.show()
 
-def make_plot(target,k_DD,f_DD,coherence):
+def make_plot(targets,k_DD,f_DD,coherence):
     f_DD = np.array(f_DD)
     coherence = np.array(coherence)
 
     if coherence.shape[0] == 0: return None
     if coherence.shape[1] == 1:
-        line_plot(target,k_DD,f_DD,coherence)
+        line_plot(targets,k_DD,f_DD,coherence)
     else:
-        color_plot(target,k_DD,f_DD,coherence)
+        color_plot(targets,k_DD,f_DD,coherence)
 
 reading_data = False
 
@@ -85,14 +85,14 @@ with open(fname,"r") as f:
                 if "k_DD" in line:
                     k_DD = int(line.split()[-1])
                     continue
-                if "target" in line:
-                    try: make_plot(target,k_DD,f_DD,coherence)
+                if "targets" in line:
+                    try: make_plot(targets,k_DD,f_DD,coherence)
                     except: None
-                    target = line.split()[-1]
+                    targets = line.split()[2:]
                     f_DD = []
                     coherence = []
             else:
                 f_DD.append(float(line.split()[0]))
                 coherence.append([ float(n) for n in line.split()[1:]])
 
-make_plot(target,k_DD,f_DD,coherence)
+make_plot(targets,k_DD,f_DD,coherence)
