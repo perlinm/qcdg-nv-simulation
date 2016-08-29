@@ -168,6 +168,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   double f_DD;
   bool signal_field;
   uint angular_resolution;
+  double signal_gB_factor;
+  double max_f_factor;
 
   po::options_description scan_options("Coherence measurement options",help_text_length);
   scan_options.add_options()
@@ -179,10 +181,14 @@ int main(const int arg_num, const char *arg_vec[]) {
      "magnitude of fourier component used in coherence scanning")
     ("signal_field",
      po::value<bool>(&signal_field)->default_value(false)->implicit_value(true),
-     "apply magnetic field during coherence signal measurement?")
+     "apply magnetic field during coherence signal measurement")
     ("angular_resolution", po::value<uint>(&angular_resolution)->default_value(20),
      "angular resolution for magnetic field direction during signal measurement"
      " (1/[pi radians])")
+    ("signal_gB_factor", po::value<double>(&signal_gB_factor)->default_value(100),
+     "sets signal field strength to static_gBz/signal_gB_factor")
+    ("max_f_factor", po::value<double>(&max_f_factor)->default_value(0.5),
+     "factor scaling maximum value of f_DD in coherence signal measurement")
     ;
 
   string lattice_file;
@@ -595,9 +601,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
 
       const double w_signal = effective_larmor(nv,target).norm();
-      const control_fields controls(nv.static_gBz/nv.scale_factor*xhat, w_signal);
+      const control_fields controls(nv.static_gBz/signal_gB_factor*xhat, w_signal);
       for (uint ii = 0; ii < coherence_bins; ii++) {
-        const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD);
+        const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
         if (!signal_field) {
           const double coherence =
