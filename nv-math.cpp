@@ -698,13 +698,37 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
   const double w_DD = w_scan/nv.k_DD;
   const double axy_advance = 0;
 
+  // identify targeted nuclei
+  const vector<uint> targets = [&]() -> vector<uint> {
+    vector<uint> targets = {};
+    for (uint nn = 0; nn < nv.nuclei.size(); nn++) {
+      if (abs(effective_larmor(nv,nn).norm()/w_scan - 1) < numerical_error) {
+        targets.push_back(nn);
+      }
+    }
+    return targets;
+  }();
+
   // initial NV state
   const MatrixXcd rho_NV_0 = (up+dn)*(up+dn).adjoint()/2;
 
   double coherence = 1;
   for (uint cluster = 0; cluster < nv.clusters.size(); cluster++) {
-    if (1 - cluster_coherence(nv,cluster,w_scan,f_DD,scan_time)
-        > precision_factor/nv.clusters.size()) {
+    // determine whether to include the effects of this cluster on the NV center
+    const bool include_cluster = [&]() -> bool {
+      for (uint target: targets) {
+        if (in_vector(target,nv.clusters.at(cluster))) {
+          return true;
+        }
+      }
+      if (1 - cluster_coherence(nv,cluster,w_scan,f_DD,scan_time)
+          > precision_factor/nv.clusters.size()) {
+        return true;
+      }
+      return false;
+    }();
+
+    if (include_cluster) {
       const MatrixXcd U = [&]() -> MatrixXcd {
         bool single_frequency = true;
         for (uint cc = 0; cc < controls.num(); cc++) {
