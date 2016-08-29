@@ -32,6 +32,7 @@ coherence = []
 
 with open(fname,"r") as f:
     for line in f:
+        if line[0] == "#": continue
         if "Larmor and hyperfine frequency data" in line:
             reading_larmor_data = True
             reading_scan_data = False

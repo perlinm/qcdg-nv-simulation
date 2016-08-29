@@ -45,20 +45,15 @@ with open(fname,"r") as f:
             continue
 
         if reading_data:
-
             if "#" in line:
-
                 if "k_DD" in line:
                     k_DD = int(line.split()[2])
                     continue
-
                 try: make_plot(target,k_DD,f_DD,coherence)
                 except: None
-
                 target = line.split()[2]
                 f_DD = []
                 coherence = []
-
             else:
                 if nums_in(line) != 2: continue
                 f_DD.append(float(line.split()[0]))
