@@ -605,9 +605,13 @@ int main(const int arg_num, const char *arg_vec[]) {
       for (uint nn: targets) cout << " " << nn;
       cout << endl;
       if (angular_coherence_signal) {
-        const double angular_pos = atan2(dot(nv.nuclei.at(target),yhat),
-                                         dot(nv.nuclei.at(target),xhat));
-        cout << "# azimuth/pi: " << angular_pos/pi << endl;
+        cout << "# azimuths/pi:";
+        for (uint nn: targets) {
+          const double angular_pos = atan2(dot(nv.nuclei.at(nn),yhat),
+                                           dot(nv.nuclei.at(nn),xhat));
+          cout << " " << angular_pos/pi;
+        }
+        cout << endl;
       }
 
       const double w_signal = effective_larmor(nv,target).norm();
