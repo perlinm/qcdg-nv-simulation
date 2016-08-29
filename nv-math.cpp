@@ -703,17 +703,38 @@ double coherence_measurement(const nv_system& nv, const double w_scan, const dou
 
   double coherence = 1;
   for (uint cluster = 0; cluster < nv.clusters.size(); cluster++) {
-    if (1 - coherence_measurement(nv,w_scan,f_DD,scan_time)
+    if (1 - cluster_coherence(nv,cluster,w_scan,f_DD,scan_time)
         > precision_factor/nv.clusters.size()) {
-
+      const MatrixXcd U = [&]() -> MatrixXcd {
+        bool single_frequency = true;
+        for (uint cc = 0; cc < controls.num(); cc++) {
+          if (controls.freqs.at(cc) != w_scan) {
+            single_frequency = false;
+            break;
+          }
+        }
+        if (!single_frequency) {
+          return simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
+                              controls, scan_time, axy_advance, phi_DD).U;
+        } else {
+          const double t_DD = 2*pi/w_DD;
+          const unsigned long int cycles = (unsigned long int)(scan_time/t_DD);
+          const double leading_time = scan_time - cycles*t_DD;
+          const double trailing_time = [&]() -> double {
+            if (cycles == 0) return 0;
+            else return t_DD - leading_time;
+          }();
+          const MatrixXcd U_leading = simulate_AXY(nv, cluster, w_scan, f_DD, nv.k_DD,
+                                                   controls, leading_time, 0, phi_DD).U;
+          const MatrixXcd U_trailing = simulate_AXY(nv, cluster, w_scan, f_DD, nv.k_DD,
+                                                    controls, trailing_time,
+                                                    leading_time, phi_DD).U;
+          return U_leading * pow(U_trailing*U_leading, cycles);
+        }
+      }();
       const uint spins = nv.clusters.at(cluster).size()+1;
-
       const MatrixXcd rho_0 = act(rho_NV_0,{0},spins) / pow(2,spins-1);
       const MatrixXcd proj_x = act(rho_NV_0,{0},spins);
-
-      const MatrixXcd U = simulate_AXY(nv, cluster, w_DD, f_DD, nv.k_DD,
-                                       controls, scan_time, axy_advance, phi_DD).U;
-
       const double population_x = real(trace(U * rho_0 * U.adjoint() * proj_x));
       coherence *= 2*population_x - 1;
     }

@@ -166,6 +166,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   double measurement_time;
   double measurement_time_in_ms;
   double f_DD;
+  bool signal_field;
+  uint angular_resolution;
 
   po::options_description scan_options("Coherence measurement options",help_text_length);
   scan_options.add_options()
@@ -175,6 +177,12 @@ int main(const int arg_num, const char *arg_vec[]) {
      "time for each coherence measurement (microseconds)")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
+    ("signal_field",
+     po::value<bool>(&signal_field)->default_value(false)->implicit_value(true),
+     "apply magnetic field during coherence signal measurement?")
+    ("angular_resolution", po::value<uint>(&angular_resolution)->default_value(20),
+     "angular resolution for magnetic field direction during signal measurement"
+     " (1/[pi radians])")
     ;
 
   string lattice_file;
@@ -279,6 +287,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     assert(coherence_bins > 0);
     assert(measurement_time_in_ms > 0);
   }
+  assert(!(signal_field && !coherence_signal));
 
   // set some variables based on iputs
   c13_abundance = c13_factor*c13_natural_abundance;
@@ -543,7 +552,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     // print effective larmor frequencies and NV couping strengths
     cout << endl
          << "Larmor and hyperfine frequency data:" << endl
-         << "# w_larmor A_perp" << endl;
+         << "# format: w_larmor A_perp" << endl;
     for (uint i = 0; i < nv.nuclei.size(); i++) {
       const double A_perp = hyperfine_perp(nv,i).norm();
       const double w_larmor = effective_larmor(nv,i).norm();
@@ -556,7 +565,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     // perform coherence scan
     cout << endl
          << "Coherence scan results:" << endl
-         << "# w_scan coherence" << endl;
+         << "# format: w_scan coherence" << endl;
     const double w_range = w_max - w_min;
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
@@ -574,16 +583,41 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if (coherence_signal) {
     cout << "Coherence signal results:" << endl
-         << "# k_DD: " << nv.k_DD << endl
-         << "# f_DD coherence" << endl;
+         << "# k_DD: " << nv.k_DD << endl;
+    if (signal_field) {
+      cout << "# angular bins: " << angular_resolution << endl;
+    }
+    cout << "# format: f_DD coherence(s)" << endl;
+
     for (uint target: target_nuclei) {
       cout << "# target: " << target << endl;
+      if (signal_field) {
+        const double angular_pos = atan2(dot(nv.nuclei.at(target),yhat),
+                                         dot(nv.nuclei.at(target),xhat));
+        cout << "# azimuth/pi: " << angular_pos/pi << endl;
+      }
+
       const double w_signal = effective_larmor(nv,target).norm();
+      const control_fields controls(nv.static_gBz/nv.scale_factor*xhat, w_signal);
       for (uint i = 0; i < coherence_bins; i++) {
         const double f_DD = (i+0.5)/coherence_bins * axy_f_max(nv.k_DD);
-        const double coherence = coherence_measurement(nv, w_signal, f_DD,
-                                                       measurement_time);
-        cout << f_DD << " " << coherence << endl;
+
+        if (!signal_field) {
+          const double coherence =
+            coherence_measurement(nv, w_signal, f_DD, measurement_time);
+          cout << f_DD << " " << coherence << endl;
+
+        } else {
+          cout << f_DD;
+          for (uint angular_bin = 0; angular_bin < angular_resolution; angular_bin++) {
+            const double phi_DD = angular_bin/pi;
+            const double coherence =
+              coherence_measurement(nv, w_signal, f_DD, measurement_time,
+                                    controls, phi_DD);
+            cout << " " << coherence;
+          }
+          cout << endl;
+        }
       }
     }
   }
