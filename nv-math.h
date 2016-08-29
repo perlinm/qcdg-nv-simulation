@@ -263,7 +263,7 @@ struct control_fields {
     this->phases = phases;
   }
 
-  void add(const Vector3d& gB, const double freq, const double phase = 0) {
+  void add(const Vector3d& gB, const double freq = 0, const double phase = 0) {
     gBs.push_back(gB);
     freqs.push_back(freq);
     phases.push_back(phase);
@@ -401,12 +401,19 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
                       const control_fields& controls, const double simulation_time,
                       const double advance_time = 0, const double phi_DD = 0);
 
-// perform NV coherence measurement with a static magnetic field
+
+// perform NV coherence measurement with a static magnetic field on a single cluster
+double cluster_coherence(const nv_system& nv, const uint cluster, const double w_scan,
+                         const double f_DD, const double scan_time,
+                         const Vector3d& gB_ctl = Vector3d::Zero());
+
+// perform NV coherence measurement with a static magnetic field on the entire system
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time,
                              const Vector3d& gB_ctl = Vector3d::Zero());
 
-// perform NV coherence measurement with control fields
+// perform NV coherence measurement with control fields on the entire system
 double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
                              const double scan_time, const control_fields& controls,
-                             const double phi_DD, const double precision_factor = 0.05);
+                             const double phi_DD = 0,
+                             const double precision_factor = 0.05);

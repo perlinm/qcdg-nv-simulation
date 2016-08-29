@@ -633,52 +633,59 @@ protocol simulate_AXY(const nv_system& nv, const uint cluster,
   return protocol(U, simulation_time, pulse_count);
 }
 
-// perform NV coherence measurement with a static magnetic field
-double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
-                             const double scan_time, const Vector3d& gB_ctl) {
+// perform NV coherence measurement with a static magnetic field on a single cluster
+double cluster_coherence(const nv_system& nv, const uint cluster, const double w_scan,
+                         const double f_DD, const double scan_time,
+                         const Vector3d& gB_ctl) {
+  const uint cluster_size = nv.clusters.at(cluster).size();
+
   // AXY sequence parameters
   const double w_DD = w_scan/nv.k_DD;
   const double t_DD = 2*pi/w_DD;
   const vector<double> pulse_times = axy_pulse_times(f_DD,nv.k_DD);
 
+  // projections onto |ms> and |0> NV states
+  const MatrixXcd proj_m = act(up*up.adjoint(),{0},cluster_size+1); // |ms><ms|
+  const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
+
+  // full system Hamiltonian
+  const MatrixXcd H = H_sys(nv,cluster) + H_ctl(nv,cluster,gB_ctl);
+
+  // spin cluster Hamiltonians for single NV states
+  const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
+  const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
+
+  // propagators for sections of the AXY sequence
+  const MatrixXcd U1_m = exp(-j*H_m*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
+  const MatrixXcd U2_m = exp(-j*H_0*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
+  const MatrixXcd U3_m = exp(-j*H_m*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
+
+  const MatrixXcd U1_0 = exp(-j*H_0*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
+  const MatrixXcd U2_0 = exp(-j*H_m*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
+  const MatrixXcd U3_0 = exp(-j*H_0*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
+
+  // single AXY sequence propagators
+  MatrixXcd U_m = U1_m*U2_m*U3_m*U3_0*U2_0*U1_0 * U1_0*U2_0*U3_0*U3_m*U2_m*U1_m;
+  MatrixXcd U_0 = U1_0*U2_0*U3_0*U3_m*U2_m*U1_m * U1_m*U2_m*U3_m*U3_0*U2_0*U1_0;
+
+  // propagators for entire scan
+  U_m = pow(U_m, int(scan_time/t_DD));
+  U_0 = pow(U_0, int(scan_time/t_DD));
+
+  // normalize propagators
+  U_m /= sqrt(real(trace(U_m.adjoint()*U_m)) / U_m.rows());
+  U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)) / U_0.rows());
+
+  // return coherence
+  return real(trace(U_0.adjoint()*U_m)) / pow(2,cluster_size);
+}
+
+// perform NV coherence measurement with a static magnetic field
+double coherence_measurement(const nv_system& nv, const double w_scan, const double f_DD,
+                             const double scan_time, const Vector3d& gB_ctl) {
   double coherence = 1;
   for (uint cluster = 0; cluster < nv.clusters.size(); cluster++) {
-    const uint cluster_size = nv.clusters.at(cluster).size();
-
-    // projections onto |ms> and |0> NV states
-    const MatrixXcd proj_m = act(up*up.adjoint(),{0},cluster_size+1); // |ms><ms|
-    const MatrixXcd proj_0 = act(dn*dn.adjoint(),{0},cluster_size+1); // |0><0|
-
-    // full system Hamiltonian
-    const MatrixXcd H = H_sys(nv,cluster) + H_ctl(nv,cluster,gB_ctl);
-
-    // spin cluster Hamiltonians for single NV states
-    const MatrixXcd H_m = ptrace(H*proj_m, {0}); // <ms|H|ms>
-    const MatrixXcd H_0 = ptrace(H*proj_0, {0}); // <0|H|0>
-
-    // propagators for sections of the AXY sequence
-    const MatrixXcd U1_m = exp(-j*H_m*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
-    const MatrixXcd U2_m = exp(-j*H_0*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
-    const MatrixXcd U3_m = exp(-j*H_m*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
-
-    const MatrixXcd U1_0 = exp(-j*H_0*t_DD*(pulse_times.at(1)-pulse_times.at(0)));
-    const MatrixXcd U2_0 = exp(-j*H_m*t_DD*(pulse_times.at(2)-pulse_times.at(1)));
-    const MatrixXcd U3_0 = exp(-j*H_0*t_DD*(pulse_times.at(3)-pulse_times.at(2)));
-
-    // single AXY sequence propagators
-    MatrixXcd U_m = U1_m*U2_m*U3_m*U3_0*U2_0*U1_0 * U1_0*U2_0*U3_0*U3_m*U2_m*U1_m;
-    MatrixXcd U_0 = U1_0*U2_0*U3_0*U3_m*U2_m*U1_m * U1_m*U2_m*U3_m*U3_0*U2_0*U1_0;
-
-    // propagators for entire scan
-    U_m = pow(U_m, int(scan_time/t_DD));
-    U_0 = pow(U_0, int(scan_time/t_DD));
-
-    // normalize propagators
-    U_m /= sqrt(real(trace(U_m.adjoint()*U_m)) / U_m.rows());
-    U_0 /= sqrt(real(trace(U_0.adjoint()*U_0)) / U_0.rows());
-
-    // update coherence
-    coherence *= real(trace(U_0.adjoint()*U_m)) / pow(2,cluster_size);
+    coherence *= cluster_coherence(nv, cluster, w_scan, f_DD, scan_time, gB_ctl);
   }
   return coherence;
 }
