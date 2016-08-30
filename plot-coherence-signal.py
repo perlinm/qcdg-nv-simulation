@@ -23,11 +23,11 @@ def nums_in(line):
     return n
 
 def figname(targets):
-    return fname.replace(".txt","-{}.pdf".format("-".join(targets)))
+    return fname.replace(".txt","-{}.png".format("-".join(targets)))
 
 def line_plot(targets,k_DD,f_DD,coherence):
 
-    plot = plt.plot(f_DD,coherence,'k-',linewidth=2)
+    plot = plt.plot(f_DD,coherence,"k-",linewidth=2)
 
     plt.xlim(0,f_DD[-1])
     plt.ylim(-1,1)
@@ -49,10 +49,10 @@ def color_plot(targets,k_DD,f_DD,coherence,azimuths):
     plt.pcolor(angles_over_pi,f_DD_boundaries,coherence)
     if show_azimuths:
         for azimuth in azimuths:
-            pi_phi = azimuth
+            pi_phi = 1 - azimuth
             while pi_phi < 0: pi_phi +=1
-            while pi_phi >= 1: ip_phi -= 1
-            plt.axvline(pi_phi,color='k')
+            while pi_phi >= 1: pi_phi -= 1
+            plt.axvline(pi_phi,color="k",linewidth=2)
 
     plt.xlim(0,1)
     plt.ylim(0,f_DD_boundaries[-1])
@@ -74,6 +74,8 @@ def make_plot(targets,k_DD,f_DD,coherence,azimuths):
     coherence = np.array(coherence)
 
     if coherence.shape[0] == 0: return None
+
+    plt.figure()
     if coherence.shape[1] == 1:
         line_plot(targets,k_DD,f_DD,coherence)
     else:
