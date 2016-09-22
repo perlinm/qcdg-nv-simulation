@@ -27,6 +27,8 @@
 \renewcommand{\S}{\t{S}}
 \newcommand{\T}{\t{T}}
 \newcommand{\R}{\mathcal R}
+\newcommand{\A}{\mathcal A}
+\newcommand{\B}{\mathcal B}
 
 %%% figures
 \usepackage{graphicx,grffile,float} % floats, etc.
@@ -44,7 +46,8 @@
 \title{Realization of a Decoherence-Free Subspace with
   Nitrogen-Vacancy Centers and $^{13}$C Nuclear Spins}
 
-\author{Michael A. Perlin, Zhen-Yu Wang, Jorge Casanova, and Martin B. Plenio}
+\author{Michael A. Perlin, Zhen-Yu Wang, Jorge Casanova, and Martin
+  B. Plenio}
 
 \affiliation{Institut f\"ur Theoretische Physik, Albert-Einstein-Allee
   11, Universit\"at Ulm, D-89069 Ulm, Germany}
@@ -100,22 +103,21 @@ between the NV center electron spin state and the DFS qubit.
 
 \section{Identifying symmetrically coupled $^{13}$C nuclear spins}
 
-Restricting the NV electron spin states to the subspace spanned by
+Restricting the NV electron spin states to the span of
 $\set{\ket0,\ket{m_s}}$ ($m_s=\pm1$), the AXY-$n$ pulse sequence
 developed in by Casanova et al. in \cite{casanova2015robust} and
 control scheme developed by Wang et al. in \cite{wang2016positioning}
 allows addressing individual $^{13}$C nuclear spins via Hamiltonians
 of the form
 \begin{align}
-  H_\t{int} = h_j^\t{int}\sigma_\NV^z\v I_j\c\uv n_j,
-  \label{H_int}
+  H_{\t{int}} = h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j,
+  \label{eq:H_int}
 \end{align}
-for a tunable coupling strength $h_\t{int}$ and direction $\uv n_j$,
-where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and $\v I_j$ is the spin
-operator for nuclear spin $j$. The protocol for realizing this
-effective Hamiltonian, however, is conditional on a sufficiently
-unique effective larmor frequency $\omega_j$, i.e. that for all
-$n\ne j$
+for a tunable coupling strength $h_j^{\t{int}}$ and direction
+$\uv n_j$, where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and $\v I_j$ is
+the spin operator for nuclear spin $j$. The protocol for realizing
+this effective Hamiltonian is conditional on a sufficiently unique
+effective larmor frequency $\omega_j$, i.e. that for all $n\ne j$
 \begin{align}
   \abs{\omega_n-\omega_j} \gg \abs{f_{k_{DD}}\v A_j^\perp},
 \end{align}
@@ -128,46 +130,74 @@ It is possible, however, for two nuclear spins (indexed by 1 and 2) to
 have identical larmor frequencies $\omega_1=\omega_2\equiv\omega$,
 which occurs when both nuclei lie along the edges of a cylinder
 centered on the NV center and oriented along the natural NV axis. We
-call such nuclei {\it larmor pairs}, and their geometry results in
+call such nuclei {\it larmor pairs}, and their geometry implies
 $A_1^\perp=A_2^\perp\equiv A^\perp$ and
 $A_1^\parallel=A_2^\parallel\equiv A^\parallel$ (see Supplementary
-Information) \fixme{prove in the SI}.
+Information) \fixme{prove in the SI}. We wish to identify larmor
+pairs and individually address the nuclei making up the pair.
 
-\fixme{Reference \cite{wang2016positioning} for identifying and
-  location nuclei with unique larmor frequencies}
+The AXY-$n$ sequence and the Hamiltonian in Eq. (\ref{eq:H_int})
+allows for measurement of distinct frequencies $\omega_j$, hyperfine
+couplings $A_j^\perp$, and ultimately the positions of $^{13}$C nuclei
+via a coupling protocol ending in an NV coherence measurement,
+outlined in \cite{wang2016positioning}. When on resonance with several
+frequencies $\set{\omega_j}$ which the protocol cannot resolve, the NV
+coherence after a time $t$ reads
+\begin{align}
+  \label{eq:L}
+  L\p{t} = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t}.
+\end{align}
+After selecting an effective larmor frequency $\omega$ of interest via
+the scanning protocol in \cite{wang2016positioning}, coherence
+measurements as per Eq. (\ref{eq:L}) for different fourier components
+$f_{k_{DD}}$ (or times $t$) are sufficient to determine the number of
+nuclei with effective larmor frequency $\omega$. The protocol for
+measuring $L$ can thus be used to identify a larmor pair.
 
-\fixme{Provide derivation for NV coherence when on resonance with a
-  larmor frequency when applying a control field for both the one- and
-  two-nucleus case}
+After identifying a larmor pair, in order to locate the individual
+nuclei in the pair we introduce an auxiliary magnetic decoupling field
+$\tilde{\v B}_{\t{dec}}\p{t} = \v
+B_{\t{dec}}\cos\p{\omega_{\t{dec}}t-\phi_{\t{dec}}}$. When
+$\omega_{\t{dec}}$ is on resonance with the effective larmor frequency
+$\omega$, the coherence in Eq. (\ref{eq:L}) is modified as
+\begin{align}
+  \label{eq:L_dec}
+  \tilde L\p{t}
+  = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t\cos\eta_j},
+\end{align}
+where the angle $\eta_j$ is determined by the directions
+$\uv A_j^\perp$ and $\uv B_{\t{dec}}$, as well as the phases
+$\phi_{DD}$ and $\phi_{\t{dec}}$ (see Supplementary Info
+\ref{sec:addressing_pairs}). Measurements of the coherence $\tilde L$
+as a function of fourier components $f_{k_{DD}}$ (or times $t$) and
+phases $\phi_{DD}$ thus provides information about the directions
+$\uv A_j^\perp$.
 
-\fixme{Walk through protocol to identify and locate larmor pairs}
+\fixme{How do we locate larmor pairs using Eq. (\ref{eq:L_dec})?}
 
 \section{Individually addressing nuclei in larmor pairs}
 
 When trying to address one spin in a larmor pair, the protocols for
-(\ref{H_int}) will simultaneously couple $\sigma_\NV^z$ to both
+Eq. (\ref{eq:H_int}) will simultaneously couple $\sigma_\NV^z$ to both
 $\v I_1\c\uv n_1$ and $\v I_2\c\uv n_2$ with identical coupling
-strength ($h_\t{int}$). So long as $\uv n_1$ and $\uv n_2$
+strength ($h_j^{\t{int}}$). So long as $\uv n_1$ and $\uv n_2$
 (equivalently, $\v A_1^\perp$ and $\v A_2^\perp$) are not parallel,
 however, it is possible to address only one of these spins at a time
 by applying additional control fields. In particular, the application
 of a magnetic decoupling field
-$\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega
-  t-\phi_\t{dec}}$ during the AXY-$n$ addressing protocol suppresses
+$\tilde{\v B}_{\t{dec}}\p{t}=\v B_{\t{dec}}\cos\p{\omega
+  t-\phi_{\t{dec}}}$ during the AXY-$n$ addressing protocol suppresses
 components of $\uv n_j$ which are perpendicular to the vector
-$\v B_\t{dec}$ projected onto the plane perpendicular to $\v\omega_j$
-and rotated about the axis $\uv\omega_j$ by the angle
-$\phi_\t{dec}$. One can therefore choose a direction $\v B_\t{dec}$
-which completely suppresses NV electron spin coupling to spin 1 (2),
-leaving only coupling to spin 2 (1).
+$\v B_{\t{dec}}$ projected onto the plane perpendicular to
+$\v\omega_j$ and rotated about the axis $\uv\omega_j$ by the angle
+$\phi_{\t{dec}}$. One can therefore choose a direction
+$\v B_{\t{dec}}$ which completely suppresses NV electron spin coupling
+to spin 1 (2), leaving only coupling to spin 2 (1).
 
 \fixme{Give more information or details about this protocol? Reference
   SI}
 
 \section{Qubit initialization in a decoherence-free subspace}
-
-\fixme{Implement PRX\cite{reiserer2016robust} methods for initializing
-  a qubit in $\ket{\u\d}\pm\ket{\d\u}$}
 
 The state space of larmor pairs contains a subspace free of
 decoherence via spin coupling to the NV center electron, i.e. a
@@ -187,25 +217,28 @@ $\ket{\d\d}\to\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ can be
 performed with simultaneous coupling to both larmor pairs,
 i.e. without the magnetic decoupling field.
 
+\fixme{Provide result for initialization fidelities.}
+
 \section{Coherent SWAP operation with DFS qubit}
 
+The protocols developed for addressing larmor pairs can be used to
+perform a coherent SWAP operation between the NV center spin and the
+DFS qubit. In principle, such a coherent SWAP allows using larmor
+pairs as quantum memory registers.
+
+\fixme{Expand.}
 
 
 \bibliography{\jobname}
 
-
 \pagebreak
 \clearpage
-\widetext
-\makeatletter
+\widetext \makeatletter
 \begin{center}
   \large \bf Supplementary Information for ``\@title''
 \end{center}
-\setcounter{equation}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
-\setcounter{page}{1}
-\renewcommand{\theequation}{S\arabic{equation}}
+\setcounter{equation}{0} \setcounter{figure}{0} \setcounter{table}{0}
+\setcounter{page}{1} \renewcommand{\theequation}{S\arabic{equation}}
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\bibnumfmt}[1]{[S#1]}
 \renewcommand{\citenumfont}[1]{S#1}
@@ -219,38 +252,38 @@ i.e. without the magnetic decoupling field.
 The Hamiltonian of the NV center system in the presence of a strong,
 static magnetic field $\v B$ can be decomposed as
 \begin{align}
-  H_\t{sys} = H_\NV^\t{GS} + H_\t{hf} + H_\t{nZ}  + H_\t{nn},
+  H_{\t{sys}} = H_\NV^{\t{GS}} + H_{\t{hf}} + H_{\t{nZ}}  + H_{\t{nn}},
 \end{align}
 where
 \begin{align}
-  H_\NV^\t{GS} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
+  H_\NV^{\t{GS}} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
 \end{align}
 is the ground-state NV electron spin Hamiltonian with zero-field
 splitting $D$, spin-1 operator $\v S$, natural NV axis $\uv z$, and
 electron gyromagnetic ratio $\gamma_e$;
 \begin{align}
-  H_\t{hf} = \sum_j\f{\gamma_e\gamma_j}{4\pi r_j^3}
+  H_{\t{hf}} = \sum_j\f{\gamma_e\gamma_j}{4\pi r_j^3}
   \p{\v S\c\v I_j-3\sp{\v S\c\uv r_j}\sp{\v I_j\c\uv r_j}}
 \end{align}
 is the hyperfine coupling between the NV electron spin (located at the
 origin) and nuclei indexed by $j$ located at $\v r_j$;
 \begin{align}
-  H_\t{nZ} = -\sum_j\gamma_j\v B\c\v I_j
+  H_{\t{nZ}} = -\sum_j\gamma_j\v B\c\v I_j
 \end{align}
 is the Zeeman Hamiltonian for nuclei indexed by $j$ with gyromagnetic
 ratio $\gamma_j$ and spin operators $\v I_j$; and
 \begin{align}
-  H_\t{nn} = \sum_{j<k}\f{\gamma_j\gamma_k}{4\pi r_{jk}^3}
+  H_{\t{nn}} = \sum_{j<k}\f{\gamma_j\gamma_k}{4\pi r_{jk}^3}
   \p{\v I_j\c\v I_k-3\sp{\v I_j\c\uv r_{jk}}\sp{\v I_k\c\uv r_{jk}}}
 \end{align}
 is the internuclear coupling with $\v r_{jk}\equiv\v r_j-\v r_k$. We
 will hereafter neglect internuclear coupling in all analytical work,
-though we will keep $H_\t{nn}$ in any numerical results.
+though we will keep $H_{\t{nn}}$ in any numerical results.
 
-Changing into the rotating frame of $H_\NV^\t{GS}$ affects only the
+Changing into the rotating frame of $H_\NV^{\t{GS}}$ affects only the
 hyperfine Hamiltonian, which becomes
 \begin{align}
-  \tilde H_\t{hf} = S_z\sum_j \v A_j\c\v I_j,
+  \tilde H_{\t{hf}} = S_z\sum_j \v A_j\c\v I_j,
 \end{align}
 where we define the hyperfine field
 \begin{align}
@@ -259,19 +292,19 @@ where we define the hyperfine field
 \end{align}
 The system Hamiltonian is thus
 \begin{align}
-  \tilde H_\t{sys} = S_z\sum_j \v A_j\c\v I_j
+  \tilde H_{\t{sys}} = S_z\sum_j \v A_j\c\v I_j
   -\sum_j\gamma_j\v B\c\v I_j.
 \end{align}
 
-When restricted to the subspace of $\set{\ket0,\ket{m_s}}$ with with
-$m_s\in\set{1,-1}$ for the NV electron spin,
+When NV electron spin is restricted to the span of
+$\set{\ket0,\ket{m_s}}$ with $m_s\in\set{1,-1}$,
 \begin{align}
   S_z = \f{m_s}2\p{\sigma_\NV^z+\mathbf1},
 \end{align}
 where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and
 $\mathbf1\equiv\op{m_s}+\op{0}$. Defining the interaction Hamiltonian
 \begin{align}
-  H_\t{int} = \f12m_s\sigma_\NV^z\sum_j\v A_j\c\v I_j
+  H_{\t{int}} = \f12m_s\sigma_\NV^z\sum_j\v A_j\c\v I_j
 \end{align}
 the effective larmor frequency
 \begin{align}
@@ -279,28 +312,28 @@ the effective larmor frequency
 \end{align}
 and the effective Zeeman Hamiltonian
 \begin{align}
-  H_\t{nZ}^\t{eff} = -\sum_j\p{\gamma_j\v B - \f{m_s}2\v A_j}\c\v I_j
+  H_{\t{nZ}}^{\t{eff}} = -\sum_j\p{\gamma_j\v B - \f{m_s}2\v A_j}\c\v I_j
   = -\sum_j\v\omega_j\c\v I_j,
 \end{align}
 the system Hamiltonian can be written as
 \begin{align}
-  \tilde H_\t{sys} = H_\t{int} + H_\t{nZ}^\t{eff}.
-  \label{S_H_sys_int_nZ}
+  \tilde H_{\t{sys}} = H_{\t{int}} + H_{\t{nZ}}^{\t{eff}}.
+  \label{eq:S_H_sys_int_nZ}
 \end{align}
 
-Moving into the rotating frame of $H_\t{nZ}^\t{eff}$, the entire
+Moving into the rotating frame of $H_{\t{nZ}}^{\t{eff}}$, the entire
 system is described by the Hamiltonian
 \begin{align}
-  \tilde H_\t{int} = \f12m_s\sigma_\NV^z
-  \sum_j\tilde{\v A_j}\p{t}\c\v I_j,
-  \label{S_H_int_no_DD}
+  \tilde H_{\t{int}} = \f12m_s\sigma_\NV^z
+  \sum_j\v\A_j\p{t}\c\v I_j,
+  \label{eq:S_H_int_no_DD}
 \end{align}
-where $\tilde{\v A_j}\p{t}$ is the vector $\v A_j$ rotated about
-$\uv\omega_j$ by an angle $\omega_jt$. Written explicitly,
+where $\v\A_j\p{t}$ is the vector $\v A_j$ rotated about $\uv\omega_j$
+by an angle $\omega_jt$. Written explicitly,
 \begin{align}
-  \tilde{\v A_j}\p{t} = \v A_j^\parallel + \v A_j^\perp\cos\p{\omega_jt}
+  \v\A_j\p{t} = \v A_j^\parallel + \v A_j^\perp\cos\p{\omega_jt}
   + \v A_j^{\perp\perp}\sin\p{\omega_jt},
-  \label{S_A_rot}
+  \label{eq:S_A_rot}
 \end{align}
 where
 \begin{align}
@@ -318,6 +351,7 @@ $\v\omega_j$, and
 is the vector $\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
 
 \subsection{Dynamic decoupling and nuclear spin addressing}
+\label{sec:dynamic_decoupling}
 
 Dynamic decoupling schemes effectively prepend a modulation function
 \begin{align}
@@ -326,15 +360,15 @@ Dynamic decoupling schemes effectively prepend a modulation function
 with fundamental frequency $\omega_{DD}$, phase $\phi_{DD}$, and range
 $\set{1,-1}$ to $\sigma_\NV^z$, so that the system Hamiltonian reads
 \begin{align}
-  \tilde H_\t{int} =
-  \f12m_sF\p{t}\sigma_\NV^z\sum_j\tilde{\v A_j}\p{t}\c\v I_j.
+  \tilde H_{\t{int}} =
+  \f12m_sF\p{t}\sigma_\NV^z\sum_j\v\A_j\p{t}\c\v I_j.
 \end{align}
 At a resonance $k_{DD}\omega_{DD}\equiv\omega_r\gg A_j$, the secular
 approximation allows one to neglect $\v A_j^\parallel$ and express
 \begin{align}
-  \tilde H_\t{int} = \f14 f_{k_{DD}} m_s\sigma_\NV^z
+  \tilde H_{\t{int}} = \f14 f_{k_{DD}} m_s\sigma_\NV^z
   \sum_{j:\omega_j=\omega_r} A_j^\perp\v I_j\c\uv n_j,
-  \label{S_H_int_resonance}
+  \label{eq:S_H_int_resonance}
 \end{align}
 where $\uv n_j$ is a unit vector in the direction of $\v A_j^\perp$
 rotated about $\uv\omega_j$ by $\phi_{DD}$, i.e.
@@ -342,165 +376,170 @@ rotated about $\uv\omega_j$ by $\phi_{DD}$, i.e.
   \uv n_j = \uv A_j^\perp\cos\phi_{DD} +
   \uv A_j^{\perp\perp}\sin\phi_{DD}.
 \end{align}
-One can concisely write (\ref{S_H_int_resonance}) with
+One can concisely write Eq. (\ref{eq:S_H_int_resonance}) with
 \begin{align}
-  h_j^\t{int}\equiv f_{k_{DD}}m_sA_j^\perp/4
+  h_j^{\t{int}}\equiv f_{k_{DD}}m_sA_j^\perp/4
 \end{align}
 as
 \begin{align}
-  \tilde H_\t{int} = \sum_{j:\omega_j=\omega_r}
-  h_j^\t{int}\sigma_\NV^z\v I_j\c\uv n_j.
-  \label{S_H_int}
+  \tilde H_{\t{int}} = \sum_{j:\omega_j=\omega_r}
+  h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j.
+  \label{eq:S_H_int}
 \end{align}
 
 When the harmonics of $F\p{t}$ are off resonance with all $\omega_j$
 and $\omega_{DD}\gg A_j$ for all $j$, the secular approximation allows
-one to neglect $\tilde H_\t{int}$ entirely. In this case, one can
+one to neglect $\tilde H_{\t{int}}$ entirely. In this case, one can
 apply an auxiliary magnetic field
-$\v B_\t{ctl}^{\p\omega}\p{t}=\v
-B_\t{ctl}\cos\p{\omega_\t{ctl}t-\phi_\t{ctl}}$ and shift into the
-rotating frame of $H_\t{nZ}^\t{eff}$, much like the frame shift
-between (\ref{S_H_sys_int_nZ}) and (\ref{S_H_int_no_DD}), to realize
-the Hamiltonian
+$\tilde{\v B}_{\t{ctl}}\p{t}=\v
+B_{\t{ctl}}\cos\p{\omega_{\t{ctl}}t-\phi_{\t{ctl}}}$ and shift into
+the rotating frame of $H_{\t{nZ}}^{\t{eff}}$, much like the frame
+shift between Eqs. (\ref{eq:S_H_sys_int_nZ}) and
+(\ref{eq:S_H_int_no_DD}), to realize the Hamiltonian
 \begin{align}
-  \tilde H_\t{sys}^\t{ctl} =
-  -\sum_j\gamma_j\tilde{\v B}_{\t{ctl},j}\p{t}
-  \cos\p{\omega_\t{ctl}t-\phi_\t{ctl}}\c\v I_j,
+  \tilde H_{\t{sys}}^{\t{ctl}} =
+  -\sum_j\gamma_j\v\B_{\t{ctl},j}\p{t}
+  \cos\p{\omega_{\t{ctl}}t-\phi_{\t{ctl}}}\c\v I_j,
 \end{align}
-with $\tilde{\v B}_{\t{ctl},j}\p{t}$ defined using $\v B_\t{ctl}$ and
-$\v\omega_j$ the same way that $\tilde{\v A_j}\p{t}$ was defined using
-$\v A_j$ and $\v\omega_j$ in (\ref{S_A_rot}), i.e. as $\v B_\t{ctl}$
-rotated about $\uv\omega_j$ by an angle $\omega_jt$:
+with $\v\B_{\t{ctl},j}\p{t}$ defined using $\v B_{\t{ctl}}$ and
+$\v\omega_j$ the same way that $\v\A_j\p{t}$ was defined using
+$\v A_j$ and $\v\omega_j$ in Eq. (\ref{eq:S_A_rot}), i.e. as
+$\v B_{\t{ctl}}$ rotated about $\uv\omega_j$ by an angle $\omega_jt$:
 \begin{align}
-  \tilde{\v B}_{\t{ctl},j}\p{t} = \v B_{\t{ctl},j}^\parallel
+  \v\B_{\t{ctl},j}\p{t} = \v B_{\t{ctl},j}^\parallel
   + \v B_{\t{ctl},j}^\perp\cos\p{\omega_jt}
   + \v B_{\t{ctl},j}^{\perp\perp}\sin\p{\omega_jt},
 \end{align}
 where
 \begin{align}
   \v B_{\t{ctl},j}^\parallel
-  &\equiv \p{\v B_\t{ctl} \c\uv\omega_j}\uv\omega_j \\
+  &\equiv \p{\v B_{\t{ctl}} \c\uv\omega_j}\uv\omega_j \\
   \v B_{\t{ctl},j}^\perp
-  &\equiv \v B_\t{ctl} - \v B_{\t{ctl},j}^\parallel \\
+  &\equiv \v B_{\t{ctl}} - \v B_{\t{ctl},j}^\parallel \\
   \v B_{\t{ctl},j}^{\perp\perp}
-  &\equiv \uv\omega_j\times\v B_\t{ctl}^\perp.
+  &\equiv \uv\omega_j\times\v B_{\t{ctl}}^\perp.
 \end{align}
 
-When $\omega_\t{ctl}\gg\gamma_jB_\t{ctl}$, the secular approximation
-allows one to neglect $\v B_{\t{ctl},j}^\parallel$ and express
+When $\omega_{\t{ctl}}\gg\gamma_jB_{\t{ctl}}$, the secular
+approximation allows one to neglect $\v B_{\t{ctl},j}^\parallel$ and
+express
 \begin{align}
-  \tilde H_\t{ctl} = -\f12\sum_{j:\omega_j=\omega_\t{ctl}}
+  \tilde H_{\t{ctl}} = -\f12\sum_{j:\omega_j=\omega_{\t{ctl}}}
   \gamma_jB_{\t{ctl},j}^\perp \v I_j\c\uv m_j,
-  \label{S_H_ctl_resonance}
+  \label{eq:S_H_ctl_resonance}
 \end{align}
 where $\uv m_j$ is the direction of $\v B_{\t{ctl},j}^\perp$ rotated
-about $\uv\omega_j$ by $\phi_\t{ctl}$, i.e.
+about $\uv\omega_j$ by $\phi_{\t{ctl}}$, i.e.
 \begin{align}
-  \uv m_j = \uv B_{\t{ctl},j}^\perp\cos\phi_\t{ctl} +
-  \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_\t{ctl}.
+  \uv m_j = \uv B_{\t{ctl},j}^\perp\cos\phi_{\t{ctl}} +
+  \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_{\t{ctl}}.
 \end{align}
-One can concisely write (\ref{S_H_ctl_resonance}) with
+One can concisely write Eq. (\ref{eq:S_H_ctl_resonance}) with
 \begin{align}
-  h_j^\t{ctl}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2
+  h_j^{\t{ctl}}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2
 \end{align}
 as
 \begin{align}
-  \tilde H_\t{ctl} = \sum_{j:\omega_j=\omega_\t{ctl}}
-  h_j^\t{ctl}\v I_j\c\uv m_j.
-  \label{S_H_ctl}
+  \tilde H_{\t{ctl}} = \sum_{j:\omega_j=\omega_{\t{ctl}}}
+  h_j^{\t{ctl}}\v I_j\c\uv m_j.
+  \label{eq:S_H_ctl}
 \end{align}
 
-In both (\ref{S_H_int}) and (\ref{S_H_ctl}), one can choose
-$\phi_{DD}$ and $\phi_\t{ctl}$ such that $\uv n_j\p\phi$ and
-$\uv m_j\p{\phi_\t{ctl}}$ lie anywhere in the plane perpendicular to
-$\uv\omega_j$. One can also tune $h_j^\t{int}$ and $h_j^\t{ctl}$
+In both Eqs. (\ref{eq:S_H_int}) and (\ref{eq:S_H_ctl}), one can choose
+$\phi_{DD}$ and $\phi_{\t{ctl}}$ such that $\uv n_j\p\phi$ and
+$\uv m_j\p{\phi_{\t{ctl}}}$ lie anywhere in the plane perpendicular to
+$\uv\omega_j$. One can also tune $h_j^{\t{int}}$ and $h_j^{\t{ctl}}$
 respectively via free parameters in the AXY-$n$ sequence and
-$\v B_\t{ctl}$. These controls, together with rotations of the NV
+$\v B_{\t{ctl}}$. These controls, together with rotations of the NV
 electron spin, allow one to realize a universal set of quantum
 gates. An exception to this statement is when two or more nuclei have
 the same effective larmor frequency $\omega_j$, in which case they are
-addressed simultaneously in (\ref{S_H_int}) and (\ref{S_H_ctl}).
+addressed simultaneously in Eqs. (\ref{eq:S_H_int}) and
+(\ref{eq:S_H_ctl}).
 
 \subsection{Addressing larmor pairs}
+\label{sec:addressing_pairs}
 
 We call two spins indexed by $j$ and $k$ elements of a \emph{larmor
   set} if their effective larmor frequencies are equal,
 i.e. $\omega_j=\omega_k$, and refer to a larmor set with exactly two
 spins as a \emph{larmor pair}. The problem with individually
-addressing elements of a larmor set is manifest in (\ref{S_H_int}) and
-(\ref{S_H_ctl}), wherein the previously developed procedure for
-nuclear spin addressing does not single out any nuclei. Nonetheless,
-under certain conditions it is possible to individually address
-elements of a larmor set by applying additional control fields.
+addressing elements of a larmor set is manifest in
+Eqs. (\ref{eq:S_H_int}) and (\ref{eq:S_H_ctl}), wherein the previously
+developed procedure for nuclear spin addressing does not single out
+any nuclei. Nonetheless, under certain conditions it is possible to
+individually address elements of a larmor set by applying additional
+control fields.
 
 When employing a dynamic decoupling protocol on resonance with an
 effective larmor frequency $\omega_r$, one can apply an additional
 magnetic decoupling field
-$\v B_\t{dec}^{\p\omega}\p{t}=\v B_\t{dec}\cos\p{\omega_r
-  t-\phi_\t{dec}}$ and realize, in the frame of $H_\NV^\t{GS}$, the
-system Hamiltonian
+$\tilde{\v B}_{\t{dec}}\p{t}=\v B_{\t{dec}}\cos\p{\omega_r
+  t-\phi_{\t{dec}}}$ and realize, in the frame of $H_\NV^{\t{GS}}$,
+the system Hamiltonian
 \begin{align}
-  \tilde H_\t{sys}^\t{dec} = H_\t{int} + H_\t{nZ}^\t{eff} + H_\t{dec},
+  \tilde H_{\t{sys}}^{\t{dec}}
+  = H_{\t{int}} + H_{\t{nZ}}^{\t{eff}} + H_{\t{dec}},
 \end{align}
 where
 \begin{align}
-  H_\t{dec} = -\sum_j\gamma_j\v B_\t{dec}\c\v I_j
-  \cos\p{\omega_rt-\phi_\t{dec}}.
+  H_{\t{dec}} = -\sum_j\gamma_j\v B_{\t{dec}}\c\v I_j
+  \cos\p{\omega_rt-\phi_{\t{dec}}}.
 \end{align}
 
-In the frame of $H_\t{nZ}^\t{eff}=-\sum_j\v\omega_j\c\v I_j$, the
+In the frame of $H_{\t{nZ}}^{\t{eff}}=-\sum_j\v\omega_j\c\v I_j$, the
 decoupling Hamiltonian becomes
 \begin{align}
-  \tilde H_\t{dec} = -\sum_j\gamma_j\tilde{\v B}_{\t{dec},j}
-  \c\v I_j \cos\p{\omega_rt-\phi_\t{dec}}
-  \label{S_H_dec_eff_full}
+  \tilde H_{\t{dec}} = -\sum_j\gamma_j\v\B_{\t{dec},j}
+  \c\v I_j \cos\p{\omega_rt-\phi_{\t{dec}}}
+  \label{eq:S_H_dec_eff_full}
 \end{align}
 with
 \begin{align}
-  \tilde{\v B}_{\t{dec},j} = \v B_{\t{dec},j}^\parallel
+  \v\B_{\t{dec},j} = \v B_{\t{dec},j}^\parallel
   + \v B_{\t{dec},j}^\perp\cos\p{\omega_j t}
   + \v B_{\t{dec},j}^{\perp\perp}\sin\p{\omega_j t}
 \end{align}
 and
 \begin{align}
   \v B_{\t{dec},j}^\parallel
-  &\equiv \p{\v B_\t{dec} \c\uv\omega_j}\uv\omega_j, \\
+  &\equiv \p{\v B_{\t{dec}}\c\uv\omega_j}\uv\omega_j, \\
   \v B_{\t{dec},j}^\perp
-  &\equiv \v B_\t{dec} - \v B_{\t{dec},j}^\parallel, \\
+  &\equiv \v B_{\t{dec}} - \v B_{\t{dec},j}^\parallel, \\
   \v B_{\t{dec},j}^{\perp\perp}
-  &\equiv \uv\omega_j\times\v B_\t{dec}^\perp.
+  &\equiv \uv\omega_j\times\v B_{\t{dec}}^\perp.
 \end{align}
-If $\omega_r,\omega_j\gg \gamma_jB_\t{dec}$, then we can neglect
-$\v B_{\t{dec},j}^\parallel$ in (\ref{S_H_dec_eff_full}) by the
+If $\omega_r,\omega_j\gg \gamma_jB_{\t{dec}}$, then we can neglect
+$\v B_{\t{dec},j}^\parallel$ in Eq. (\ref{eq:S_H_dec_eff_full}) by the
 secular approximation, and by the rotating approximation express
 \begin{align}
-  \tilde H_\t{dec} = -\sum_{j:\omega_j=\omega_r}
-  \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_\t{dec} +
-  \v B_{\t{dec},j}^{\perp\perp}\sin\phi_\t{dec}}\c\v I_j.
+  \tilde H_{\t{dec}} = -\sum_{j:\omega_j=\omega_r}
+  \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_{\t{dec}} +
+  \v B_{\t{dec},j}^{\perp\perp}\sin\phi_{\t{dec}}}\c\v I_j.
 \end{align}
 Defining
 \begin{align}
-  \v\nu_j = \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_\t{dec}
-  + \v B_{\t{dec},j}^{\perp\perp}\sin\phi_\t{dec}},
+  \v\nu_j = \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_{\t{dec}}
+  + \v B_{\t{dec},j}^{\perp\perp}\sin\phi_{\t{dec}}},
 \end{align}
 we can express
 \begin{align}
-  \tilde H_\t{dec} = -\sum_{j:\omega_j=\omega_r}\v\nu_j\c\v I_j.
+  \tilde H_{\t{dec}} = -\sum_{j:\omega_j=\omega_r}\v\nu_j\c\v I_j.
 \end{align}
-The system Hamiltonian in the frame of $H_\t{nZ}^\t{eff}$ thus takes
-the form
+The system Hamiltonian in the frame of $H_{\t{nZ}}^{\t{eff}}$ thus
+takes the form
 \begin{align}
-  \tilde H_\t{sys}^\t{dec} = \tilde H_\t{int} + \tilde H_\t{dec}
+  \tilde H_{\t{sys}}^{\t{dec}} = \tilde H_{\t{int}} + \tilde H_{\t{dec}}
   = \sum_{j:\omega_j=\omega_r}
-  \p{h_j^\t{int}\sigma_\NV^z\v I_j\c\uv n_j - \v\nu_j\c\v I_j}.
+  \p{h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j - \v\nu_j\c\v I_j}.
 \end{align}
 
-In the frame of $\tilde H_\t{dec}$, the entire system is governed by
+In the frame of $\tilde H_{\t{dec}}$, the entire system is governed by
 the Hamiltonian
 \begin{align}
-  \tilde H_\t{int}^\t{dec} = \sum_{j:\omega_j=\omega_r}
-  h_j^\t{int}\sigma_\NV^z\v I_j\c\tilde{\v n}_j\p{t},
-  \label{S_H_int_dec_full}
+  \tilde H_{\t{int}}^{\t{dec}} = \sum_{j:\omega_j=\omega_r}
+  h_j^{\t{int}}\sigma_\NV^z\v I_j\c\tilde{\v n}_j\p{t},
+  \label{eq:S_H_int_dec_full}
 \end{align}
 where $\tilde{\v n}_j\p{t}$ is the unit vector $\uv n_j$ rotated about
 $\uv\nu_j$ by $\nu_jt$, i.e.
@@ -514,47 +553,53 @@ with
   \v n_j^\perp &\equiv \uv n_j - \uv n_j^\parallel, \\
   \v n_j^{\perp\perp} &\equiv \uv\nu_j\times\uv n_j.
 \end{align}
-If $\omega_j\gg\nu_j\gg h_j^\t{int}$, the secular approximation allows
-us to neglect $\v n_j^\perp$ and $\v n_j^{\perp\perp}$ in
-(\ref{S_H_int_dec_full}), leaving
+If $\omega_j\gg\nu_j\gg h_j^{\t{int}}$, the secular approximation
+allows us to neglect $\v n_j^\perp$ and $\v n_j^{\perp\perp}$ in
+Eq. (\ref{eq:S_H_int_dec_full}), leaving
 \begin{align}
-  \tilde H_\t{int}^\t{dec}
+  \tilde H_{\t{int}}^{\t{dec}}
   = \sum_{j:\omega_j=\omega_r}
-  \tilde h_j^\t{int}\sigma_\NV^z\v I_j\c\uv\nu_j,
-  \label{S_H_int_dec}
+  \tilde h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv\nu_j,
+  \label{eq:S_H_int_dec}
 \end{align}
 where
 \begin{align}
-  \tilde h_j^\t{int} = h_j^\t{int}\uv n_j\c\uv\nu_j.
+  \tilde h_j^{\t{int}}
+  = h_j^{\t{int}}\uv n_j\c\uv\nu_j.
 \end{align}
+Letting $\theta_j$ and $\theta_{\t{dec}}$ respectively be the angular
+positions of $\uv A_j^\perp$ and $\uv B_{\t{dec}}^\perp$ in the plane
+perpendicular to $\uv\omega_j$, we can say that
+\begin{align}
+  \tilde h_j^{\t{int}} = h_j^{\t{int}}\cos\eta_j,
+\end{align}
+where $\eta_j=\theta_j+\phi_{DD}-\p{\theta_{\t{dec}}+\phi_{\t{dec}}}$.
 
-In words, the decoupling field $\v B_\t{dec}^{\p\omega}\p{t}$ modifies
-$\tilde H_\t{int}$ in (\ref{S_H_int}) by suppressing the components of
-$\uv n_j$ (i.e. $\uv A_j^\perp$ rotated about $\uv\omega_j$ by
-$\phi_{DD}$) which are perpendicular to the respective $\uv\nu_j$
-(i.e.  $\uv B_{\t{dec},j}^\perp$ rotated about $\uv\omega_j$ by
-$\phi_\t{dec}$). The utility of this decoupling field lies in the fact
-that when $\uv n_j$ and $\uv\nu_j$ are orthogonal, the interaction
-with spin $j$ is suppressed as $\tilde h_j^\t{int}=0$. Considering a
-single larmor pair, one can therefore apply a decoupling field to
-eliminate one of the two terms in (\ref{S_H_int_dec}) and realize an
-effective Hamiltonian which couples the NV electron spin to only one
-nuclear spin. This scheme fails for larmor pairs with mutually
-parallel $\v A_j^\perp$.
+In words, the decoupling field $\tilde{\v B}_{\t{dec}}\p{t}$ modifies
+$\tilde H_{\t{int}}$ in Eq. (\ref{eq:S_H_int}) by suppressing the
+components of $\uv n_j$ (i.e. $\uv A_j^\perp$ rotated about
+$\uv\omega_j$ by $\phi_{DD}$) which are perpendicular to the
+respective $\uv\nu_j$ (i.e.  $\uv B_{\t{dec},j}^\perp$ rotated about
+$\uv\omega_j$ by $\phi_{\t{dec}}$). The utility of this decoupling
+field lies in the fact that when $\uv n_j$ and $\uv\nu_j$ are
+orthogonal, the interaction with spin $j$ is suppressed as
+$\tilde h_j^{\t{int}}=0$. Considering a single larmor pair, one can
+therefore apply a decoupling field to eliminate one of the two terms
+in Eq. (\ref{eq:S_H_int_dec}) and realize an effective Hamiltonian
+which couples the NV electron spin to only one nuclear spin. This
+scheme fails for larmor pairs with mutually parallel $\v A_j^\perp$.
 
 The tools developed in this paper do not allow for single-spin
 operations on elements of a larmor pair. Such operations must
 therefore be either forgone, or else realized via composite operations
-making use of (\ref{S_H_ctl}) and (\ref{S_H_int_dec}). The same is
-true of spin-spin coupling between the NV electron spin and a single
-element of a larmor set with more than two nuclei.
+making use of Eqs. (\ref{eq:S_H_ctl}) and (\ref{eq:S_H_int_dec}). The
+same is true of spin-spin coupling between the NV electron spin and a
+single element of a larmor set with more than two nuclei.
 
 \subsection{Coherent SWAP with a singlet-triplet qubit}
 
-For the following analysis, we will consider a single addressable
-larmor pair, i.e. a pair of nuclei indexed by 1 and 2 with effective
-larmor frequencies $\omega$ and for which $\v A_j^\perp$ are not
-mutually parallel. We will use the basis
+In the following section, we will consider an addressable larmor pair
+with effective larmor frequencies $\omega$. We will use the basis
 $\set{\ket\u\equiv\ket 0, \ket\d\equiv\ket{m_s}}$ for the spin states
 of the NV electron, and the standard basis
 $\set{\ket{\u\u}, \ket{\u\d}, \ket{\d\u}, \ket{\d\d}}$ for the spin
@@ -585,7 +630,7 @@ and an ST qubit, it is easier to first realize the operation
 \begin{align}
   \SWAP^{\NV,\AC}
   = {\cNOT^{\AC\to\NV}}^\dagger\cNOT^{\NV\to\AC}\cNOT^{\AC\to\NV},
-  \label{S_SWAP_NVAC_sketch}
+  \label{eq:S_SWAP_NVAC_sketch}
 \end{align}
 where
 \begin{align}
@@ -595,79 +640,80 @@ and
 \begin{align}
   \cNOT^{\NV\to\AC} = \cNOT^{\NV\to2}\cNOT^{\NV\to1}.
 \end{align}
-For later convenience, (\ref{S_SWAP_NVAC_sketch}) makes use of the
-fact that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore (with
-$\v I_\NV=\v\sigma_\NV/2$),
+For later convenience, Eq. (\ref{eq:S_SWAP_NVAC_sketch}) makes use of
+the fact that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore
+(with $\v I_\NV=\v\sigma_\NV/2$),
 \begin{align}
   \SWAP^{\NV,\AC}
-  =& \exp\p{-j\f\pi2 I_\NV^x} \exp\p{j\f\pi2 I_1^{z'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_1^{x'}}
-     \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_2^{x''}}
-     \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_1^{z'}}
-     \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}},
-  \label{S_SWAP_NVAC_full}
+  &= \exp\p{-j\f\pi2 I_\NV^x} \exp\p{j\f\pi2 I_1^{z'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_1^{x'}}
+    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_2^{x''}}
+    \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_1^{z'}}
+    \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}},
+    \label{eq:S_SWAP_NVAC_full}
 \end{align}
 where we make explicit the fact that the the spin of nuclei 1 and 2
 may be given in their own respective bases
 $\set{\uv x',\uv y',\uv z'}$ and $\set{\uv x'',\uv y'',\uv z''}$. We
 can evaluate the first and last rotations of spin 1 in
-(\ref{S_SWAP_NVAC_full}) and combine factors to get
+Eq. (\ref{eq:S_SWAP_NVAC_full}) and combine factors to get
 \begin{align}
   \SWAP^{\NV,\AC}
-  =& \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}}
-     \times \tag*{} \\
-   & \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sp{I_1^{y'}-I_2^{x''}}}
-     \times \tag*{} \\
-   & \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-     \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \times \tag*{} \\
-   & \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}} \exp\p{-j\f\pi2 I_\NV^x}.
+  &= \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}}
+    \tag*{} \\
+  &~~\times \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sp{I_1^{y'}-I_2^{x''}}}
+    \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
+    \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \tag*{} \\
+  &~~\times \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}}
+    \exp\p{-j\f\pi2 I_\NV^x}.
 \end{align}
 Letting
 \begin{align}
   \uv x' = \uv y'' &= \uv A_1^\perp, \\
   \uv y' = -\uv x'' &= \uv A_1^{\perp\perp}, \\
-  \uv z' = \uv z'' &= \uv\omega_1\approx\uv z, \label{S_w=z}
+  \uv z' = \uv z'' &= \uv\omega_1\approx\uv z, \label{eq:S_w=z}
 \end{align}
-where the approximation in (\ref{S_w=z}) holds for
+where the approximation in Eq. (\ref{eq:S_w=z}) holds for
 $\gamma_1B\gg A_1/2$,
 \begin{align}
   \SWAP^{\NV,\AC}
-  =& \exp\p{j\f\pi2 I_\NV^x}
-     \exp\p{-j\f\pi2 \sigma_\NV^x I_1^z} \times \tag*{} \\
-   & \exp\p{-j\pi I_\NV^z}
-     \exp\p{j\f\pi2\sum_jI_j^{y'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \times \tag*{} \\
-   & \exp\p{j\f\pi2 \sigma_\NV^x I_1^z} \exp\p{-j\f\pi2 I_\NV^x}.
-  \label{S_SWAP_NVAC_sxsz}
+  &= \exp\p{j\f\pi2 I_\NV^x}
+    \exp\p{-j\f\pi2 \sigma_\NV^x I_1^z} \tag*{} \\
+  &~~\times \exp\p{-j\pi I_\NV^z}
+    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
+  &~~\times \exp\p{j\f\pi2 \sigma_\NV^x I_1^z} \exp\p{-j\f\pi2 I_\NV^x}.
+    \label{eq:S_SWAP_NVAC_sxsz}
 \end{align}
-As we cannot directly realize the coupling $\sigma_x^\NV I_z^1$,
-we must perform rotations as
+As we cannot directly realize the coupling $\sigma_x^\NV I_z^1$, we
+must perform rotations as
 \begin{align}
   \exp\p{-j\f\pi2 \sigma_\NV^x I_1^z}
-  =& \exp\p{-j\f\pi2 I_\NV^y} \exp\p{j\f\pi2 I_1^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-     \exp\p{-j\f\pi2 I_1^{y'}} \exp\p{j\f\pi2 I_\NV^y}.
+  = \exp\p{-j\f\pi2 I_\NV^y} \exp\p{j\f\pi2 I_1^{y'}}
+  \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
+  \exp\p{-j\f\pi2 I_1^{y'}} \exp\p{j\f\pi2 I_\NV^y}.
 \end{align}
-Substituting this identity into (\ref{S_SWAP_NVAC_sxsz}) yields
+Substituting this identity into Eq. (\ref{eq:S_SWAP_NVAC_sxsz}) yields
 \begin{align}
   \SWAP^{\NV,\AC}
-  =& \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_\NV^y} \times \tag*{} \\
-   & \exp\p{j\f\pi2\sum_jI_j^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-     \exp\p{j\f\pi2 I_\NV^y} \times \tag*{} \\
-   & \exp\p{-j\pi I_\NV^z}
-     \exp\p{j\f\pi2\sum_jI_j^{y'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 I_\NV^y}
-     \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
-     \exp\p{-j\f\pi2\sum_jI_j^{y'}} \times \tag*{} \\
-   & \exp\p{j\f\pi2 I_\NV^y} \exp\p{-j\f\pi2 I_\NV^x},
-  \label{S_SWAP_NVAC}
+  &= \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_\NV^y} \tag*{} \\
+  &~~\times \exp\p{j\f\pi2\sum_jI_j^{y'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
+    \exp\p{j\f\pi2 I_\NV^y} \tag*{} \\
+  &~~\times \exp\p{-j\pi I_\NV^z}
+    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 I_\NV^y}
+    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
+    \exp\p{-j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
+  &~~\times \exp\p{j\f\pi2 I_\NV^y} \exp\p{-j\f\pi2 I_\NV^x},
+    \label{eq:S_SWAP_NVAC}
 \end{align}
 where we have canceled out two rotations of the form
 $\exp\p{\pm j\pi/2~I_1^{y'}}$ and inserted two rotations of the form
@@ -686,19 +732,19 @@ and $\ket\d\to\p{\ket\u+\ket\d}/\sqrt2$. Written explicitly,
 We therefore have that
 \begin{align}
   \SWAP^{\NV,\ST}
-  =& \exp\p{j\pi\v I_\NV\c\uv a} \times \tag*{} \\
-   & \exp\p{j\f\pi2\sum_jI_j^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-     \exp\p{j\f\pi2 I_\NV^y} \times \tag*{} \\
-   & \exp\p{-j\pi I_\NV^z}
-     \exp\p{j\f\pi2\sum_jI_j^{y'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-     \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \times \tag*{} \\
-   & \exp\p{-j\f\pi2 I_\NV^y}
-     \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
-     \exp\p{-j\f\pi2\sum_jI_j^{y'}} \times \tag*{} \\
-   & \exp\p{-j\pi\v I_\NV\c\uv a},
-  \label{S_SWAP_NVST}
+  &= \exp\p{j\pi\v I_\NV\c\uv a} \tag*{} \\
+  &~~\times \exp\p{j\f\pi2\sum_jI_j^{y'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
+    \exp\p{j\f\pi2 I_\NV^y} \tag*{} \\
+  &~~\times \exp\p{-j\pi I_\NV^z}
+    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
+    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\f\pi2 I_\NV^y}
+    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
+    \exp\p{-j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
+  &~~\times \exp\p{-j\pi\v I_\NV\c\uv a},
+    \label{eq:S_SWAP_NVST}
 \end{align}
 where $\v a = \uv x - \uv y$ and we have used the fact that
 \begin{align}
@@ -714,40 +760,39 @@ non-entangling SWAP operation
   + \op{\d\S}{\u\T} + \op{\d\T}{\d\T}.
 \end{align}
 If $\gamma_1=\gamma_2$, i.e. if nuclei 1 and 2 are of the same
-species, all factors in (\ref{S_SWAP_NVST}) can be realized directly
-via the protocols for (\ref{S_H_ctl}), (\ref{S_H_int_dec}), and
-rotations of the NV electron spin.
+species, all factors in Eq. (\ref{eq:S_SWAP_NVST}) can be realized
+directly via the protocols for Eq. (\ref{eq:S_H_ctl}) and
+Eq. (\ref{eq:S_H_int_dec}), as well as rotations of the NV electron
+spin.
 
-Realizing $\SWAP^{\NV,\AC}$ by switching the cNOT operations in
-(\ref{S_SWAP_NVAC_sketch}) is seemingly impossible, as doing so
-requires rotating one spin in the larmor pair without rotating the
-other. It is possible to realize $\SWAP^{\NV,\ST}$ via cNOT operations
-between the NV and ST qubits directly, but this method requires
-performing many more individual spin addressing operations, and
-therefore has a substantially lower fidelity.
+As a last note, it is possible to realize $\SWAP^{\NV,\ST}$ via cNOT
+operations between the NV and ST qubits directly, i.e. without
+performing $\SWAP^{\NV,\AC}$, but doing so requires performing many
+more individual spin addressing operations, which results in a
+substantially lower fidelity.
 
 \fixme{when we wish to read out the ST qubit, it is possible to do so
-  without performing the full coherent SWAP operation so long as we no
-  longer need the larmor pair as a resource for the time being. Talk
+  without performing the full coherent SWAP operation so long as we
+  are willing to discard the initial state of the NV center. Talk
   about this.}
 
 \subsection{Robustness against noise}
 
-Talk about the robustness of the ST qubit against dephasing via the NV
-center, as well as its robustness against slowly varying (frequencies
-$\nu\ll\gamma_jB$) external magnetic noise.
+\fixme{Talk about the robustness of the ST qubit against dephasing via
+  the NV center, as well as its robustness against slowly varying
+  (frequencies $\nu\ll\gamma_jB$) external magnetic noise.}
 
 \section{Simulations and Results}
 
 \subsection{Abundance of larmor pairs}
 
-For any given hyperfine cutoff $A_\t{min}$ and an isotopic abundance
+For any given hyperfine cutoff $A_{\t{min}}$ and an isotopic abundance
 $n$ of $^{13}$C, we can compute exactly the probability
-$P\p{A_\t{min},n}$ of finding an addressable larmor pair for which
-$A_j\ge A_\t{min}$. The simulations developed for this paper can also
-be used to test the computation of $P\p{A_\t{min},n}$ via the Monte
-Carlo method of simply generating many NV systems and counting the
-proportion of them which contain an addressable larmor pair.
+$P\p{A_{\t{min}},n}$ of finding an addressable larmor pair for which
+$A_j\ge A_{\t{min}}$. The simulations developed for this paper can
+also be used to test the computation of $P\p{A_{\t{min}},n}$ via the
+Monte Carlo method of simply generating many NV systems and counting
+the proportion of them which contain an addressable larmor pair.
 
 \subsection{SWAP fidelities via AXY-$n$}
 
