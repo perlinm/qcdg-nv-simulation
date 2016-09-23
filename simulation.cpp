@@ -615,7 +615,6 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
 
       const double w_signal = effective_larmor(nv,target).norm();
-      const control_fields controls(nv.static_gBz/signal_gB_factor*xhat, w_signal);
       for (uint ii = 0; ii < coherence_bins; ii++) {
         const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
@@ -627,10 +626,11 @@ int main(const int arg_num, const char *arg_vec[]) {
         } else {
           cout << f_DD;
           for (uint jj = 0; jj < angular_resolution; jj++) {
-            const double phi_DD = (jj+0.5)/angular_resolution * pi;
+            const double phi_dec = (jj+0.5)/angular_resolution * pi;
+            const control_fields controls(nv.static_gBz/signal_gB_factor*xhat,
+                                          w_signal, phi_dec);
             const double coherence =
-              coherence_measurement(nv, w_signal, f_DD, measurement_time,
-                                    controls, phi_DD);
+              coherence_measurement(nv, w_signal, f_DD, measurement_time, controls);
             cout << " " << coherence;
           }
           cout << endl;
