@@ -168,8 +168,8 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   uint coherence_bins;
-  double measurement_time;
-  double measurement_time_in_ms;
+  double scan_time;
+  double scan_time_in_ms;
   double f_DD;
   uint angular_resolution;
   double signal_gB_factor;
@@ -179,8 +179,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   scan_options.add_options()
     ("bins", po::value<uint>(&coherence_bins)->default_value(500),
      "number of bins in coherence measurements")
-    ("measurement_time", po::value<double>(&measurement_time_in_ms)->default_value(1),
-     "time for each coherence measurement (microseconds)")
+    ("scan_time", po::value<double>(&scan_time_in_ms)->default_value(1),
+     "time for each measurement in the coherence scan (microseconds)")
     ("f_DD", po::value<double>(&f_DD)->default_value(0.06,"0.06"),
      "magnitude of fourier component used in coherence scanning")
     ("angular_resolution", po::value<uint>(&angular_resolution)->default_value(20),
@@ -293,7 +293,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   if (coherence_scan) {
     assert(coherence_bins > 0);
-    assert(measurement_time_in_ms > 0);
+    assert(scan_time_in_ms > 0);
   }
   assert(angular_resolution > 2);
   assert(signal_gB_factor > 1);
@@ -303,7 +303,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   c13_abundance = c13_factor*c13_natural_abundance;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
-  measurement_time = measurement_time_in_ms*1e-3;
+  scan_time = scan_time_in_ms*1e-3;
 
   angle = angle_over_pi*pi;
   target_polar = pi/2 - target_pitch_over_pi*pi;
@@ -577,7 +577,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     const double w_end = w_max + w_range/10;
     for (uint i = 0; i < coherence_bins; i++) {
       const double w_scan = w_start + (i+0.5)*(w_end-w_start)/coherence_bins;
-      const double coherence = coherence_measurement(nv, w_scan, f_DD, measurement_time);
+      const double coherence = coherence_measurement(nv, w_scan, f_DD, scan_time);
       cout << w_scan << " " << coherence << endl;
     }
 
@@ -615,6 +615,8 @@ int main(const int arg_num, const char *arg_vec[]) {
       }
 
       const double w_signal = effective_larmor(nv,target).norm();
+      const double measurement_time = 4*pi / (axy_f_max(nv.k_DD) * max_f_factor
+                                              * hyperfine_perp(nv,target).norm() / 4);
       for (uint ii = 0; ii < coherence_bins; ii++) {
         const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
