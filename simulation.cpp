@@ -628,7 +628,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         } else {
           cout << f_DD;
           for (uint jj = 0; jj < angular_resolution; jj++) {
-            const double phi_dec = (jj+0.5)/angular_resolution * pi;
+            const double phi_dec = -(jj+0.5)/angular_resolution * pi;
             const control_fields controls(nv.static_gBz/signal_gB_factor*xhat,
                                           w_signal, phi_dec);
             const double coherence =
