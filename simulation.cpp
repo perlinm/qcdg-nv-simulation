@@ -572,7 +572,7 @@ int main(const int arg_num, const char *arg_vec[]) {
     cout << endl
          << "Coherence scan results:" << endl
          << "# format: w_scan coherence" << endl;
-    const double w_range = w_max - w_min;
+    const double w_range = max(w_max - w_min, 10.);
     const double w_start = max(w_min - w_range/10, 0.);
     const double w_end = w_max + w_range/10;
     for (uint i = 0; i < coherence_bins; i++) {
