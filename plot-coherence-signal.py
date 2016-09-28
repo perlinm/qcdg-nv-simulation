@@ -56,7 +56,7 @@ def color_plot(targets,k_DD,f_DD,coherence,azimuths):
     plt.pcolor(angles_over_pi,f_DD_boundaries,coherence)
     if show_azimuths:
         for azimuth in azimuths:
-            plt.axvline(mod(1-azimuth),color="k",linewidth=2)
+            plt.axvline(mod(azimuth),color="k",linewidth=2)
 
     plt.xlim(0,1)
     plt.ylim(0,f_DD_boundaries[-1])
