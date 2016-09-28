@@ -8,7 +8,7 @@ if len(sys.argv) not in [2,3]:
     exit(1)
 
 fname = sys.argv[1]
-output_fname = fname.replace(".txt","") + ".pdf"
+output_fname = fname.replace(".txt","") + ".png"
 
 show = (len(sys.argv) == 3)
 
