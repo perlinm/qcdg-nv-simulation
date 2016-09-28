@@ -617,6 +617,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       const double w_signal = effective_larmor(nv,target).norm();
       const double measurement_time = 4*pi / (axy_f_max(nv.k_DD) * max_f_factor
                                               * hyperfine_perp(nv,target).norm() / 4);
+      cout << "# measurement_time (s): " << measurement_time << endl;
       for (uint ii = 0; ii < coherence_bins; ii++) {
         const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
