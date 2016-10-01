@@ -614,26 +614,36 @@ int main(const int arg_num, const char *arg_vec[]) {
         cout << endl;
       }
 
+      // determine control field to use during coherence signal measurement
       const double w_signal = effective_larmor(nv,target).norm();
+      const double phi_dec = [&]() -> double {
+        if (!angular_coherence_signal) return angle;
+        else return 0;
+      }();
+      const control_fields controls(nv.static_gBz/signal_gB_factor*xhat,
+                                    w_signal, phi_dec);
+      cout << "# phi_dec/pi: " << phi_dec/pi << endl;
+
+      // fix coherence signal measurement time
       const double measurement_time = 4*pi / (axy_f_max(nv.k_DD) * max_f_factor
                                               * hyperfine_perp(nv,target).norm() / 4);
-      cout << "# measurement_time (s): " << measurement_time << endl;
+      cout << "# measurement_time (ms): " << measurement_time * 1e3 << endl;
+
       for (uint ii = 0; ii < coherence_bins; ii++) {
         const double f_DD = (ii+0.5)/coherence_bins * axy_f_max(nv.k_DD) * max_f_factor;
 
         if (!angular_coherence_signal) {
           const double coherence =
-            coherence_measurement(nv, w_signal, f_DD, measurement_time);
+            coherence_measurement(nv, w_signal, f_DD, measurement_time, controls);
           cout << f_DD << " " << coherence << endl;
 
         } else {
           cout << f_DD;
           for (uint jj = 0; jj < angular_resolution; jj++) {
-            const double phi_dec = -(jj+0.5)/angular_resolution * pi;
-            const control_fields controls(nv.static_gBz/signal_gB_factor*xhat,
-                                          w_signal, phi_dec);
+            const double phi_DD = (jj+0.5)/angular_resolution * pi;
             const double coherence =
-              coherence_measurement(nv, w_signal, f_DD, measurement_time, controls);
+              coherence_measurement(nv, w_signal, f_DD, measurement_time,
+                                    controls, phi_DD);
             cout << " " << coherence;
           }
           cout << endl;
