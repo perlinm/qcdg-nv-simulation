@@ -5,7 +5,7 @@
 \usepackage{hyperref} % for linking references
 
 %%% math, symbols, etc.
-\usepackage{physics,braket,bm}
+\usepackage{physics,braket,bm,amssymb}
 \renewcommand{\t}{\text} % text in math mode
 \newcommand{\f}[2]{\dfrac{#1}{#2}} % shorthand for fractions
 \newcommand{\p}[1]{\left(#1\right)} % square parenthesis
@@ -101,6 +101,7 @@ initialize qubits in a decoherence-free subspace (DFS) of nuclear
 spins, and propose a means for realizing a coherent SWAP operation
 between the NV center electron spin state and the DFS qubit.
 
+
 \section{Identifying symmetrically coupled $^{13}$C nuclear spins}
 
 Restricting the NV electron spin states to the span of
@@ -145,35 +146,39 @@ frequencies $\set{\omega_j}$ which the protocol cannot resolve, the NV
 coherence after a time $t$ reads
 \begin{align}
   \label{eq:L}
-  L\p{t} = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t}.
+  L = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t}.
 \end{align}
 After selecting an effective larmor frequency $\omega$ of interest via
 the scanning protocol in \cite{wang2016positioning}, coherence
-measurements as per Eq. (\ref{eq:L}) for different fourier components
-$f_{k_{DD}}$ (or times $t$) are sufficient to determine the number of
-nuclei with effective larmor frequency $\omega$. The protocol for
-measuring $L$ can thus be used to identify a larmor pair.
+measurements as per Eq. (\ref{eq:L}) for different AXY-$n$ fourier
+components $f_{k_{DD}}$ (or times $t$) are sufficient to determine the
+number of nuclei with effective larmor frequency $\omega$. The
+protocol for measuring NV coherence can thus be used to identify a
+larmor pair.
 
 After identifying a larmor pair, in order to locate the individual
 nuclei in the pair we introduce an auxiliary magnetic decoupling field
 $\tilde{\v B}_{\t{dec}}\p{t} = \v
 B_{\t{dec}}\cos\p{\omega_{\t{dec}}t-\phi_{\t{dec}}}$. When
 $\omega_{\t{dec}}$ is on resonance with the effective larmor frequency
-$\omega$, the coherence in Eq. (\ref{eq:L}) is modified as
+$\omega$ of a larmor pair (and some simple conditions on
+$\v B_{\t{dec}}$ are satisfied), the coherence in Eq. (\ref{eq:L}) can
+be written as
 \begin{align}
   \label{eq:L_dec}
-  \tilde L\p{t}
-  = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t\cos\eta_j},
+  L = \f12\p{\cos\sp{2\xi\cos\alpha_+\cos\alpha_-}
+  + \cos\sp{2\xi\sin\alpha_+\sin\alpha_-}}.
 \end{align}
-where the angle $\eta_j$ is determined by the directions
-$\uv A_j^\perp$ and $\uv B_{\t{dec}}$, as well as the phases
-$\phi_{DD}$ and $\phi_{\t{dec}}$ (see Supplementary Info
-\ref{sec:addressing_pairs}). Measurements of the coherence $\tilde L$
-as a function of fourier components $f_{k_{DD}}$ (or times $t$) and
-phases $\phi_{DD}$ thus provides information about the directions
-$\uv A_j^\perp$.
+Here $\xi$ is a constant phase determined by $f_{k_{DD}}$, $A^\perp$,
+and interaction time $t$; the angle $\alpha_-$ is determined by the
+directions $\uv A_j^\perp$; and $\alpha_+$ is determined by the
+directions $\uv A_j^\perp$ as well as $\phi_{DD}$, $\phi_{\t{dec}}$,
+and $\uv B_{\t{dec}}$. Measurement of e.g.  $L\p{\xi,\phi_{DD}}$ thus
+provides sufficient information to deduce the directions
+$\uv A_j^\perp$, knowing which is necessary for individual nuclear
+addressing protocols (see Supplementary Info section
+\ref{sec:S_locating_pairs}).
 
-\fixme{How do we locate larmor pairs using Eq. (\ref{eq:L_dec})?}
 
 \section{Individually addressing nuclei in larmor pairs}
 
@@ -197,6 +202,7 @@ to spin 1 (2), leaving only coupling to spin 2 (1).
 \fixme{Give more information or details about this protocol? Reference
   SI}
 
+
 \section{Qubit initialization in a decoherence-free subspace}
 
 The state space of larmor pairs contains a subspace free of
@@ -219,6 +225,7 @@ i.e. without the magnetic decoupling field.
 
 \fixme{Provide result for initialization fidelities.}
 
+
 \section{Coherent SWAP operation with DFS qubit}
 
 The protocols developed for addressing larmor pairs can be used to
@@ -229,6 +236,12 @@ pairs as quantum memory registers.
 \fixme{Expand.}
 
 
+\section{Conclusions}
+
+
+\section{Acknowledgments}
+
+
 \bibliography{\jobname}
 
 \pagebreak
@@ -237,17 +250,20 @@ pairs as quantum memory registers.
 \begin{center}
   \large \bf Supplementary Information for ``\@title''
 \end{center}
-\setcounter{equation}{0} \setcounter{figure}{0} \setcounter{table}{0}
-\setcounter{page}{1} \renewcommand{\theequation}{S\arabic{equation}}
+\setcounter{equation}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\renewcommand{\theequation}{S\arabic{equation}}
 \renewcommand{\thefigure}{S\arabic{figure}}
 \renewcommand{\bibnumfmt}[1]{[S#1]}
 \renewcommand{\citenumfont}[1]{S#1}
 
+\setcounter{section}{0}
+\renewcommand{\thesection}{S.I. \Roman{section}}
+
 \tableofcontents{}
 
-\section{Theory}
-
-\subsection{Basic system model}
+\section{Basic system model}
 
 The Hamiltonian of the NV center system in the presence of a strong,
 static magnetic field $\v B$ can be decomposed as
@@ -350,8 +366,9 @@ $\v\omega_j$, and
 \end{align}
 is the vector $\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
 
-\subsection{Dynamic decoupling and nuclear spin addressing}
-\label{sec:dynamic_decoupling}
+
+\section{Dynamic decoupling and nuclear spin addressing}
+\label{sec:S_dynamic_decoupling}
 
 Dynamic decoupling schemes effectively prepend a modulation function
 \begin{align}
@@ -413,11 +430,11 @@ $\v B_{\t{ctl}}$ rotated about $\uv\omega_j$ by an angle $\omega_jt$:
 where
 \begin{align}
   \v B_{\t{ctl},j}^\parallel
-  &\equiv \p{\v B_{\t{ctl}} \c\uv\omega_j}\uv\omega_j \\
-  \v B_{\t{ctl},j}^\perp
-  &\equiv \v B_{\t{ctl}} - \v B_{\t{ctl},j}^\parallel \\
-  \v B_{\t{ctl},j}^{\perp\perp}
-  &\equiv \uv\omega_j\times\v B_{\t{ctl}}^\perp.
+  \equiv \p{\v B_{\t{ctl}} \c\uv\omega_j}\uv\omega_j,
+  && \v B_{\t{ctl},j}^\perp
+  \equiv \v B_{\t{ctl}} - \v B_{\t{ctl},j}^\parallel,
+  && \v B_{\t{ctl},j}^{\perp\perp}
+  \equiv \uv\omega_j\times\v B_{\t{ctl}}^\perp.
 \end{align}
 
 When $\omega_{\t{ctl}}\gg\gamma_jB_{\t{ctl}}$, the secular
@@ -457,8 +474,9 @@ the same effective larmor frequency $\omega_j$, in which case they are
 addressed simultaneously in Eqs. (\ref{eq:S_H_int}) and
 (\ref{eq:S_H_ctl}).
 
-\subsection{Addressing larmor pairs}
-\label{sec:addressing_pairs}
+
+\section{Addressing larmor pairs}
+\label{sec:S_addressing_pairs}
 
 We call two spins indexed by $j$ and $k$ elements of a \emph{larmor
   set} if their effective larmor frequencies are equal,
@@ -503,11 +521,11 @@ with
 and
 \begin{align}
   \v B_{\t{dec},j}^\parallel
-  &\equiv \p{\v B_{\t{dec}}\c\uv\omega_j}\uv\omega_j, \\
-  \v B_{\t{dec},j}^\perp
-  &\equiv \v B_{\t{dec}} - \v B_{\t{dec},j}^\parallel, \\
-  \v B_{\t{dec},j}^{\perp\perp}
-  &\equiv \uv\omega_j\times\v B_{\t{dec}}^\perp.
+  \equiv \p{\v B_{\t{dec}}\c\uv\omega_j}\uv\omega_j,
+  && \v B_{\t{dec},j}^\perp
+  \equiv \v B_{\t{dec}} - \v B_{\t{dec},j}^\parallel,
+  && \v B_{\t{dec},j}^{\perp\perp}
+  \equiv \uv\omega_j\times\v B_{\t{dec}}^\perp.
 \end{align}
 If $\omega_r,\omega_j\gg \gamma_jB_{\t{dec}}$, then we can neglect
 $\v B_{\t{dec},j}^\parallel$ in Eq. (\ref{eq:S_H_dec_eff_full}) by the
@@ -571,9 +589,9 @@ Letting $\theta_j$ and $\theta_{\t{dec}}$ respectively be the angular
 positions of $\uv A_j^\perp$ and $\uv B_{\t{dec}}^\perp$ in the plane
 perpendicular to $\uv\omega_j$, we can say that
 \begin{align}
-  \tilde h_j^{\t{int}} = h_j^{\t{int}}\cos\eta_j,
+  \tilde h_j^{\t{int}} = h_j^{\t{int}}\cos\p{\theta_j-\eta},
 \end{align}
-where $\eta_j=\theta_j+\phi_{DD}-\p{\theta_{\t{dec}}+\phi_{\t{dec}}}$.
+where $\eta=-\phi_{DD}+\theta_{\t{dec}}+\phi_{\t{dec}}$.
 
 In words, the decoupling field $\tilde{\v B}_{\t{dec}}\p{t}$ modifies
 $\tilde H_{\t{int}}$ in Eq. (\ref{eq:S_H_int}) by suppressing the
@@ -596,7 +614,102 @@ making use of Eqs. (\ref{eq:S_H_ctl}) and (\ref{eq:S_H_int_dec}). The
 same is true of spin-spin coupling between the NV electron spin and a
 single element of a larmor set with more than two nuclei.
 
-\subsection{Coherent SWAP with a singlet-triplet qubit}
+
+\section{Identifying and locating larmor pairs}
+\label{sec:S_locating_pairs}
+
+Larmor pairs can be identified and located via NV coherence
+measurements as in \cite{wang2016positioning}. When the AXY-$n$
+sequence is on resonance with a larmor pair, the NV coherence reads
+\begin{align}
+  L = \cos^2\xi,
+\end{align}
+where the phase $\xi = h^{\t{int}}t = f_{k_{DD}}m_sA_j^\perp t/4$.
+Applying a decoupling field as in section \ref{sec:S_addressing_pairs}
+modifies $h_j^{\t{int}}\to h_j^{\t{int}}\cos\p{\theta_j-\eta}$, which
+makes the NV coherence
+($\eta=-\phi_{DD}+\theta_{\t{dec}}+\phi_{\t{dec}}$)
+\begin{align}
+  L
+  = \cos\p{\xi\cos\sp{\theta_1-\eta}}\cos\p{\xi\cos\sp{\theta_2-\eta}}.
+\end{align}
+Defining
+\begin{align}
+  \alpha_- = \f12\p{\sp{\theta_1-\eta}-\sp{\theta_2-\eta}}
+  = \f12\p{\theta_1-\theta_2},
+  && \alpha_+ = \f12\p{\sp{\theta_1-\eta}+\sp{\theta_2-\eta}}
+     = \f12\p{\theta_1+\theta_2} - \eta,
+\end{align}
+we can expand
+\begin{align}
+  L
+  = \f12\p{\cos\sp{2\xi\cos\alpha_+\cos\alpha_-}
+  + \cos\sp{2\xi\sin\alpha_+\sin\alpha_-}}.
+\end{align}
+When $\alpha_+$ is an integer multiple of $\pi/2$, this coherence
+simplifies to ($n\in\mathbb Z$)
+\begin{align}
+  \label{eq:S_L_simplified}
+  L\p{\alpha_+=n\pi} = \f12\p{1 + \cos\sp{2\xi\cos\alpha_-}},
+  && L\p{\alpha_+=n\pi+\f\pi2}
+     = \f12\p{1 + \cos\sp{2\xi\sin\alpha_-}}.
+\end{align}
+By collecting data on $L\p{\xi,\eta}$, one can identify fixed angles
+$\bar\eta$ at which $L_{\bar\eta}\p\xi\equiv L\p{\xi,\bar\eta}$ takes
+the form above. Knowing $L_{\bar\eta}\p\xi$ is then sufficient to
+deduce the values of $\theta_1$ and $\theta_2$ up to a degeneracy
+which does not affect nuclear spin addressing protocols. To find the
+angles $\set{\theta_j}$ and understand this degeneracy, we first note
+that changing these angles by $\pi$ as $\theta_j\to\theta_j+\pi$ does
+not affect any protocols, so we can safely enforce all
+$\theta_j\in\sp{0,\pi}$ and in turn $\alpha_\pm\in\sp{0,\pi}$. The
+coherence $L\p{\xi,\eta}$ then takes the forms in
+(\ref{eq:S_L_simplified}) when $\alpha_+\in\set{0,\pi/2}$, in which
+case a fourier transform of $L_{\bar\eta}\p\xi$ can be used to
+identify the coherence modes
+\begin{align}
+  \omega_L\p{\alpha_+=0}=2\xi\cos\alpha_-,
+  && \omega_L\p{\alpha_+=\pi/2}=2\xi\sin\alpha_-,
+\end{align}
+and in turn the angles
+\begin{align}
+  \alpha_-\p{\alpha_+=0} = \acos\p{\f1{2\xi}\omega_L\p{\alpha_+=0}},
+  && \alpha_-\p{\alpha_+=\f\pi2}
+     = \asin\p{\f1{2\xi}\omega_L\p{\alpha_+=\f\pi2}}.
+\end{align}
+When $\alpha_+=0$, the angles $\theta_1$ and $\theta_2$ are then
+\begin{align}
+  \label{eq:S_nuclear_angles}
+  \theta_1 = \bar\eta\p{\alpha_+=0} + \alpha_-\p{\alpha_+=0},
+  && \theta_2 = \bar\eta\p{\alpha_+=0} - \alpha_-\p{\alpha_+=0},
+\end{align}
+The obvious problem with this recipe for $\set{\theta_j}$ is the fact
+that measuring $L_{\bar\eta}\p\xi$ does not allow one to distinguish
+the case of $\alpha_+=0$ from $\alpha_+=\pi/2$, as the form of
+$L_{\bar\eta}\p\xi$ is identical in both cases. As it turns out, in
+finding $\theta_1$ and $\theta_2$ via the prescription above, one is
+free to simply assume without consequence that $\alpha_+=0$ whenever
+the coherence $L_{\bar\eta}\p\xi$ takes the form in
+(\ref{eq:S_L_simplified}). Incorrectly identifying the value of
+$\alpha_+'=\pi/2-\alpha_+$ instead of $\alpha_+$ will result in the
+deduction of $\alpha_-'=\pi/2-\alpha_-$ instead of $\alpha_-$. The
+prescriptions in (\ref{eq:S_nuclear_angles}) then yield
+\begin{align}
+  \bar\eta\p{\alpha_+'=0} + \alpha_-'\p{\alpha_+'=0}
+  = \sp{\bar\eta\p{\alpha_+=0} - \f\pi2}
+  + \sp{\f\pi2 - \alpha_-\p{\alpha_+=0}}
+  = \bar\eta\p{\alpha_+=0} - \alpha_-\p{\alpha_+=0} = \theta_2
+\end{align}
+and similarly
+\begin{align}
+  \bar\eta\p{\alpha_+'=0} - \alpha_-'\p{\alpha_+'=0} = \theta_1.
+\end{align}
+Using $\alpha_\pm'$ instead of $\alpha_\pm$ to find $\set{\theta_j}$
+thus amounts to merely relabeling nuclei, which has no physical
+consequence.
+
+
+\section{Coherent SWAP with a singlet-triplet qubit}
 
 In the following section, we will consider an addressable larmor pair
 with effective larmor frequencies $\omega$. We will use the basis
@@ -608,8 +721,8 @@ the basis states $\set{\ket{\u\d},\ket{\d\u}}$ as the anti-correlated
 (AC) qubit, and the logical qubit consisting of the basis states
 $\set{\ket\S,\ket\T}$ as the singlet-triplet (ST) qubit, where
 \begin{align}
-  \ket\S &\equiv \f1{\sqrt2}\p{\ket{\u\d}-\ket{\d\u}}, \\
-  \ket\T &\equiv \f1{\sqrt2}\p{\ket{\u\d}+\ket{\d\u}}.
+  \ket\S \equiv \f1{\sqrt2}\p{\ket{\u\d}-\ket{\d\u}},
+  &&  \ket\T \equiv \f1{\sqrt2}\p{\ket{\u\d}+\ket{\d\u}}.
 \end{align}
 
 A SWAP operation between two qubits indexed by 1 and 2 can be realized
@@ -634,11 +747,8 @@ and an ST qubit, it is easier to first realize the operation
 \end{align}
 where
 \begin{align}
-  \cNOT^{\AC\to\NV} = \cNOT^{1\to\NV}
-\end{align}
-and
-\begin{align}
-  \cNOT^{\NV\to\AC} = \cNOT^{\NV\to2}\cNOT^{\NV\to1}.
+  \cNOT^{\AC\to\NV} = \cNOT^{1\to\NV},
+  && \cNOT^{\NV\to\AC} = \cNOT^{\NV\to2}\cNOT^{\NV\to1}.
 \end{align}
 For later convenience, Eq. (\ref{eq:S_SWAP_NVAC_sketch}) makes use of
 the fact that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore
@@ -776,15 +886,15 @@ substantially lower fidelity.
   are willing to discard the initial state of the NV center. Talk
   about this.}
 
-\subsection{Robustness against noise}
+
+\section{Robustness against noise}
 
 \fixme{Talk about the robustness of the ST qubit against dephasing via
   the NV center, as well as its robustness against slowly varying
   (frequencies $\nu\ll\gamma_jB$) external magnetic noise.}
 
-\section{Simulations and Results}
 
-\subsection{Abundance of larmor pairs}
+\section{Abundance of larmor pairs}
 
 For any given hyperfine cutoff $A_{\t{min}}$ and an isotopic abundance
 $n$ of $^{13}$C, we can compute exactly the probability
@@ -794,39 +904,13 @@ also be used to test the computation of $P\p{A_{\t{min}},n}$ via the
 Monte Carlo method of simply generating many NV systems and counting
 the proportion of them which contain an addressable larmor pair.
 
-\subsection{SWAP fidelities via AXY-$n$}
 
-Discuss simulations and any relevant nuances therein. Present
-histograms of $\SWAP^{\NV,\ST}$ fidelities and net operation times.
+\section{SWAP fidelities via AXY-$n$}
 
-Note: the same simulations can also be used to generate similar
-histograms (as well as other info) about other operations,
-e.g. single-spin $\SWAP$ or $i\SWAP$ operations. Furthermore, the
-simulations can, without any modification, reproduce results such as
-Figure 2 in \cite{wang2016positioning} (``Positioning Nuclear Spins in
-Interacting Clusters for Quantum Technologies and
-Bio-imaging''). Minor additions to the codes might make them useful
-for comparing the efficacy of different spin-addressing protocols. Is
-there any interest in doing any of these things (for this paper or
-elsewhere)?
+\fixme{Discuss simulations and any relevant nuances therein. Present
+  histograms of $\SWAP^{\NV,\ST}$ fidelities and net operation times.}
 
-\section{Conclusions}
-
-\section{Acknowledgments}
 
 \bibliography{\jobname}
 
 \end{document}
-
-
-notes:
-
-prove DFS
-
-how to locate spins?
-- identify larmor frequencies for C-13 nuclei
-- identify a frequency with two spins
-- locate two spins
-
-perform elementary gate on one spin
-implement PRX gates
