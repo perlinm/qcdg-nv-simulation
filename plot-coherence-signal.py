@@ -62,7 +62,7 @@ def color_plot(targets,k_DD,f_DD,coherence,azimuths):
     plt.ylim(0,f_DD_boundaries[-1])
     plt.clim(-1,1)
 
-    plt.xlabel(r"$\phi_{\mathregular{dec}}/\pi$")
+    plt.xlabel(r"$\phi_{DD}/\pi$")
     plt.ylabel("$f_{}$".format(k_DD))
 
     cbar = plt.colorbar()
@@ -73,13 +73,12 @@ def color_plot(targets,k_DD,f_DD,coherence,azimuths):
 
     if show: plt.show()
 
-def make_plot(targets,k_DD,f_DD,coherence,azimuths):
-    f_DD = np.array(f_DD)
-    coherence = np.array(coherence)
+def make_plot(targets,k_DD,f_DD,coherence,azimuths,time):
 
     if coherence.shape[0] == 0: return None
 
     plt.figure()
+    plt.title("$t={}$ ms".format(round(time)))
     if coherence.shape[1] == 1:
         line_plot(targets,k_DD,f_DD,coherence)
     else:
@@ -101,8 +100,10 @@ with open(fname,"r") as f:
                 if "azimuths" in line:
                     azimuths = [ float(a) for a in line.split()[2:]]
                     continue
+                if "measurement_time" in line:
+                    time = float(line.split()[-1])
                 if "targets" in line:
-                    try: make_plot(targets,k_DD,f_DD,coherence,azimuths)
+                    try: make_plot(targets,k_DD,f_DD,coherence,azimuths,time)
                     except: None
                     targets = line.split()[2:]
                     f_DD = []
@@ -111,4 +112,8 @@ with open(fname,"r") as f:
                 f_DD.append(float(line.split()[0]))
                 coherence.append([ float(n) for n in line.split()[1:]])
 
-make_plot(targets,k_DD,f_DD,coherence,azimuths)
+f_DD = np.array(f_DD)
+coherence = np.array(coherence)
+make_plot(targets,k_DD,f_DD,coherence,azimuths,time)
+
+plt.show()
