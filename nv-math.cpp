@@ -275,7 +275,7 @@ double larmor_resolution(const nv_system& nv, const uint target) {
 // Hamiltonians
 // ---------------------------------------------------------------------------------------
 
-// Hamiltoninan coupling two C-13 nuclei
+// Hamiltoninan coupling two spins
 MatrixXcd H_ss(const Vector3d& p1, const double g1, const mvec& S1,
                const Vector3d& p2, const double g2, const mvec& S2) {
   const Vector3d r = p2 - p1;
