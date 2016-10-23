@@ -37,6 +37,7 @@ int main(const int arg_num, const char *arg_vec[]) {
      "seed for random number generator")
     ;
 
+  bool pair_search;
   bool coherence_scan;
   bool coherence_signal;
   bool angular_coherence_signal;
@@ -54,6 +55,8 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   po::options_description simulations("Available simulations",help_text_length);
   simulations.add_options()
+    ("pair_search", po::value<bool>(&pair_search)->default_value(false)->implicit_value(true),
+     "identify and characterize addressable larmor pairs")
     ("scan", po::value<bool>(&coherence_scan)->default_value(false)->implicit_value(true),
      "perform NV coherence scan for effective larmor frequencies")
     ("signal",
@@ -97,6 +100,7 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   double c13_abundance;
   double c13_factor;
+  double pair_isolation;
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
@@ -113,6 +117,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   simulation_options.add_options()
     ("c13_factor", po::value<double>(&c13_factor)->default_value(1),
      "abundance of C-13 relative to its natural abundance")
+    ("pair_isolation", po::value<double>(&pair_isolation)->default_value(100),
+     "maximum coupling factor for an 'isolated' nucleus (Hz)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
@@ -201,7 +207,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     ;
 
   bool print_lattice;
-  bool print_pairs;
   bool target_info;
 
   po::options_description print_options("Available printing options",help_text_length);
@@ -209,9 +214,6 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("print_lattice",
      po::value<bool>(&print_lattice)->default_value(false)->implicit_value(true),
      "print C-13 lattice to a file")
-    ("print_pairs",
-     po::value<bool>(&print_pairs)->default_value(false)->implicit_value(true),
-     "print larmor pairs")
     ("target_info",
      po::value<bool>(&target_info)->default_value(false)->implicit_value(true),
      "print information about target nuclei")
@@ -251,9 +253,10 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // make sure we are either printing something, or performing a simulation
   if (!testing_mode) {
-    const bool printing = print_lattice || print_pairs || target_info;
+    const bool printing = print_lattice || target_info;
     if (!printing) {
-      if (int(coherence_scan)
+      if (int(pair_search)
+          + int(coherence_scan)
           + int(coherence_signal)
           + int(angular_coherence_signal)
           + int(rotation)
@@ -285,6 +288,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // verify validity of other values
   assert(hyperfine_cutoff_in_kHz > 0);
   assert(c13_factor >= 0);
+  assert(pair_isolation >= 0);
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert((k_DD_int == 1) || (k_DD_int == 3));
@@ -420,17 +424,31 @@ int main(const int arg_num, const char *arg_vec[]) {
     }
   }
 
-  // if we wish to print pairs, do so
-  if (print_pairs) {
-    if (larmor_pairs.size() > 0) {
-      cout << "Larmor pairs:\n";
-      for (vector<uint> pair: larmor_pairs) {
-        cout << " " << pair.at(0) << " " << pair.at(1) << endl;
+  // if we are only doing a search for isolated larmor pairs, do it now
+  if (pair_search) {
+    cout << "Starting search for isolated larmor pairs..." << endl;
+    cout << "idx1 idx2 effective_hyperfine_in_Hz" << endl;
+    for (vector<uint> larmor_pair: larmor_pairs) {
+      const uint ln_1 = larmor_pair.at(0);
+      const uint ln_2 = larmor_pair.at(1);
+      bool isolated_pair = (coupling_strength(nuclei, ln_1, ln_2) <= pair_isolation);
+      if (!isolated_pair) continue;
+
+      for (uint n = 0; n < nuclei.size(); n++) {
+        if (n == ln_1 || n == ln_2) continue;
+        if (coupling_strength(nuclei, n, ln_1) > pair_isolation ||
+            coupling_strength(nuclei, n, ln_2) > pair_isolation) {
+          isolated_pair = false;
+          break;
+        }
       }
-      cout << endl;
-    } else {
-      cout << "No larmor pairs found\n";
+      if (!isolated_pair) continue;
+
+      cout << ln_1 << " " << ln_2 << " "
+           << (g_C13*static_Bz_in_gauss*gauss*zhat
+               - ms/2.*hyperfine(nuclei.at(ln_1))).norm() << endl;
     }
+    return 0;
   }
 
   // determine which nuclei to target
