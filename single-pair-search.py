@@ -54,6 +54,9 @@ for s in range(samples):
 
 while threading.active_count() > 1: None
 
-print(samples_with_pairs/samples)
-if samples_with_pairs:
-    print(sum(hyperfine_perp_values)/samples_with_pairs)
+if sum(hyperfine_perp_values) == 0:
+    mean_hyperfine_perp = 0
+else:
+    mean_hyperfine_perp = sum(hyperfine_perp_values)/samples_with_pairs
+
+print(samples_with_pairs/samples, "%.3g" % mean_hyperfine_perp)
