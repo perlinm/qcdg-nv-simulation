@@ -427,7 +427,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // if we are only doing a search for isolated larmor pairs, do it now
   if (pair_search) {
     cout << "Starting search for isolated larmor pairs..." << endl;
-    cout << "idx1 idx2 effective_hyperfine_in_Hz" << endl;
+    cout << "idx1 idx2 effective_larmor_in_Hz" << endl;
     for (vector<uint> larmor_pair: larmor_pairs) {
       const uint ln_1 = larmor_pair.at(0);
       const uint ln_2 = larmor_pair.at(1);
