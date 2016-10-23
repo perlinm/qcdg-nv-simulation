@@ -18,8 +18,8 @@ log10_samples = int(sys.argv[4])
 try:
     task_num = int(sys.argv[5])
 except:
-    task_num = 2
-assert task_num > 1
+    task_num = 1
+assert task_num >= 1
 
 if not start < end:
     print("cutoff_start must be less than cutoff_end")

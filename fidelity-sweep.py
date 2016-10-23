@@ -8,9 +8,7 @@ if len(sys.argv) < 5:
 
 # process inputs
 task_num = int(sys.argv[1])
-if task_num < 2:
-    print("task number must be >= 2")
-    exit(1)
+assert task_num >= 1
 
 sim_args = sys.argv[2:] # args passed on to this script
 cmd_args = sim_args[:] # args to pass on to individual simulations
@@ -75,7 +73,7 @@ for s in range(samples):
 
     # run each simulation in a new thread
     t = threading.Thread(target=run_sample,args=[s])
-    while threading.active_count() >= task_num:
+    while threading.active_count() > task_num:
         time.sleep(1)
     t.start()
 
