@@ -107,6 +107,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   int ms;
   uint k_DD_int;
   axy_harmonic k_DD;
+  double static_Bz;
   double static_Bz_in_gauss;
   double identity_time;
   double scale_factor;
@@ -307,6 +308,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   c13_abundance = c13_factor*c13_natural_abundance;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
   k_DD = (k_DD_int == 1 ? first : third);
+  static_Bz = static_Bz_in_gauss*gauss;
   scan_time = scan_time_in_ms*1e-3;
 
   angle = angle_over_pi*pi;
@@ -427,7 +429,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // if we are only doing a search for isolated larmor pairs, do it now
   if (pair_search) {
     cout << "Starting search for isolated larmor pairs..." << endl;
-    cout << "idx1 idx2 effective_larmor_in_Hz" << endl;
+    cout << "idx1 idx2 hyperfine_perp" << endl;
     for (vector<uint> larmor_pair: larmor_pairs) {
       const uint ln_1 = larmor_pair.at(0);
       const uint ln_2 = larmor_pair.at(1);
@@ -445,8 +447,7 @@ int main(const int arg_num, const char *arg_vec[]) {
       if (!isolated_pair) continue;
 
       cout << ln_1 << " " << ln_2 << " "
-           << (g_C13*static_Bz_in_gauss*gauss*zhat
-               - ms/2.*hyperfine(nuclei.at(ln_1))).norm() << endl;
+           << hyperfine_perp(static_Bz,ms,nuclei.at(ln_1)).norm() << endl;
     }
     return 0;
   }
@@ -536,7 +537,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   cout << endl;
 
   // initialize nv_system object
-  const nv_system nv(nuclei, clusters, ms, g_C13*static_Bz_in_gauss*gauss, k_DD,
+  const nv_system nv(nuclei, clusters, ms, g_C13*static_Bz, k_DD,
                      scale_factor, integration_factor, no_nn);
 
   // -------------------------------------------------------------------------------------

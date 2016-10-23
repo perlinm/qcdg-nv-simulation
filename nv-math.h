@@ -174,6 +174,10 @@ inline Vector3d hyperfine(const nv_system& nv, const uint index) {
 }
 
 // effective larmor frequency of target C-13 nucleus located at pos
+inline Vector3d effective_larmor(const double static_Bz, const int ms,
+                                 const Vector3d& pos) {
+  return g_C13*static_Bz*zhat - ms/2.*hyperfine(pos);
+}
 inline Vector3d effective_larmor(const nv_system& nv, const Vector3d& pos) {
   return nv.static_gBz*zhat - nv.ms/2.*hyperfine(pos);
 }
@@ -182,6 +186,12 @@ inline Vector3d effective_larmor(const nv_system& nv, const uint index) {
 }
 
 // component of hyperfine field perpendicular to the larmor axis
+inline Vector3d hyperfine_perp(const double static_Bz, const int ms,
+                               const Vector3d& pos) {
+  const Vector3d w_eff_hat = hat(effective_larmor(static_Bz,ms,pos));
+  const Vector3d A = hyperfine(pos);
+  return A - dot(A,w_eff_hat)*w_eff_hat;
+}
 inline Vector3d hyperfine_perp(const nv_system&nv, const Vector3d& pos) {
   const Vector3d w_eff_hat = hat(effective_larmor(nv,pos));
   const Vector3d A = hyperfine(pos);
