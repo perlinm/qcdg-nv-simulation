@@ -100,7 +100,9 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   double c13_abundance;
   double c13_factor;
-  double pair_isolation;
+  double nuclear_isolation;
+  double larmor_isolation;
+  double larmor_isolation_in_kHz;
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
@@ -118,8 +120,10 @@ int main(const int arg_num, const char *arg_vec[]) {
   simulation_options.add_options()
     ("c13_factor", po::value<double>(&c13_factor)->default_value(1),
      "abundance of C-13 relative to its natural abundance")
-    ("pair_isolation", po::value<double>(&pair_isolation)->default_value(100),
-     "maximum coupling factor for an 'isolated' nucleus (Hz)")
+    ("nuclear_isolation", po::value<double>(&nuclear_isolation)->default_value(100),
+     "maximum internuclear coupling factor for an 'isolated' nucleus (Hz)")
+    ("larmor_isolation", po::value<double>(&larmor_isolation_in_kHz)->default_value(0),
+     "isolation factor of effective larmor frequency for an 'isolated' nucleus (kHz)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
@@ -289,7 +293,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   // verify validity of other values
   assert(hyperfine_cutoff_in_kHz > 0);
   assert(c13_factor >= 0);
-  assert(pair_isolation >= 0);
+  assert(nuclear_isolation >= 0);
+  assert(larmor_isolation_in_kHz >= 0);
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert((k_DD_int == 1) || (k_DD_int == 3));
@@ -306,16 +311,17 @@ int main(const int arg_num, const char *arg_vec[]) {
 
   // set some variables based on iputs
   c13_abundance = c13_factor*c13_natural_abundance;
-  hyperfine_cutoff = hyperfine_cutoff_in_kHz*kHz;
+  larmor_isolation = larmor_isolation_in_kHz * 1e3;
+  hyperfine_cutoff = hyperfine_cutoff_in_kHz * 1e3;
   k_DD = (k_DD_int == 1 ? first : third);
-  static_Bz = static_Bz_in_gauss*gauss;
-  scan_time = scan_time_in_ms*1e-3;
+  static_Bz = static_Bz_in_gauss * gauss;
+  scan_time = scan_time_in_ms * 1e-3;
 
-  angle = angle_over_pi*pi;
-  target_polar = pi/2 - target_pitch_over_pi*pi;
-  target_azimuth = target_azimuth_over_pi*pi;
-  nv_polar = pi/2 - nv_pitch_over_pi*pi;
-  nv_azimuth = nv_azimuth_over_pi*pi;
+  angle = angle_over_pi * pi;
+  target_polar = pi/2 - target_pitch_over_pi * pi;
+  target_azimuth = target_azimuth_over_pi * pi;
+  nv_polar = pi/2 - nv_pitch_over_pi * pi;
+  nv_azimuth = nv_azimuth_over_pi * pi;
 
   uniform_real_distribution<double> rnd(0.0,1.0); // uniform distribution on [0,1)
   mt19937_64 generator(seed); // use and seed the 64-bit Mersenne Twister 19937 generator
@@ -433,13 +439,16 @@ int main(const int arg_num, const char *arg_vec[]) {
     for (vector<uint> larmor_pair: larmor_pairs) {
       const uint ln_1 = larmor_pair.at(0);
       const uint ln_2 = larmor_pair.at(1);
-      bool isolated_pair = (coupling_strength(nuclei, ln_1, ln_2) <= pair_isolation);
+      const double w_larmor = effective_larmor(static_Bz, ms, nuclei.at(ln_1)).norm();
+      bool isolated_pair = (coupling_strength(nuclei, ln_1, ln_2) <= nuclear_isolation);
       if (!isolated_pair) continue;
 
       for (uint n = 0; n < nuclei.size(); n++) {
         if (n == ln_1 || n == ln_2) continue;
-        if (coupling_strength(nuclei, n, ln_1) > pair_isolation ||
-            coupling_strength(nuclei, n, ln_2) > pair_isolation) {
+        if (coupling_strength(nuclei, n, ln_1) > nuclear_isolation ||
+            coupling_strength(nuclei, n, ln_2) > nuclear_isolation ||
+            (abs(effective_larmor(static_Bz, ms, nuclei.at(n)).norm() - w_larmor)
+             < larmor_isolation)) {
           isolated_pair = false;
           break;
         }
@@ -550,9 +559,9 @@ int main(const int arg_num, const char *arg_vec[]) {
       cout << "index: " << n << endl
            << "position (nm): "
            << in_crystal_basis(nv.nuclei.at(n)).transpose() * a0/2 / nm << endl
-           << "effective_larmor (kHz): " << effective_larmor(nv,n).norm() / kHz << endl
-           << "hyperfine (kHz): " << hyperfine(nv,n).norm() / kHz << endl
-           << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() / kHz << endl
+           << "effective_larmor (kHz): " << effective_larmor(nv,n).norm() * 1e-3 << endl
+           << "hyperfine (kHz): " << hyperfine(nv,n).norm() * 1e-3 << endl
+           << "hyperfine_perp (kHz): " << hyperfine_perp(nv,n).norm() * 1e-3 << endl
            << endl;
     }
     for (uint i = 0; i < target_nuclei.size(); i++) {
@@ -562,7 +571,7 @@ int main(const int arg_num, const char *arg_vec[]) {
         cout << "indices: " << i << " " << j << endl
              << "displacement (nm): "
              << in_crystal_basis(pos_j-pos_i).transpose() * a0/2 / nm << endl
-             << "coupling (Hz): " << coupling_strength(pos_i,pos_j) / Hz << endl
+             << "coupling (Hz): " << coupling_strength(pos_i,pos_j) << endl
              << endl;
       }
     }
