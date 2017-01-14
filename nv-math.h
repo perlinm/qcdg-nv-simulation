@@ -218,6 +218,17 @@ inline Vector3d hyperfine_perp(const nv_system&nv, const uint index) {
   return hyperfine_perp(nv,nv.nuclei.at(index));
 }
 
+// magnitude of hyperfine field parallel to the NV axis
+inline double hyperfine_z(const Vector3d& pos) {
+  return dot(hyperfine(pos), zhat);
+}
+
+// magnitude of hyperfine field perpendicular to the NV axis
+inline double hyperfine_xy(const Vector3d& pos) {
+  const Vector3d A = hyperfine(pos);
+  return (A - dot(A,zhat)*zhat).norm();
+}
+
 // minimum difference in larmor frequencies between target nucleus and other nuclei
 //   i.e. min{ |w_s - w_{index}| for all s != index }
 double larmor_resolution(const nv_system& nv, const uint index);

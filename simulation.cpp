@@ -104,8 +104,8 @@ int main(const int arg_num, const char *arg_vec[]) {
   double nuclear_isolation;
   double larmor_isolation;
   double larmor_isolation_in_kHz;
-  double min_hyperfine_perp;
-  double min_hyperfine_perp_in_kHz;
+  double min_hyperfine_xy;
+  double min_hyperfine_xy_in_kHz;
   uint max_cluster_size;
   double hyperfine_cutoff;
   double hyperfine_cutoff_in_kHz;
@@ -128,10 +128,9 @@ int main(const int arg_num, const char *arg_vec[]) {
     ("larmor_isolation", po::value<double>(&larmor_isolation_in_kHz)->default_value(0),
      "isolation factor of parallel component of hyperfine field"
      " for an 'isolated' nucleus (kHz)")
-    ("min_hyperfine_perp",
-     po::value<double>(&min_hyperfine_perp_in_kHz)->default_value(0),
-     "minimum perpendicular value of hyperfine field for a larmor pair"
-     " to be counted in a pair search (kHz)")
+    ("min_hyperfine_xy", po::value<double>(&min_hyperfine_xy_in_kHz)->default_value(0),
+     "minimum magnitude of hyperfine field perpendicular to the NV axis"
+     " for a larmor pair to be counted in a pair search (kHz)")
     ("max_cluster_size", po::value<uint>(&max_cluster_size)->default_value(6),
      "maximum allowable size of C-13 clusters")
     ("hyperfine_cutoff", po::value<double>(&hyperfine_cutoff_in_kHz)->default_value(10),
@@ -303,7 +302,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   assert(c13_factor >= 0);
   assert(nuclear_isolation >= 0);
   assert(larmor_isolation_in_kHz >= 0);
-  assert(min_hyperfine_perp_in_kHz >= 0);
+  assert(min_hyperfine_xy_in_kHz >= 0);
   assert(max_cluster_size > 0);
   assert(ms == 1 || ms == -1);
   assert((k_DD_int == 1) || (k_DD_int == 3));
@@ -321,7 +320,7 @@ int main(const int arg_num, const char *arg_vec[]) {
   // set some variables based on iputs
   c13_abundance = c13_factor*c13_natural_abundance;
   larmor_isolation = larmor_isolation_in_kHz * 1e3;
-  min_hyperfine_perp = min_hyperfine_perp_in_kHz * 1e3;
+  min_hyperfine_xy = min_hyperfine_xy_in_kHz * 1e3;
   hyperfine_cutoff = hyperfine_cutoff_in_kHz * 1e3;
   k_DD = (k_DD_int == 1 ? first : third);
   static_Bz = static_Bz_in_gauss * gauss;
@@ -445,31 +444,31 @@ int main(const int arg_num, const char *arg_vec[]) {
   // if we are only doing a search for isolated larmor pairs, do it now
   if (pair_search) {
     cout << "Starting search for isolated larmor pairs..." << endl;
-    cout << "idx1 idx2 hyperfine_perp" << endl;
+    cout << "idx1 idx2 hyperfine_xy" << endl;
     for (vector<uint> larmor_pair: larmor_pairs) {
       const uint ln_1 = larmor_pair.at(0);
       const uint ln_2 = larmor_pair.at(1);
-      const double A_z = hyperfine_parallel(static_Bz, ms, nuclei.at(ln_1)).norm();
-      const double A_perp = hyperfine_perp(static_Bz,ms,nuclei.at(ln_1)).norm();
+      const double A_z = hyperfine_z(nuclei.at(ln_1));
+      const double A_xy = hyperfine_xy(nuclei.at(ln_1));
 
-      if (A_perp <= min_hyperfine_perp) continue;
+      if (A_xy <= min_hyperfine_xy) continue;
 
-      bool isolated_pair = (coupling_strength(nuclei, ln_1, ln_2) <= nuclear_isolation);
+      bool isolated_pair = (strong_field_coupling(nuclei, ln_1, ln_2)
+                            <= nuclear_isolation);
       if (!isolated_pair) continue;
 
       for (uint n = 0; n < nuclei.size(); n++) {
         if (n == ln_1 || n == ln_2) continue;
-        if (coupling_strength(nuclei, n, ln_1) > nuclear_isolation ||
-            coupling_strength(nuclei, n, ln_2) > nuclear_isolation ||
-            (abs(hyperfine_parallel(static_Bz, ms, nuclei.at(n)).norm() - A_z)
-             < larmor_isolation)) {
+        if (strong_field_coupling(nuclei, n, ln_1) > nuclear_isolation ||
+            strong_field_coupling(nuclei, n, ln_2) > nuclear_isolation ||
+            (abs(hyperfine_z(nuclei.at(n)) - A_z) < larmor_isolation)) {
           isolated_pair = false;
           break;
         }
       }
       if (!isolated_pair) continue;
 
-      cout << ln_1 << " " << ln_2 << " " << A_perp << endl;
+      cout << ln_1 << " " << ln_2 << " " << A_xy << endl;
     }
     return 0;
   }
