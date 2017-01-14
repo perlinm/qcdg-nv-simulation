@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import sys, os, subprocess, random, threading
 
-if len(sys.argv) != 6:
+if len(sys.argv) != 8:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz" + \
-          " c13_factor pair_isolation samples task_num")
+          " min_hyperfine_perp_in_kHz c13_factor nuclear_isolation" + \
+          " larmor_isolation_in_kHz samples task_num")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
-c13_factor = float(sys.argv[2])
-pair_isolation = int(sys.argv[3])
-samples = int(sys.argv[4])
-task_num = int(sys.argv[5])
+min_hyperfine_perp = sys.argv[2]
+c13_factor = sys.argv[3]
+nuclear_isolation = sys.argv[4]
+larmor_isolation = sys.argv[5]
+samples = int(sys.argv[6])
+task_num = int(sys.argv[7])
 assert task_num >= 1
 
 sim_file = "{}/simulate.exe".format(os.path.dirname(os.path.realpath(__file__)))
@@ -18,9 +21,11 @@ sim_file = "{}/simulate.exe".format(os.path.dirname(os.path.realpath(__file__)))
 unsigned_long_long_max = 2**64-1
 
 commands = [sim_file, "--pair_search",
-            "--hyperfine_cutoff", str(hyperfine_cutoff),
-            "--c13_factor", str(c13_factor),
-            "--pair_isolation", str(pair_isolation)]
+            "--hyperfine_cutoff", hyperfine_cutoff,
+            "--min_hyperfine_perp", min_hyperfine_perp,
+            "--c13_factor", c13_factor,
+            "--nuclear_isolation", nuclear_isolation,
+            "--larmor_isolation", larmor_isolation]
 
 lock = threading.RLock()
 
@@ -44,8 +49,9 @@ def run_sample(s):
 
     with lock:
         global samples_with_pairs, hyperfine_perp_values
-        samples_with_pairs += 1 if len(pairs) > 0 else 0
-        hyperfine_perp_values += [ float(pair[2]) for pair in pairs ]
+        hyperfines = [ float(pair[2]) for pair in pairs ]
+        if len(hyperfines) > 0:
+            samples_with_pairs += 1
 
 for s in range(samples):
     t = threading.Thread(target=run_sample,args=[s])
@@ -54,9 +60,4 @@ for s in range(samples):
 
 while threading.active_count() > 1: None
 
-if sum(hyperfine_perp_values) == 0:
-    mean_hyperfine_perp = 0
-else:
-    mean_hyperfine_perp = sum(hyperfine_perp_values)/samples_with_pairs
-
-print(samples_with_pairs/samples, "%.3g" % mean_hyperfine_perp)
+print(samples_with_pairs/samples)
