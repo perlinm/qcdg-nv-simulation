@@ -122,6 +122,15 @@ inline double coupling_strength(const vector<Vector3d>& nuclei,
   return coupling_strength(nuclei.at(idx1), nuclei.at(idx2));
 }
 
+// coupling strength between two C-13 nuclei with a strong static magnetic field
+inline double strong_field_coupling(const Vector3d& p1, const Vector3d& p2) {
+  const Vector3d r = p2 - p1;
+  return 0.5 * coupling_strength(p1,p2) * abs(1-3*dot(hat(r),zhat));
+}
+inline double strong_field_coupling(const vector<Vector3d>& nuclei,
+                                    const uint idx1, const uint idx2) {
+  return strong_field_coupling(nuclei.at(idx1), nuclei.at(idx2));
+}
 // group nuclei into clusters with intercoupling strengths >= min_coupling_strength
 vector<vector<uint>> cluster_with_coupling(const vector<Vector3d>& nuclei,
                                            const double min_coupling_strength,
@@ -183,6 +192,14 @@ inline Vector3d effective_larmor(const nv_system& nv, const Vector3d& pos) {
 }
 inline Vector3d effective_larmor(const nv_system& nv, const uint index) {
   return effective_larmor(nv,nv.nuclei.at(index));
+}
+
+// component of hyperfine field parallel to the larmor axis
+inline Vector3d hyperfine_parallel(const double static_Bz, const int ms,
+                                   const Vector3d& pos) {
+  const Vector3d w_eff_hat = hat(effective_larmor(static_Bz,ms,pos));
+  const Vector3d A = hyperfine(pos);
+  return dot(A,w_eff_hat)*w_eff_hat;
 }
 
 // component of hyperfine field perpendicular to the larmor axis
