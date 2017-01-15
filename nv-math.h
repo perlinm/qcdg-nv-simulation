@@ -124,8 +124,8 @@ inline double coupling_strength(const vector<Vector3d>& nuclei,
 
 // coupling strength between two C-13 nuclei with a strong static magnetic field
 inline double strong_field_coupling(const Vector3d& p1, const Vector3d& p2) {
-  const Vector3d r = p2 - p1;
-  return 0.5 * coupling_strength(p1,p2) * abs(1-3*dot(hat(r),zhat));
+  const double r_hat_z = dot(hat(p2-p1),zhat);
+  return 0.5 * coupling_strength(p1,p2) * abs(1-3*r_hat_z*r_hat_z);
 }
 inline double strong_field_coupling(const vector<Vector3d>& nuclei,
                                     const uint idx1, const uint idx2) {
