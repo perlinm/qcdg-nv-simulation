@@ -3,14 +3,14 @@ import sys, os, subprocess, random, threading
 
 if len(sys.argv) != 8:
     print("usage: " + sys.argv[0] + " hyperfine_cutoff_in_kHz c13_factor" + \
-          " min_hyperfine_xy_in_kHz nuclear_isolation" + \
+          " min_hyperfine_xy_in_kHz nuclear_isolation_in_Hz" + \
           " larmor_isolation_in_kHz samples task_num")
     exit(1)
 
 hyperfine_cutoff = sys.argv[1]
 c13_factor = sys.argv[2]
 min_hyperfine_xy = sys.argv[3]
-nuclear_isolation = sys.argv[4]
+nuclear_isolation_in_Hz = sys.argv[4]
 larmor_isolation = sys.argv[5]
 samples = int(sys.argv[6])
 task_num = int(sys.argv[7])
@@ -24,7 +24,7 @@ commands = [sim_file, "--pair_search",
             "--c13_factor", c13_factor,
             "--hyperfine_cutoff", hyperfine_cutoff,
             "--min_hyperfine_xy", min_hyperfine_xy,
-            "--nuclear_isolation", nuclear_isolation,
+            "--nuclear_isolation", nuclear_isolation_in_Hz,
             "--larmor_isolation", larmor_isolation]
 
 lock = threading.RLock()
