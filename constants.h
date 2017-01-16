@@ -15,8 +15,7 @@ const double c_SI = 299792458; // speed of light (meters / second)
 const double hbar_SI = 6.582119514e-16; // reduced Planck constant (eV / second)
 const double q_e_SI = 1.60217646e-19; // charge of electron (coulombs)
 const double g_e_SI = -1.760859708e11; // gyromagnetic ratio of NV electron (Hz/tesla)
-/* const double g_C13_SI = 67.28284e6; // gyromagnetic ratio of C13 (Hz/tesla) */
-const double g_C13_SI = 67.262e6; // gyromagnetic ratio of C13 (Hz/tesla)
+const double g_C13_SI = 67.28284e6; // gyromagnetic ratio of C13 (Hz/tesla)
 const double g_N15_SI = -27.116e6; // gyromagnetic ratio of N15 (Hz/tesla)
 
 // physical constants in natural units: e_0 = mu_0 = c = hbar = 1
@@ -37,8 +36,7 @@ const double volt = 1/(q_e*hbar_SI); // one volt (Hz)
 
 // NV system constants
 const double NV_ZFS = 2*pi*2.87e9; // NV center zero field splitting energy (Hz)
-/* const double a0 = 0.35668 * nm; // diamond lattice parameter at 300 K */
-const double a0 = 0.357 * nm; // diamond lattice parameter at 300 K
+const double a0 = 0.35668 * nm; // diamond lattice parameter at 300 K
 const double c13_natural_abundance = 0.0107; // by number
 
 // experimental considerations
