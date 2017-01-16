@@ -70,6 +70,7 @@ bool is_larmor_pair(const vector<Vector3d>& nuclei, const uint idx1, const uint 
 
 // check whether a nucleus is addressable
 bool can_address(const vector<Vector3d>& nuclei, const uint target) {
+  return true;
   const Vector3d r = nuclei.at(target) - e_pos;
   const Vector3i r_xy = xy_int_pos(r);
   const Vector3i r_z = z_int_pos(r);
