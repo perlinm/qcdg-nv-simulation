@@ -1,57 +1,59 @@
-| g++ -std=c++11 -Wall -Werror -flto -O3 $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o gates.o gates.cpp
+| g++ -std=c++11 -Wall -Werror -flto -O3 -c -o gates.o gates.cpp -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ $(cat .eigen-dirs)
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < gates.h
 < gates.cpp
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > gates.o
 
-| g++ -std=c++11 -Wall -Werror -flto -O3 $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o nv-control.o nv-control.cpp
+| g++ -std=c++11 -Wall -Werror -flto -O3 -c -o nv-control.o nv-control.cpp -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ $(cat .eigen-dirs)
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < gates.h
 < nv-math.h
 < nv-control.h
 < nv-control.cpp
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > nv-control.o
 
-| g++ -std=c++11 -Wall -Werror -flto -O3 $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o nv-math.o nv-math.cpp
+| g++ -std=c++11 -Wall -Werror -flto -O3 -c -o nv-math.o nv-math.cpp -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ $(cat .eigen-dirs)
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < nv-math.h
 < nv-math.cpp
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > nv-math.o
 
-| g++ -std=c++11 -Wall -Werror -flto -O3 $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o qp-math.o qp-math.cpp
+| g++ -std=c++11 -Wall -Werror -flto -O3 -c -o qp-math.o qp-math.cpp -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ $(cat .eigen-dirs)
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < qp-math.cpp
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > qp-math.o
 
-| g++ -std=c++11 -Wall -Werror -flto -O3 -lboost_system -lboost_filesystem -lboost_program_options $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -c -o simulation.o simulation.cpp
+| g++ -std=c++11 -Wall -Werror -flto -O3 -c -o simulation.o simulation.cpp -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options $(cat .eigen-dirs)
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < gates.h
 < nv-math.h
 < nv-control.h
 < simulation.cpp
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > simulation.o
 
-| g++ -std=c++11 -Wall -Werror -flto -O3 $(cat .eigen-dirs) -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ -lboost_system -lboost_filesystem -lboost_program_options -o simulate.exe gates.o nv-control.o nv-math.o qp-math.o simulation.o
+| g++ -std=c++11 -Wall -Werror -flto -O3 -o simulate.exe gates.o nv-control.o nv-math.o qp-math.o simulation.o -Wl,--no-as-needed,-rpath=$(cat .mkl-root)/lib/intel64/ -L $(cat .mkl-root)/lib/intel64/ -lmkl_intel_lp64 -lmkl_core -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64 -I $(cat .mkl-root)/include/ $(cat .eigen-dirs) -lboost_system -lboost_filesystem -lboost_program_options
+< .mkl-root
+< .eigen-dirs
 < constants.h
 < qp-math.h
 < gates.h
@@ -62,8 +64,6 @@ C ~/.ccache/
 < nv-math.o
 < qp-math.o
 < simulation.o
-< .mkl-root
-< .eigen-dirs
 C ~/.ccache/
 > simulate.exe
 

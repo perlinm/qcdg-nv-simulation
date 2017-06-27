@@ -1,3 +1,21 @@
+likeliness of larmor pair as a function of C-13 abundance
+- coupling < 40/100 Hz to other nuclear spins
+- find typical value of hyperfine vector
+
+simulations to find directions of nuclei
+perform elementary gate
+
+
+identify larmor pair
+measuring nuclear spin location
+fidelity of individual controlling
+fidelity storing information
+
+
+consider decoupling field (at some point)
+
+
+
 memory storage fidelity:
   (i) decoupled NV center
   (ii) no NV center (i.e. NV center in |0> state)

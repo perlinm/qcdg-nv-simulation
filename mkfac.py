@@ -1,94 +1,111 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys, os, glob, re, subprocess
+from collections import OrderedDict
 
 testing_mode = False
 hide_warnings = False
+build = True
 for arg in sys.argv[1:]:
     if arg.lower() == "test":
         testing_mode = True
     elif arg.lower() == "whide":
         hide_warnings = True
+    elif arg.lower() == "no-build":
+        build = False
     else:
-        print('useage: {} [test] [whide]'.format(sys.argv[0]))
+        print("useage: {} [test] [whide] [no-build]".format(sys.argv[0]))
         exit(1)
 
 executable = "simulate.exe"
+eigen_dirs = ".eigen-dirs"
+boost_dir = ".boost-dir"
+mkl_root = ".mkl-root"
+
 ignore_dirs = [ "~/.ccache/" ]
 
 language_standard_flag = "-std=c++11"
 warning_flags = "-Wall -Werror"
 link_time_optimization_flag = "-flto"
-common_flags = " ".join([ language_standard_flag,
-                          warning_flags,
-                          link_time_optimization_flag ])
+common_flags = [ language_standard_flag,
+                 warning_flags,
+                 link_time_optimization_flag ]
 
 debug_flag = "-g"
 optimization_flag = "-O3"
-ignored_warning_flags = " ".join(["-Wno-unused-variable",
-                                  "-Wno-unused-but-set-variable",
-                                  "-Wno-unused-local-typedefs"])
+ignored_warning_flags = [ "-Wno-unused-variable",
+                          "-Wno-unused-but-set-variable",
+                          "-Wno-unused-local-typedefs" ]
 
-eigen_dirs = ".eigen-dirs"
-mkl_root = ".mkl-root"
 mkl_flags = ("-Wl,--no-as-needed,-rpath=$(cat {0})/lib/intel64/" + \
              " -L $(cat {0})/lib/intel64/ -lmkl_intel_lp64 -lmkl_core" + \
              " -lmkl_gnu_thread -lpthread -lm -ldl -fopenmp -m64" + \
              " -I $(cat {0})/include/").format(mkl_root)
 
-lib_flags = {"eigen3" : "$(cat {}) {}".format(eigen_dirs,mkl_flags),
-             "boost/filesystem" : "-lboost_system -lboost_filesystem",
-             "boost/program_options" : "-lboost_program_options"}
-
-global_dependencies = [ mkl_root, eigen_dirs ]
+lib_flags = OrderedDict()
+lib_flags["eigen3"] = ["$(cat {})".format(eigen_dirs), eigen_dirs ]
+lib_flags["USE_MKL"] = ["{}".format(mkl_flags), mkl_root]
+lib_flags["boost"] = ["-lboost_system"] + \
+                     ([boost_dir] if os.path.isfile(boost_dir) else [])
+lib_flags["boost/filesystem"] = ["-lboost_filesystem"]
+lib_flags["boost/program_options"] = ["-lboost_program_options"]
+lib_flags["gsl"] = ["-lgsl"]
 
 fac_text = ""
-used_libraries = []
-used_headers = []
-sim_files = sorted(glob.glob("*.cpp"))
+global_libraries = []
+global_dependencies = []
+cpp_files = sorted(glob.glob("*.cpp"))
 
-def fac_rule(libraries, headers, out_file, in_files, link=False):
-    rule_text = "| g++ {} {} ".format(common_flags, (debug_flag if testing_mode
-                                                     else optimization_flag))
-    if hide_warnings: rule_text += ignored_warning_flags + " "
-    rule_text += " ".join(libraries) + " "
-    if not link: rule_text += "-c "
-    rule_text += "-o {} ".format(out_file)
-    rule_text += " ".join(in_files)+"\n"
-    for dependency in headers + in_files + global_dependencies:
+def fac_rule(libraries, file_dependencies, input_files, output_file, link = False):
+    cmd_parts = ["| g++"]
+    cmd_parts += common_flags
+    cmd_parts += [ debug_flag if testing_mode else optimization_flag ]
+    if hide_warnings: cmd_parts += ignored_warning_flags
+    if not link: cmd_parts += ["-c"]
+    cmd_parts += ["-o {}".format(output_file)]
+    cmd_parts += [" ".join(input_files)]
+    cmd_parts += [" ".join(libraries)]
+    cmd_parts = list(filter(None,cmd_parts))
+
+    rule_text = " ".join(cmd_parts) + "\n"
+
+    for dependency in file_dependencies + input_files:
         rule_text += "< {}\n".format(dependency)
     for ignore_dir in ignore_dirs:
         rule_text += "C {}\n".format(ignore_dir)
-    rule_text += "> {}\n\n".format(out_file)
+    rule_text += "> {}\n\n".format(output_file)
     return rule_text
 
-for sim_file in sim_files:
-    out_file = sim_file.replace(".cpp",".o")
+for cpp_file in cpp_files:
+    output_file = cpp_file.replace(".cpp",".o")
     libraries = []
-    headers = []
-    with open(sim_file,'r') as f:
+    dependencies = []
+    with open(cpp_file,'r') as f:
         for line in f:
-            if "#include" in line:
+            if "#include" in line or "#define" in line:
                 for tag in lib_flags.keys():
-                    if tag in line and lib_flags[tag] not in libraries:
-                        libraries += [lib_flags[tag]]
-                if re.search('"*.h"',line):
-                    headers += [line.split('"')[-2]]
+                    if tag in line and lib_flags[tag][0] not in libraries:
+                        libraries += [lib_flags[tag][0]]
+                        if len(lib_flags[tag]) > 1:
+                             dependencies += [lib_flags[tag][1]]
+                if re.search('"*\.h"',line):
+                    dependencies += [line.split('"')[-2]]
 
-
-    fac_text += fac_rule(libraries, headers, out_file, [sim_file])
+    fac_text += fac_rule(libraries, dependencies, [cpp_file], output_file)
     for library in libraries:
-        if library not in used_libraries:
-            used_libraries += [library]
-    for header in headers:
-        if header not in used_headers:
-            used_headers += [header]
+        if library not in global_libraries:
+            global_libraries += [library]
+    for dependency in dependencies:
+        if dependency not in global_dependencies:
+            global_dependencies += [dependency]
 
 
-out_files = [ sim_file.replace(".cpp",".o") for sim_file in sim_files ]
-fac_text += fac_rule(used_libraries, used_headers, executable, out_files, link=True)
+compiled_binaries = [ cpp_file.replace(".cpp",".o") for cpp_file in cpp_files ]
+fac_text += fac_rule(global_libraries, global_dependencies,
+                     compiled_binaries, executable, link = True)
+
 fac_text += "| etags *.cpp *.h\n< {}\n> TAGS\n".format(executable)
 
 with open(".{}".format(executable.replace(".exe",".fac")),"w") as f:
     f.write(fac_text)
 
-exit(subprocess.call(["fac"]))
+if build: exit(subprocess.call(["fac"]))
