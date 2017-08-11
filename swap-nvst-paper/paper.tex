@@ -1,916 +1,722 @@
-\documentclass[twocolumn]{revtex4-1}
+%% LyX 2.0.6 created this file. For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[twocolumn,prl,aps,twocolumn]{revtex4-1}
+\setcounter{secnumdepth}{3}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{esint}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=false,
+ breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+ {hyperref}
+\hypersetup{
+ bookmarksnumbered=false,bookmarksopen=false}
 
-% \usepackage{showframe}
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\@ifundefined{textcolor}{}
+{%
+ \definecolor{BLACK}{gray}{0}
+ \definecolor{WHITE}{gray}{1}
+ \definecolor{RED}{rgb}{1,0,0}
+ \definecolor{GREEN}{rgb}{0,1,0}
+ \definecolor{BLUE}{rgb}{0,0,1}
+ \definecolor{CYAN}{cmyk}{1,0,0,0}
+ \definecolor{MAGENTA}{cmyk}{0,1,0,0}
+ \definecolor{YELLOW}{cmyk}{0,0,1,0}
+}
 
-\usepackage{hyperref} % for linking references
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{color}
+\usepackage{soul}
+\newcommand{\note}[1]{\textcolor{blue}{(#1)}}
+\newcommand{\MP}[1]{\textcolor{magenta}{#1}}
+\newcommand{\wzy}[1]{\textcolor{red}{#1}}
 
-%%% math, symbols, etc.
-\usepackage{physics,braket,bm,amssymb}
-\renewcommand{\t}{\text} % text in math mode
-\newcommand{\f}[2]{\dfrac{#1}{#2}} % shorthand for fractions
-\newcommand{\p}[1]{\left(#1\right)} % square parenthesis
-\renewcommand{\sp}[1]{\left[#1\right]} % square parenthesis
-\renewcommand{\set}[1]{\left\{#1\right\}} % curly parenthesis
-\renewcommand{\v}{\bm} % bold vectors
-\newcommand{\uv}[1]{\hat{\v{#1}}} % unit vectors
-\renewcommand{\c}{\cdot} % inner product
-\newcommand{\bk}{\Braket} % shorthand for braket notation
+\newcommand{\CNV}{$^{13}$C }
 
-% shorthand for frequently used commands
-\renewcommand{\u}{\uparrow}
-\renewcommand{\d}{\downarrow}
-\newcommand{\SWAP}{\t{SWAP}}
-\newcommand{\cNOT}{\t{cNOT}}
-\newcommand{\NV}{\t{NV}}
-\newcommand{\AC}{\t{AC}}
-\newcommand{\ST}{\t{ST}}
-\renewcommand{\S}{\t{S}}
-\newcommand{\T}{\t{T}}
-\newcommand{\R}{\mathcal R}
-\newcommand{\A}{\mathcal A}
-\newcommand{\B}{\mathcal B}
 
-%%% figures
-\usepackage{graphicx,grffile,float} % floats, etc.
-\usepackage{multirow} % multirow entries in tables
-\usepackage{footnote} % footnotes in floating objects
-\usepackage[font=small,labelfont=bf]{caption} % caption text options
-
-%%% markup
-\usepackage{color,soul} % text color and other editing options
-% \ul{underline}, \st{strikethrough}, and \hl{highlight}
-\newcommand{\fixme}[1]{{\bf \color{red} fixme: #1}}
+\makeatother
 
 \begin{document}
 
-\title{Realization of a Decoherence-Free Subspace with
-  Nitrogen-Vacancy Centers and $^{13}$C Nuclear Spins}
+\title{Controlling Spectrally-indistinguishable Nuclear Spins \\ for a
+  Decoherence-Free Subspace}
 
-\author{Michael A. Perlin, Zhen-Yu Wang, Jorge Casanova, and Martin
-  B. Plenio}
 
-\affiliation{Institut f\"ur Theoretische Physik, Albert-Einstein-Allee
-  11, Universit\"at Ulm, D-89069 Ulm, Germany}
+\author{Michael A. Perlin}
+\affiliation{Institut f\"ur Theoretische Physik and IQST, Albert-Einstein-Allee
+11, Universit\"at Ulm, D-89069 Ulm, Germany}
+
+\author{Zhen-Yu Wang}
+\email{zhenyu3cn@gmail.com}
+\affiliation{Institut f\"ur Theoretische Physik and IQST, Albert-Einstein-Allee
+11, Universit\"at Ulm, D-89069 Ulm, Germany}
+
+\author{Jorge Casanova}
+\affiliation{Institut f\"ur Theoretische Physik and IQST, Albert-Einstein-Allee
+11, Universit\"at Ulm, D-89069 Ulm, Germany}
+
+\author{Martin. B. Plenio}
+\affiliation{Institut f\"ur Theoretische Physik and IQST, Albert-Einstein-Allee
+11, Universit\"at Ulm, D-89069 Ulm, Germany}
+
 
 \begin{abstract}
-  Here is the abstract.
+  Close nuclear spins with identical precession frequencies have the
+  remarkable property of feeling the same magnetic noise, which makes
+  them exceptional candidates for constructing a decoherence-free
+  subspace (DFS). However, selective control of such nuclei is not
+  possible with existing methods based on spectroscopic
+  discrimination. We overcome this obstacle and present a protocol for
+  storage and retrieval of quantum information from a DFS. We
+  demonstrate the efficacy of our protocol with detailed numerical
+  simulations of a nitrogen-vacancy (NV) center with nearby \CNV
+  nuclei, and show that the resulting DFS is immune to NV magnetic
+  noise and external magnetic field drifts.
 \end{abstract}
-
 \maketitle
 
-\section{Introduction}
+\emph{Introduction.}~-- Quantum spins in a solid-state platform are
+natural and reliable quantum resources for performing tasks such as
+information processing, simulations, and nano-scale
+sensing~\cite{Zhong2015Optically, Doherty2013Nitrogen,
+  Dobrovitski2013Quantum, Schirhagl2014Nitrogen}. A particularly
+promising platform containing such resources is the nitrogen-vacancy
+(NV) center in diamond~\cite{Doherty2013Nitrogen,
+  Dobrovitski2013Quantum, Schirhagl2014Nitrogen}. \MP{At room
+  temperature, the electron spin of an NV center has a $T_1$-limited
+  lifetime on the order of milliseconds, as $T_2$ decoherence
+  processes can be suppressed via dynamical decoupling
+  techniques~\cite{Jarmola12, vanderSar12}. During this time, the
+  electron spin can be polarized, detected, and coherently manipulated
+  with high fidelity via optical fields and microwave
+  radiation~\cite{Taminiau14}. By working at lower temperatures and
+  high purity diamond samples, the electron spin lifetime can be
+  extended upwards to seconds~\cite{Gill13}.}
+% old text here: At room temperature, the electron spins of NV centers
+% have coherence times on the order of milliseconds, and can be
+% polarized, detected, and coherently manipulated with high fidelity
+% via optical fields and microwave radiation~\cite{Jarmola12,
+% vanderSar12, Taminiau14}. By working at lower temperatures and
+% employing dynamical decoupling techniques, these coherence times can
+% be extended upwards to seconds~\cite{Gill13}.
+Furthermore, the NV electron spin can be selectively coupled to nearby
+\CNV nuclear spins by appropriately controlling individual
+electron-nuclear hyperfine interactions. In this manner, nuclear spins
+can be individually addressed and manipulated via the NV center when
+they have distinct precession frequencies $\omega_{j}$, with $j$
+indexing a particular nucleus. These distinctions are a consequence of
+the energy shifts produced by the components $A_{j}^{\parallel}$ of
+the hyperfine field parallel to the NV symmetry axis at the location
+of the each nucleus~\cite{Kolkowitz2012Sensing,Taminiau2012Detection,
+  Zhao2012Sensing}. Individual addressing allows for the realization
+of noise-resilient quantum gates~\cite{Liu2013Noise}, quantum error
+correcting codes~\cite{Taminiau2014Universal, Waldherr2014Quantum},
+quantum computing~\cite{Casanova2016Noise}, and quantum simulation
+protocols~\cite{Cai2013Large} in the hybrid system of a NV center and
+its surrounding nuclei. In addition, the NV electron spin provides an
+optical interface to entangle spins with
+photons~\cite{Togan2010Quantum}, which together with the available
+nuclear memory establishes a key prerequisite for scalable quantum
+architectures~\cite{Nemoto2014Photonic}. To this end, recent
+remarkable experiments have established photon-mediated entanglement
+between distant NV quantum-network
+nodes~\cite{Bernien2013Entanglement,
+  Pfaff2014Unconditional,Hensen2015Loophole}, as well as entanglement
+distillation on entangled spin qubits~\cite{Kalb2016Entanglement}.
 
-\fixme{Write about NV centers, C-13 nuclei, introduction to larmor
-  pairs and DFS, quantum memory/networks, etc.}
+% todo: insert citations 24, 31, and 32 into first paragraph
 
-Nitrogen-vacancy (NV) centers in diamond have been recognized in
-recent years as a promising platform for quantum sensing and quantum
-information technologies\cite{mamin2013nanoscale, steinert2010high,
-  wang2016positioning, chou2015optimal, childress2006fault,
-  yao2012scalable}. The electronic ground and optically excited states
-of NV$^-$ split into spin triplets which can be polarized, detected,
-and coherently manipulated with high fidelity with fields and
-microwave radiation \cite{dobrovitski2013quantum}. Hyperfine coupling
-between the NV center electron and $^{13}$C nuclei in bulk diamond
-allows for the coherent control and measurement of individual nuclear
-spins, and the realization of universal set of high-fidelity quantum
-gates \cite{dobrovitski2013quantum, casanova2016noise}.
+\begin{figure}[t!]
+  \includegraphics[width=0.95\columnwidth]{FigDrawing}
+  \caption{(Color online) (a) Energy splittings of bare, DPS, and DFS
+    qubit states. (b) A pair of \CNV nuclear spins located in a
+    symmetric configuration about the NV center have the same parallel
+    and perpendicular components of the hyperfine field. (c)
+    Perpendicular hyperfine components of the spin pair in (b) and the
+    effective direction of a RF field. (d) Polar plot of the NV
+    transition signal (red solid line) with respect to the RF phase
+    $\phi_{{\rm RF}}$. Dashed lines show the polar plots of single
+    spin signals, and the gray solid circle is the single spin signal
+    without RF control.}
+\label{fig:Drawing}
+\end{figure}
 
-One promising application of the NV center is as a memory register for
-storing quantum information. While typical control operations on the
-NV electron spin happen on the scale of nanoseconds, its
-room-temperature coherence time is on the scale of microseconds
-\cite{dobrovitski2013quantum}. Dynamic decoupling schemes and the use
-of isotopically pure diamond samples can increase the NV electron spin
-coherence time by a few orders of magnitude
-\cite{ryan2010robust}. Storing quantum information in the NV electron
-spin itself, however, reserves a valuable resource, as the center
-could otherwise be used to address nuclear spins and other quantum
-processing resources. The weaker environmental coupling of $^{13}$C
-nuclei present in diamond yields much longer coherence times than that
-of the NV electron spin, and by entangling multiple nuclear spins,
-e.g. into the singlet-triplet states
-$\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, it is possible to generate
-logical qubits which are protected from various sources of system and
-environmental dephasing noise.
+Although strong electron-nuclear hyperfine interactions are generally
+desirable for fast and reliable nuclear spin control via the NV
+center, these strong interactions can also dephase the nuclear
+spins~\cite{Maurer2012Room} % removed citation for Wang2017Delayed
+due to, for example, electron spin relaxation. More specifically, the
+electron undergoes stochastic spin flips ($T_1$ processes), thereby
+acting as a source of magnetic noise for the nuclear spins. This noise
+is most severe during the optical initialization and readout of NV
+electrons, as well as during the reset for establishing
+electron-photon entanglement~\cite{Reiserer2016Robust}\MP{, and cannot
+  be suppressed with dynamical decoupling techniques}.
+% Because these NV electron spin flips are much faster than external
+% radio frequency control over nuclei, noise suppression techniques
+% such as dynamical decoupling~\cite{Yang2011Preserving} are incapable
+% of prolonging nuclear spin coherence times.
+Electron spin noise thus limits the use of individual nuclear spins as
+a quantum resource. While nuclear spins with weaker hyperfine coupling
+to the NV center are less sensitive to electron spin flip noise, weak
+coupling also unavoidably implies poor nuclear spin controllability,
+which again limits their utility for quantum memory registers.
 
-In this letter, we present a means to address individual $^{13}$C
-nuclear spins which are normally indistinguishable due to a symmetry
-in their coupling to the NV center. We use this addressing scheme to
-initialize qubits in a decoherence-free subspace (DFS) of nuclear
-spins, and propose a means for realizing a coherent SWAP operation
-between the NV center electron spin state and the DFS qubit.
+By pairing nuclear spins, one can reduce the magnitude of NV electron
+spin noise on individual qubits by constructing decoherence-protected
+subspaces (DPS)~\cite{Reiserer2016Robust} {[}see
+Fig.~\ref{fig:Drawing}(a){]}.  Similar to standard techniques in
+nuclear magnetic resonance (NMR)~\cite{Mehring1983Principle} or
+electron-nuclear double resonance
+(ENDOR)~\cite{Schweiger2001Principles}, current protocols for
+realizing a DPS rely on the distinct nuclear precession frequencies
+$\omega_{j}$ for addressing and control~\cite{Kolkowitz2012Sensing,
+  Taminiau2012Detection, Zhao2012Sensing, Liu2013Noise,
+  London2013Detecting, Taminiau2014Universal, Casanova2015Robust,
+  Wang2016Positioning, Wang2017Delayed}. The logical qubits in a DPS
+are therefore still sensitive to electron spin
+noise~\cite{Reiserer2016Robust}.
 
+In this work, we address the problem of selectively manipulating
+nuclear spins with identical precession frequencies $\omega_{j}$ by
+combining dynamical decoupling techniques with radio-frequency (RF)
+nuclear spin control. As a result, we are able to construct an
+accessible decoherence-free subspace (DFS) in a solid-state platform,
+and thereby realize robust quantum memory registers which are
+resilient to dephasing processes such as NV initialisation and
+readout. Among the possible applications of this work, we highlight
+storage of the electron spin state into the DFS, leaving the NV center
+free to perform other tasks such as forming entangled quantum
+networks.
 
-\section{Identifying symmetrically coupled $^{13}$C nuclear spins}
+\emph{Electron-nuclear coupling.}~-- In the typical situation with the
+electron-nuclear flip-flop terms suppressed by a large energy
+mismatch, on the order of GHz in the case of an NV center and nearby
+\CNV nuclei, the hyperfine interactions between the electron and
+nuclear spins reads
+$H_{{\rm hf}}=S_{z}\sum_{j}\vec{A}_{j}\cdot\vec{I}_{j}$, where $S_{z}$
+and $\vec{I}_{j}$ are respectively electron and nuclear spin
+operators. Denoting by $\hat{z}$ a unit vector along the NV symmetry
+axis, the hyperfine fields $\vec{A}_{j}$ can be decomposed into
+parallel and perpendicular components
+$A_{j}^{\parallel}=\vec{A}_{j}\cdot\hat{z}$ and
+$\vec{A}_{j}^{\perp}=\vec{A}_{j}-A_{j}^{\parallel}\hat{z}$. In the
+presence of a static magnetic field $B_{z}\hat{z}$ with strength
+$B_z\gg A_{j}^{\perp}/\gamma_{\rm n}$, where $\gamma_{\rm n}$ is the
+nuclear \CNV gyromagnetic ratio, the perpendicular components
+$\vec{A}_{j}^{\perp}\cdot\vec{I}_{j}=A_{j}^{\perp}I_{j}^{x}$ in
+$H_{{\rm hf}}$ are suppressed, resulting in the coupling (see for
+example~\cite{Maurer2012Room})
+\begin{equation}
+  H_{{\rm hf}} = S_{z}\sum_{j}A_{j}^{\parallel}I_{j}^{z},
+  \label{eq:SzIz}
+\end{equation}
+where $I_{j}^{z}=\vec{I}_{j}\cdot\hat{z}$. While nuclear spins are
+excellent candidates for a quantum memory, uncontrolled electron spin
+flips generate random noise with the strengths $A_{j}^{\parallel}$ on
+the nuclei through the coupling in Eq.~\eqref{eq:SzIz}.
 
-Restricting the NV electron spin states to the span of
-$\set{\ket0,\ket{m_s}}$ ($m_s=\pm1$), the AXY-$n$ pulse sequence
-developed in by Casanova et al. in \cite{casanova2015robust} and
-control scheme developed by Wang et al. in \cite{wang2016positioning}
-allows addressing individual $^{13}$C nuclear spins via Hamiltonians
-of the form
-\begin{align}
-  H_{\t{int}} = h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j,
-  \label{eq:H_int}
-\end{align}
-for a tunable coupling strength $h_j^{\t{int}}$ and direction
-$\uv n_j$, where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and $\v I_j$ is
-the spin operator for nuclear spin $j$. The protocol for realizing
-this effective Hamiltonian is conditional on a sufficiently unique
-effective larmor frequency $\omega_j$, i.e. that for all $n\ne j$
-\begin{align}
-  \abs{\omega_n-\omega_j} \gg \abs{f_{k_{DD}}\v A_j^\perp},
-\end{align}
-where $f_{k_{DD}}$ is the fourier component of the AXY-$n$ protocol on
-resonance with $\omega_j$ and $\v A_j^\perp$ ($\v A_j^\parallel$) is
-the component of the hyperfine vector $\v A_j$ perpendicular
-(parallel) to the effective larmor precession axis $\uv\omega_j$.
+By pairing nuclear spins, the strength of dephasing noise can be
+diminished to $\delta_{1,2}=A_{1}^{\parallel}-A_{2}^{\parallel}$ in a
+DPS~\cite{Reiserer2016Robust}. Existing protocols for selective spin
+manipulation, however, have gate times on the scale of
+$1/\delta_{1,2}$, which are furthermore bounded from above by the NV
+electron spin coherence time. This restriction is prohibitive for the
+realization of an accessible DFS, which requires $\delta_{1,2}=0$
+{[}see Fig.~\ref{fig:Drawing}(a){]}.
 
-It is possible, however, for two nuclear spins (indexed by 1 and 2) to
-have identical larmor frequencies $\omega_1=\omega_2\equiv\omega$,
-which occurs when both nuclei lie along the edges of a cylinder
-centered on the NV center and oriented along the natural NV axis. We
-call such nuclei {\it larmor pairs}, and their geometry implies
-$A_1^\perp=A_2^\perp\equiv A^\perp$ and
-$A_1^\parallel=A_2^\parallel\equiv A^\parallel$ (see Supplementary
-Information) \fixme{prove in the SI}. We wish to identify larmor
-pairs and individually address the nuclei making up the pair.
+\emph{Larmor pairs.}~-- Due to symmetries of the diamond lattice, it
+is possible for multiple \CNV nuclear spins to share the same
+hyperfine components $A_{j}^{\parallel}=A^{\parallel}$ and
+$A_{j}^{\perp}=A^{\perp}$. Such nuclei manifestly satisfy the
+necessary conditions for containing a DFS. We refer to exactly two
+\CNV nuclei in such a symmetric configuration {[}see
+Fig.~\ref{fig:Drawing}(b){]} as a \emph{Larmor pair}, and observe
+their relatively large probability of occurrence in an NV system with
+natural \CNV abundance {[}see Fig.~\ref{fig:FigChance}{]}. Because
+$A^{\parallel}$ for the Larmor pair is different from the parallel
+hyperfine field $A_{j}^{\parallel}$ of other spins, we can use our
+recently developed dynamical decoupling
+sequence~\cite{Casanova2015Robust} to selectively couple the NV
+electron to only the Larmor pair, realizing the effective interaction
+Hamiltonian
+\begin{equation}
+  H_{{\rm int}}
+  = \frac{1}{4}f_{k_{{\rm DD}}}A^{\perp}\sigma_{z}(I_{1}^{x}+I_{2}^{x}),
+  \label{eq:Hint}
+\end{equation}
+where $f_{k_{{\rm DD}}}$ is a tunable parameter of the dynamical
+decoupling sequence~\cite{Casanova2015Robust} and $\sigma_{z}$ is an
+electron spin Pauli operator. The Hamiltonian in Eq.~\eqref{eq:Hint}
+generates the entangling gate
+\begin{equation}
+  U_{{\rm int}}(\theta)
+  = \exp\left[-i\theta\sigma_{z}(I_{1}^{x}+I_{2}^{x})\right]
+  \label{eq:Uint}
+\end{equation}
+with an interaction time $4\theta/(f_{k_{{\rm DD}}}A^{\perp})$.
 
-The AXY-$n$ sequence and the Hamiltonian in Eq. (\ref{eq:H_int})
-allows for measurement of distinct frequencies $\omega_j$, hyperfine
-couplings $A_j^\perp$, and ultimately the positions of $^{13}$C nuclei
-via a coupling protocol ending in an NV coherence measurement,
-outlined in \cite{wang2016positioning}. When on resonance with several
-frequencies $\set{\omega_j}$ which the protocol cannot resolve, the NV
-coherence after a time $t$ reads
-\begin{align}
-  \label{eq:L}
-  L = \prod_j\cos\p{\f14 f_{k_{DD}}A_j^\perp t}.
-\end{align}
-After selecting an effective larmor frequency $\omega$ of interest via
-the scanning protocol in \cite{wang2016positioning}, coherence
-measurements as per Eq. (\ref{eq:L}) for different AXY-$n$ fourier
-components $f_{k_{DD}}$ (or times $t$) are sufficient to determine the
-number of nuclei with effective larmor frequency $\omega$. The
-protocol for measuring NV coherence can thus be used to identify a
-larmor pair.
+To find a Larmor pair, we use the recently developed delayed
+entanglement echo (DEE) in \cite{Wang2017Delayed} to find spectrally
+resolvable resonances, and identify the number of nuclear spins within
+them. Having found a Larmor pair, we can measure the corresponding
+hyperfine fields $\vec{A}_{j}^{\perp}$ via our recently developed
+nuclear positioning method in \cite{Wang2016Positioning}. Therein, we
+turn on an external RF magnetic field on resonance with the nuclear
+spin precession frequency. In the rotating frame of the nuclear spin
+precession, the phase of this RF field corresponds to an effective
+static magnetic field direction $\phi_{\rm{RF}}$ in the $x$-$y$ plane
+{[}see Fig.~ \ref{fig:Drawing}(c) and (d){]}. When the effective field
+direction is parallel to $\vec{A}_{j}^{\perp}$, the electron-nuclear
+spin coupling vanishes for spin $j$; an effective field direction not
+parallel to $\vec{A}_{j}^{\perp}$ will simply reduce the magnitude of
+this coupling. By varying the phase of the RF field, one can thus
+measure the positions of both nuclei in the Larmor pair. This
+measurement can be simplified by taking symmetries of the diamond
+lattice into account {[}see Fig.~\ref{fig:Drawing}(d) for the NV
+transition signal in a strong magnetic field{]}. The ambiguity of
+$180^{\circ}$ in Fig.~\ref{fig:Drawing}(d) can be eliminated by
+checking the NV transition signal in the presence of a weak magnetic
+field ($B_{z}\sim A_{j}^{\perp}/\gamma_{{\rm n}}$)
+\cite{Wang2016Positioning}. As we will see, however, resolving this
+ambiguity is not necessary for our protocol.
 
-After identifying a larmor pair, in order to locate the individual
-nuclei in the pair we introduce an auxiliary magnetic decoupling field
-$\tilde{\v B}_{\t{dec}}\p{t} = \v
-B_{\t{dec}}\cos\p{\omega_{\t{dec}}t-\phi_{\t{dec}}}$. When
-$\omega_{\t{dec}}$ is on resonance with the effective larmor frequency
-$\omega$ of a larmor pair (and some simple conditions on
-$\v B_{\t{dec}}$ are satisfied), the coherence in Eq. (\ref{eq:L}) can
-be written as
-\begin{align}
-  \label{eq:L_dec}
-  L = \f12\p{\cos\sp{2\xi\cos\alpha_+\cos\alpha_-}
-  + \cos\sp{2\xi\sin\alpha_+\sin\alpha_-}}.
-\end{align}
-Here $\xi$ is a constant phase determined by $f_{k_{DD}}$, $A^\perp$,
-and interaction time $t$; the angle $\alpha_-$ is determined by the
-directions $\uv A_j^\perp$; and $\alpha_+$ is determined by the
-directions $\uv A_j^\perp$ as well as $\phi_{DD}$, $\phi_{\t{dec}}$,
-and $\uv B_{\t{dec}}$. Measurement of e.g.  $L\p{\xi,\phi_{DD}}$ thus
-provides sufficient information to deduce the directions
-$\uv A_j^\perp$, knowing which is necessary for individual nuclear
-addressing protocols (see Supplementary Info section
-\ref{sec:S_locating_pairs}).
+\begin{figure}[t!]
+  \includegraphics[width=0.95\columnwidth]{FigChance}
+  \caption{(Color online) Probability to find at least one Larmor pair
+    near the NV electron spin for a natural \CNV abundance of
+    1.1\%. Different markers denote different minimum values of the
+    $A^\perp$, which couples the nuclei to the NV electron spin, and
+    $\Delta_{{\rm min}}^{\parallel}$ is the minimum difference between
+    $A^\parallel$ and the parallel hyperfine field for any other \CNV
+    nucleus in the NV system. Each of spin in the Larmor pair is
+    coupled to other nuclear spins with a strength smaller than
+    $2\pi\times50$ Hz, and the directions of hyperfine fields satisfy
+    the constrain Eq.~\eqref{eq:AngleRange}.  Each data point is
+    obtained via Monte Carlo sampling with $4\times10^{5}$ randomly
+    generated NV systems.}
+\label{fig:FigChance}
+\end{figure}
 
+\emph{Controlling spectrally indistinguishable nuclear spins}. -- The
+symmetry between nuclear spins in Eq.~\eqref{eq:Hint} can be broken by
+a RF control field, allowing for individual control of each nucleus in
+a Larmor pair. Using the technique outlined in
+\cite{Wang2016Positioning}, we can decouple all electron-nuclear
+interactions, and introduce RF control fields targeting the desired
+Larmor pair in a coherence-protected manner to realize the Hamiltonian
+\begin{equation}
+  H_{{\rm RF}}
+  = \vec{\Omega}(\phi_{{\rm RF}})\cdot(\vec{I}_{1}+\vec{I}_{2})
+  = \Omega(I_{1}^{\phi_{{\rm RF}}-\phi_{1}}+I_{2}^{\phi_{{\rm RF}}-\phi_{2}}),
+  \label{eq:Hrf}
+\end{equation}
+where $\phi_{j}$ are the azimuthal angles of the perpendicular
+components of the local hyperfine fields {[}see Fig.~\ref{fig:Drawing}
+(c){]}; $I_{j}^{\phi}=I_{j}^{x}\cos\phi+I_{j}^{y}\sin\phi$; and
+$\Omega$, $\phi_{{\rm RF}}$ are respectively the Rabi frequency and
+phase of the RF drive. Note that the spin operators $I_{j}^{x}$ are
+quantized along the azimuthal directions of their respective local
+hyperfine fields $\vec{A}_{j}^{\perp}$. By combining the non-selective
+control of $H_{{\rm RF}}$ and $H_{{\rm int}}$, we can selectively
+address only one of the two nuclei in the Larmor pair. Without loss of
+the generality, we let the index $j=1$ for the target nucleus.
 
-\section{Individually addressing nuclei in larmor pairs}
+The control in Eq.~\eqref{eq:Hrf} allows us to apply $\pi$ pulses on
+both nuclei simultaneously by applying the RF drive for a time
+$\pi/\Omega$. Using $\phi_{{\rm RF}}=\phi_{2}+\pi/2$ and defining
+$\alpha=\phi_{2}-\phi_{1}+\frac{\pi}{2}$, we can thus generate the
+gate
+\begin{equation}
+  U_{\pi} = \exp(i\pi I_{2}^{y})\exp(i\pi I_{1}^{\alpha}).
+  \label{eq:Upi}
+\end{equation}
+One can then show that the sequence
+\begin{equation}
+  U_{{\rm DEE}}
+  = U_{{\rm int}}(\theta)U_{\pi}U_{{\rm int}}(\theta)
+\end{equation}
+leads to the evolution $U_{{\rm DEE}}=\exp(i\pi I_{2}^{y})U_{1}$,
+where
+\begin{equation}
+  U_{1} = e^{-i\theta\sigma_{z}I_{1}^{x}}e^{i\pi I_{1}^{\alpha}}
+  e^{-i\theta\sigma_{z}I_{1}^{x}}
+\end{equation}
+entangles only the target nucleus with the NV electron. We can cancel
+the single-qubit operation on the second spin by repeating the
+sequence $U_{{\rm DEE}}$ twice to get
+\begin{eqnarray}
+  U_{{\rm DEE}}^{2}
+  & = & -2i(r_{x}I_{1}^{\alpha}+r_{y}I_{1}^{\alpha_{\perp}})\sigma_{z}
+        \nonumber \\
+  &  & +\cos^{2}\theta-\cos(2\alpha)\sin^{2}\theta,
+       \label{eq:Udee}
+\end{eqnarray}
+where we define
+$r_{x}=2\cos\alpha\sin\theta
+\left[\cos^{2}\alpha\cos\theta+\sin^{2}\alpha\right]$;
+$r_{y}=4\cos^{2}\alpha\sin\alpha\sin\theta\sin^{2}(\frac{\theta}{2})$;
+and $\alpha_{\perp}=\alpha+\pi/2$. The last line of
+Eq.~\eqref{eq:Udee} vanishes when
+\begin{equation}
+  \cos^{2}\alpha\sin^{2}\theta=\frac{1}{2},
+  \label{eq:PiPulseCondition}
+\end{equation}
+which can be satisfied by choosing a suitable value of $\theta$ if
+\begin{equation}
+  \left|\sin(\phi_{2}-\phi_{1})\right|\ge1/\sqrt{2}.
+  \label{eq:AngleRange}
+\end{equation}
+While we will work within the constraint of Eq.~\eqref{eq:AngleRange},
+we note that it is possible to relax this constraint by applying
+additional repetitions of $U_{{\rm DEE}}$. By using a value of
+$\theta$ which satisfies Eq.~\eqref{eq:PiPulseCondition}, we can
+implement a selective $\pi$ rotation $R_{\pi}$ on the target spin
+along a direction perpendicular to $\hat{z}$ by applying
+$U_{{\rm DEE}}^2$ followed by a $\sigma_z$ gate on the electron spin,
+i.e.
+\begin{equation}
+  R_{\pi} = \sigma_{z}U_{{\rm DEE}}^{2} = \exp(-i\pi I_{1}^{\beta}),
+  \label{eq:PiPulse}
+\end{equation}
+where the azimuthal angle $\beta$ can be determined from
+Eqs.~\eqref{eq:Udee} and \eqref{eq:PiPulseCondition}. From
+Eq.~\eqref{eq:Udee} and the definition of $\alpha$, we can see that
+the ambiguity of $\pi$ in $\phi_{1}$ and $\phi_{2}$
+[Fig.~\ref{fig:Drawing}(d)] is inconsequential as it merely introduces
+a possible global phase in the nuclear spin gate
+Eq.~\eqref{eq:PiPulse}. Using Eq.~\eqref{eq:PiPulse}, we can implement
+a selective controlled phase gate on only one spin in a Larmor pair,
+such as
+\begin{equation}
+  U_{{\rm ent}}
+  = (i\sigma_{x}R_{\pi}e^{-iH_{{\rm hf}}\tau})^{2}
+  = \exp(-2i\tau A_{1}^{\parallel}I_{1}^{z}),
+\end{equation}
+which borrows the idea from DEE of having two blocks of control-free
+evolution $e^{-iH_{{\rm hf}}\tau}$ driven by Eq.~\eqref{eq:SzIz}.
 
-When trying to address one spin in a larmor pair, the protocols for
-Eq. (\ref{eq:H_int}) will simultaneously couple $\sigma_\NV^z$ to both
-$\v I_1\c\uv n_1$ and $\v I_2\c\uv n_2$ with identical coupling
-strength ($h_j^{\t{int}}$). So long as $\uv n_1$ and $\uv n_2$
-(equivalently, $\v A_1^\perp$ and $\v A_2^\perp$) are not parallel,
-however, it is possible to address only one of these spins at a time
-by applying additional control fields. In particular, the application
-of a magnetic decoupling field
-$\tilde{\v B}_{\t{dec}}\p{t}=\v B_{\t{dec}}\cos\p{\omega
-  t-\phi_{\t{dec}}}$ during the AXY-$n$ addressing protocol suppresses
-components of $\uv n_j$ which are perpendicular to the vector
-$\v B_{\t{dec}}$ projected onto the plane perpendicular to
-$\v\omega_j$ and rotated about the axis $\uv\omega_j$ by the angle
-$\phi_{\t{dec}}$. One can therefore choose a direction
-$\v B_{\t{dec}}$ which completely suppresses NV electron spin coupling
-to spin 1 (2), leaving only coupling to spin 2 (1).
+\begin{figure}[t!]
+  \includegraphics[width=0.95\columnwidth]{FigCoherence}
+  \caption{(Color online) Coherence of the Larmor pair, initialized in
+    the superposition state
+    $(1/\sqrt{2})\left(|\uparrow_{1}\downarrow_{2}\rangle
+      +|\downarrow_{1}\uparrow_{2}\rangle\right)$, as a function of
+    optical illumination periods ($N$). In each $10~\mu$s period, we
+    apply a $\pi$ pulse on the electron spin to simulate gate
+    operations on the electron spin, which can affect the
+    electron-nuclear spin dynamics. Blue spheres are the case of a DPS
+    with $\omega_{1}-\omega_{2}=2\pi\times6.7$ kHz, while red squares
+    are the case of a DFS.}
+  \label{fig:FigCoherence}
+\end{figure}
 
-\fixme{Give more information or details about this protocol? Reference
-  SI}
+We performed numerical simulations to demonstrate the high fidelity of
+our selective control in Eq.~\eqref{eq:PiPulse}. In these simulations,
+we consider a Larmor pair positioned on a diamond lattice at
+$[0.1785,0.1785,1.071]$ nm and $[0.1785,1.071,0.1785]$ nm relative to
+the NV defect location, each at a distance of approximately $1.1$ nm
+from the NV electron. A magnetic field of $B_{z}=0.4$ T is applied
+along the NV axis $\hat{z}=[1,1,1]/\sqrt{3}$. The two nuclear spins
+have identical hyperfine components $A^{\parallel}=2\pi\times10.2$ kHz
+and $A^{\perp}=2\pi\times22.2$ kHz. to realise the sequence in
+Eq.~\eqref{eq:PiPulse}, we use adaptive-XY-8 (AXY-8) sequences working
+at the $17$-th harmonic to generate the interaction of
+Eq.~\eqref{eq:Hint} in a robust manner. The entire protocol, during
+which the electron spin coherence is protected by the AXY-8 sequence,
+takes $\approx 504~\mu$s. Our numerical simulations include 1208
+microwave $\pi$ pulses, each with a duration of 25 ns, while to meet
+with realistic experimental conditions we considered a 1$\%$ amplitude
+and $2\pi\times2.162$ MHz detuning errors for these pulses. Under
+these conditions, we achieve a fidelity of 0.994.
 
+\emph{Nuclear spin DFS in solids.}~-- Using selective control on each
+of the spins in the Larmor pair, we can construct a DFS
+$\{|\uparrow_{1}\downarrow_{2}\rangle,
+|\downarrow_{1}\uparrow_{2}\rangle\}$ in their joint Hilbert
+space. The coherence of the state in the DFS is insensitive to optical
+and microwave control on the NV electron spin, yielding much longer
+coherence times than the case of a DPS, as shown in
+Fig.~\ref{fig:FigCoherence}.
 
-\section{Qubit initialization in a decoherence-free subspace}
+One can initialize the Larmor pair into the state
+$|\uparrow_{1}\downarrow_{2}\rangle$ within the DFS by first
+polarizing the nuclear spins to $|\downarrow_{1}\downarrow_{2}\rangle$
+via either SWAP operations with the NV electron spin or dynamical
+nuclear polarization, and then using the nuclear-selective $\pi$
+rotation in Eq.~\eqref{eq:PiPulse} to flip the first spin. Below, we
+describe protocols for quantum information storage in and retrieval
+from the DFS.
 
-The state space of larmor pairs contains a subspace free of
-decoherence via spin coupling to the NV center electron, i.e. a
-decoherence-free subspace (DFS). This DFS is spanned by the
-singlet-triplet states $\p{\ket{\u\d}\pm\ket{\d\u}}/\sqrt2$, or
-equivalently by $\ket{\u\d}$ and $\ket{\d\u}$. \fixme{prove that this
-  subspace is decoherence-free in the SI} The protocols for addressing
-an individual nucleus in a larmor pair can be used to initialize a
-qubit in this DFS. In particular, one can use the gate sequences in
-\cite{reiserer2016robust} to deterministically initialize the larmor
-pair into $\ket{\d\d}$, then probabilistically convert this state into
-$\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ for some phase $\phi$
-determined by the choice of bases for the nuclear spins. While the
-sequences to initialize into $\ket{\d\d}$ require individually
-addressing each nuclear spin, the conversion
-$\ket{\d\d}\to\p{\ket{\u\d}+e^{i\phi}\ket{\d\u}}/\sqrt2$ can be
-performed with simultaneous coupling to both larmor pairs,
-i.e. without the magnetic decoupling field.
+\emph{Storing the electron spin state in a DFS}. -- A general quantum
+state $c_{0}|0\rangle+c_{1}|1\rangle$ of the electron spin can be
+stored in a DFS by the following steps. With the Larmor pair
+initialized to $|\uparrow_{1}\downarrow_{2}\rangle$, we apply the
+conditional evolution $U_{{\rm int}}(\frac{\pi}{2})$
+{[}Eq.~\eqref{eq:Uint}{]} to achieve the entangled electron-nuclear
+spin state
+$c_{0}|0\rangle|y_{1}^{-}y_{2}^{+}\rangle -
+c_{1}|1\rangle|y_{1}^{+}y_{2}^{-}\rangle$, where $|y_{j}^{\pm}\rangle$
+denotes $\exp(\pm i\frac{\pi}{2}I_{j}^{x})|\downarrow_{j}\rangle$.
+Then we apply a $\pi/2$ pulse on the electron spin followed by a
+projective measurement on the NV electron to get
+$|0\rangle\left(c_{0}|y_{1}^{-}y_{2}^{+}\rangle +
+  c_{1}|y_{1}^{+}y_{2}^{-}\rangle\right)$ or
+$|1\rangle\left(c_{0}|y_{1}^{-}y_{2}^{+}\rangle -
+  c_{1}|y_{1}^{+}y_{2}^{-}\rangle\right)$. The optical readout
+subsequently polarizes the NV to the state
+$|0\rangle$~\cite{Reiserer2016Robust}. Finally, we apply the
+conditional evolution $U_{{\rm int}}(\frac{\pi}{2})$ to get
+$c_{0}|\uparrow_{1}\downarrow_{2}\rangle +
+c_{1}|\downarrow_{1}\uparrow_{2}\rangle$ if the previous measurement
+outcome was $m_{s}=0$, or
+$c_{0}|\uparrow_{1}\downarrow_{2}\rangle -
+c_{1}|\downarrow_{1}\uparrow_{2}\rangle$ if it was $m_{s}=1$.
 
-\fixme{Provide result for initialization fidelities.}
+\emph{Retrieval of a quantum state from the DFS}. -- To retrieve the
+quantum information stored in the DFS, say,
+$c_{0}|\uparrow_{1}\downarrow_{2}\rangle +
+c_{1}|\downarrow_{1}\uparrow_{2}\rangle$, we can use the following
+steps: (i) We apply a selective $\pi$ rotation via
+Eq.~\eqref{eq:PiPulse} to flip the first spin and get
+$c_{0}|\uparrow_{1}\uparrow_{2}\rangle +
+c_{1}|\downarrow_{1}\downarrow_{2}\rangle$. (ii) We initialize the
+electron spin state to the superposition
+$|x_{e}^{+}\rangle=\left(|0\rangle+|1\rangle\right)/\sqrt{2}$. (iii)
+We apply a standard DEE protocol as in Ref.~\cite{Wang2017Delayed} to
+achieve the interaction
+$A^{\parallel}\sigma_{z}(I_{1}^{z}+I_{2}^{z})$, which implements a
+conditional phase gate on the electron spin and yields
+$c_{0}|y_{e}^{+}\rangle|\uparrow_{1}\uparrow_{2}\rangle +
+c_{1}|y_{e}^{-}\rangle|\downarrow_{1}\downarrow_{2}\rangle$, where
+$|y_{e}^{\pm}\rangle = \exp(\mp
+i\frac{\pi}{4}\sigma_{z})|x_{e}^{+}\rangle$. (iv) We apply a $\pi/2$
+pulse on the electron spin to get
+$c_{0}|0\rangle|\uparrow_{1}\uparrow_{2}\rangle -
+c_{1}|1\rangle|\downarrow_{1}\downarrow_{2}\rangle$. (v) Finally, we
+use the conditional evolution $U_{{\rm int}}(\frac{\pi}{2})$
+{[}Eq.~\eqref{eq:Uint}{]} to retrieve the state as
+$\left(c_{0}|0\rangle+c_{1}|1\rangle\right)|x_{1}^{+}x_{2}^{+}\rangle$,
+where the nuclear spin states can be reset to the state
+$|\uparrow_{1}\downarrow_{2}\rangle$ in the DFS by a $\pi$ pulse as in
+Eq.~\eqref{eq:PiPulse}.
 
+\emph{Conclusions}. -- We proposed a scheme to selectively address
+nuclear spins that have identical hyperfine field components and
+Larmor precession frequencies. By using this scheme, we construct a
+decoherence-free subspace of nuclear spin states for reliable quantum
+storage in a solid-state platform, even in the presence of the noisy
+NV center electron spin dynamics. We provided a protocol to store
+quantum states of the NV electron in the DFS, and a complementary
+protocol to retrieve a quantum state from the DFS back into the NV
+electron spin. Our methods are general and can be applied to other
+color centers such as silicon carbide. Our results are useful for
+building robust optical interfaces for quantum networks and the
+realization of DFS quantum information processing, as well as in
+quantum sensing.
 
-\section{Coherent SWAP operation with DFS qubit}
+\begin{thebibliography}{10}
+\bibitem{Zhong2015Optically}M. Zhong, M. P. Hedges, R. L. Ahlefeldt,
+J. G. Bartholomew, S. E. Beavan, S. M. Wittig, J. J. Longdell, and
+M. J. Sellars, Optically addressable nuclear spins in a solid with
+a six-hour coherence time, Nature (London) \textbf{517}, 177 (2015).
 
-The protocols developed for addressing larmor pairs can be used to
-perform a coherent SWAP operation between the NV center spin and the
-DFS qubit. In principle, such a coherent SWAP allows using larmor
-pairs as quantum memory registers.
+\bibitem{Doherty2013Nitrogen}M. W. Doherty, N. B. Manson, Paul Delaney,
+F. Jelezko, J. Wrachtrup, and L. C. L. Hollenberg, The nitrogen-vacancy
+colour centre in diamond, Phys. Rep. \textbf{528}, 1 (2013).
 
-\fixme{Expand.}
+\bibitem{Dobrovitski2013Quantum}V. V. Dobrovitski, G. D. Fuchs, A.
+L. Falk, C. Santori, and D. D. Awschalom, Quantum control over single
+spins in diamond, Annu. Rev. Condens. Matter Phys. \textbf{4}, 23
+(2013).
 
+\bibitem{Schirhagl2014Nitrogen}R. Schirhagl, K. Chang, M. Loretz,
+and C. L. Degen, Nitrogen-vacancy centres in diamond: nanoscale sensors
+for physics and biology, Annu. Rev. Phys. Chem. \textbf{65}, 83 (2014).
 
-\section{Conclusions}
+\bibitem{Jarmola12} A. Jarmola, V. M. Acosta, K. Jensen, S. Chemerisov, and D. Budker, Temperature- and Magnetic-Field-Dependent Longitudinal Spin Relaxation in Nitrogen-Vacancy Ensembles in Diamond, Phys. Rev. Lett. \textbf{108}, 197601 (2012).
 
+\bibitem{vanderSar12} T. van der Sar, Z. H. Wang, M. S. Blok, H. Bernien,	T. H. Taminiau, D. M. Toyli, D. A. Lidar, D. D. Awschalom, R. Hanson, and V. V. Dobrovitski, Decoherence-protected quantum gates for a hybrid solid-state spin register, Nature \textbf{484}, 82 (2012).
 
-\section{Acknowledgments}
+\bibitem{Taminiau14} T. H. Taminiau, J. Cramer, T. van der Sar, V. V. Dobrovitski, and R. Hanson, Universal control and error correction in
+multi-qubit spin registers in diamond, Nature Nanotech. \textbf{9}, 171 (2014).
 
+\bibitem{Gill13} N. Bar-Gill, L. M. Pham, A. Jarmola, D. Budker, and R.L. Walsworth, Solid-state electronic spin coherence time approaching one second, Nat. Commun. \textbf{4}, 1743 (2013).
 
-\bibliography{\jobname}
+\bibitem{Kolkowitz2012Sensing}S. Kolkowitz, Q. P. Unterreithmeier,
+S. D. Bennett, and M. D. Lukin, Sensing distant nuclear spins with
+a single electron spin, Phys. Rev. Lett. \textbf{109,} 137601 (2012).
 
-\pagebreak
-\clearpage
-\widetext \makeatletter
+\bibitem{Taminiau2012Detection}T. H. Taminiau, J. J. T. Wagenaar,
+T. van der Sar, F. Jelezko, V. V. Dobrovitski, and R. Hanson, Detection
+and Control of Individual Nuclear Spins Using a Weakly Coupled Electron
+Spin, Phys. Rev. Lett. \textbf{109}, 137602 (2012).
+
+\bibitem{Zhao2012Sensing}N. Zhao, J. Honert, B. Schmidt, M. Klas,
+J. Isoya, M. Markham, D. Twitchen, F. Jelezko, R.-B. Liu, H. Fedder,
+and J. Wrachtrup, Sensing single remote nuclear spins, Nat. Nanotechnol.
+\textbf{7}, 657 (2012).
+
+\bibitem{Liu2013Noise}G.-Q. Liu, H. C. Po, J. Du, R.-B. Liu, and
+X.-Y. Pan, Noise-resilient quantum evolution steered by dynamical
+decoupling, Nat. Commun. \textbf{4}, 2254 (2013).
+
+\bibitem{Taminiau2014Universal}T. H. Taminiau, J. Cramer, T. van
+der Sar, V. V. Dobrovitski, and R. Hanson, Universal control and error
+correction in multi-qubit spin registers in diamond, Nat. Nanotechnol.
+\textbf{9}, 171 (2014).
+
+\bibitem{Waldherr2014Quantum}G. Waldherr, Y. Wang, S. Zaiser, M.
+Jamali, T. Schulte-Herbr\"uggen, H. Abe, T. Ohshima, J. Isoya, J. F.
+Du, P. Neumann, and J. Wrachtrup, Quantum Error Correction in a Solid-State
+Hybrid Spin Register, Nature (London) \textbf{506}, 204 (2014).
+
+\bibitem{Casanova2016Noise}J. Casanova, Z.-Y. Wang, and M. B. Plenio,
+Noise-resilient quantum computing with a nitrogen-vacancy center and
+nuclear spins, Phys. Rev. Lett. \textbf{117}, 130502 (2016).
+
+\bibitem{Cai2013Large}J. Cai, A. Retzker, F. Jelezko, and M. B. Plenio,
+A large-scale quantum simulator on a diamond surface at room temperature,
+Nat. Phys. \textbf{9}, 168 (2013).
+
+\bibitem{Togan2010Quantum}E. Togan, Y. Chu, A. S. Trifonov, L. Jiang,
+J. Maze, L. Childress, M. V. G. Dutt, A. S. S\o rensen, P. R. Hemmer,
+A. S. Zibrov, and M. D. Lukin, Quantum entanglement between an optical
+photon and a solid-state spin qubit, Nature \textbf{466}, 730 (2010).
+
+\bibitem{Nemoto2014Photonic}K. Nemoto, M. Trupke, S. J. Devitt, A.
+M. Stephens, B. Scharfenberger, K. Buczak, T. Nobauer, M. S. Everitt,
+J. Schmiedmayer, and W. J. Munro, Photonic Architecture for Scalable
+Quantum Information Processing in Diamond, Phys. Rev. X \textbf{4},
+031022 (2014).
+
+\bibitem{Bernien2013Entanglement}H. Bernien, B. Hensen, W. Pfaff,
+G. Koolstra, M. S. Blok, L. Robledo, T. H. Taminiau, M. Markham, D.
+J. Twitchen, L. Childress, and R. Hanson, Heralded Entanglement between
+Solid-State Qubits Separated by Three Metres, Nature (London) \textbf{497},
+86 (2013).
+
+\bibitem{Pfaff2014Unconditional}W. Pfaff, B. J. Hensen, H. Bernien,
+S. B. van Dam, M. S. Blok, T. H. Taminiau, M. J. Tiggelman, R. N.
+Schouten, M. Markham, D. J. Twitchen, and R. Hanson, Unconditional
+Quantum Teleportation between Distant Solid-State Quantum Bits, Science
+\textbf{345}, 532 (2014).
+
+\bibitem{Hensen2015Loophole}B. Hensen, H. Bernien, A. E. Dr\'eau, A.
+Reiserer, N. Kalb, M. S. Blok, J. Ruitenberg, R. F. L. Vermeulen,
+R. N. Schouten, C. Abell\'an, W. Amaya, V. Pruneri, M. W. Mitchell,
+M. Markham, D. J. Twitchen, D. Elkouss, S. Wehner, T. H. Taminiau,
+and R. Hanson, Loophole-Free Bell Inequality Violation Using Electron
+Spins Separated by 1.3 Kilometres, Nature (London) \textbf{526}, 682
+(2015).
+
+\bibitem{Kalb2016Entanglement}N. Kalb, A. A. Reiserer, P. C. Humphreys,
+J. J. W. Bakermans, S. J. Kamerling, N. H. Nickerson, S. C. Benjamin,
+D. J. Twitchen, M. Markham, R. Hanson, Entanglement Distillation between
+Solid-State Quantum Network Nodes, arXiv:1610.03253.
+
+\bibitem{Maurer2012Room} P. C. Maurer, G. Kucsko, C. Latta, L. Jiang,
+N. Y. Yao, S. D. Bennett, F. Pastawski, D. Hunger, N. Chisholm, M.
+Markham, D. J. Twitchen, J. I. Cirac, and M. D. Lukin, Room-Temperature
+Quantum Bit Memory Exceeding One Second, Science \textbf{336}, 1283
+(2012).
+
+\bibitem{Wang2017Delayed}Z.-Y. Wang, J. Casanova, and M. B. Plenio,
+Delayed entanglement echo for individual control of a large number
+of nuclear spins, Nat. Commun. \textbf{8}, 14660 (2017).
+
+\bibitem{Reiserer2016Robust}A. Reiserer, N. Kalb, M. S. Blok, K.
+J. M. van Bemmelen, T. H. Taminiau, R. Hanson, D. J. Twitchen, and
+M. Markham, Robust Quantum-Network Memory Using Decoherence-Protected
+Subspaces of Nuclear Spins, Phys. Rev. X \textbf{6}, 021040 (2016).
+
+\bibitem{Yang2011Preserving}W. Yang, Z.-Y. Wang, and R.-B. Liu, Preserving
+qubit coherence by dynamical decoupling, Front. Phys. \textbf{6},
+2 (2011).
+
+\bibitem{Rosskopf2016Quantum}T. Rosskopf, J. Zopes, J. M. Boss, C.
+L. Degen, A quantum spectrum analyzer enhanced by a nuclear spin memory,
+arXiv:1610.03253.
+
+\bibitem{Mehring1983Principle}M. Mehring, Principle of High Resolution
+NMR in Solids, Springer (1983).
+
+\bibitem{Schweiger2001Principles}A. Schweiger, and G. Jeschke. Principles
+of Pulse Electron Paramagnetic Resonance, Oxford (2001).
+
+\bibitem{London2013Detecting}P. London, J. Scheuer, J.-M. Cai, I.
+Schwarz, A. Retzker, M. B. Plenio, M. Katagiri, T. Teraji, S. Koizumi,
+J. Isoya, R. Fischer, L. P. McGuinness, B. Naydenov, and F. Jelezko,
+Detecting and Polarizing Nuclear Spins with Double Resonance on a
+Single Electron Spin, Phys. Rev. Lett. \textbf{111}, 067601 (2013).
+
+\bibitem{Casanova2015Robust}J. Casanova, Z.-Y. Wang, J. F. Haase,
+and M. B. Plenio, Robust dynamical decoupling sequences for individual-nuclear-spin
+addressing, Phys. Rev. A \textbf{92}, 042304 (2015).
+
+\bibitem{Wang2016Positioning}Z.-Y. Wang, J. F. Haase, J. Casanova,
+and M. B. Plenio, Positioning nuclear spins in interacting clusters
+for quantum technologies and bioimaging, Phys. Rev. B \textbf{93},
+174104 (2016).
+
+\bibitem{Ma2016Angstrom}W.-L. Ma and R.-B. Liu, Angstrom-Resolution
+Magnetic Resonance Imaging of Single Molecules Via Wave-Function Fingerprints
+of Nuclear Spins, Phys. Rev. Applied \textbf{6}, 024019 (2016).
+
+\end{thebibliography}
+\pagebreak{}\clearpage{}\widetext
+
 \begin{center}
-  \large \bf Supplementary Information for ``\@title''
-\end{center}
-\setcounter{equation}{0}
-\setcounter{figure}{0}
-\setcounter{table}{0}
-\renewcommand{\theequation}{S\arabic{equation}}
-\renewcommand{\thefigure}{S\arabic{figure}}
-\renewcommand{\bibnumfmt}[1]{[S#1]}
-\renewcommand{\citenumfont}[1]{S#1}
+\textbf{\large{{Supplemental Material}}}{\large{ }}
+\par\end{center}{\large \par}
 
-\setcounter{section}{0}
-\renewcommand{\thesection}{S.I. \Roman{section}}
+
+
+%%%%%%%%%% Merge with supplemental materials %%%%%%%%%%
+%%%%%%%%%% Prefix a "S" to all equations, figures, tables and reset the counter %%%%%%%%%%
+\setcounter{equation}{0} \setcounter{figure}{0} \setcounter{table}{0}
+\setcounter{page}{1} \makeatletter \global\long\def\theequation{S\arabic{equation}}
+ \global\long\def\thefigure{S\arabic{figure}}
+ \global\long\def\bibnumfmt#1{[S#1]}
+ \global\long\def\citenumfont#1{S#1}
+
 
 \tableofcontents{}
 
-\section{Basic system model}
 
-The Hamiltonian of the NV center system in the presence of a strong,
-static magnetic field $\v B$ can be decomposed as
-\begin{align}
-  H_{\t{sys}} = H_\NV^{\t{GS}} + H_{\t{hf}} + H_{\t{nZ}}  + H_{\t{nn}},
-\end{align}
-where
-\begin{align}
-  H_\NV^{\t{GS}} = D\p{\v S\c\uv z}^2 - \gamma_e\v B\c\v S
-\end{align}
-is the ground-state NV electron spin Hamiltonian with zero-field
-splitting $D$, spin-1 operator $\v S$, natural NV axis $\uv z$, and
-electron gyromagnetic ratio $\gamma_e$;
-\begin{align}
-  H_{\t{hf}} = \sum_j\f{\gamma_e\gamma_j}{4\pi r_j^3}
-  \p{\v S\c\v I_j-3\sp{\v S\c\uv r_j}\sp{\v I_j\c\uv r_j}}
-\end{align}
-is the hyperfine coupling between the NV electron spin (located at the
-origin) and nuclei indexed by $j$ located at $\v r_j$;
-\begin{align}
-  H_{\t{nZ}} = -\sum_j\gamma_j\v B\c\v I_j
-\end{align}
-is the Zeeman Hamiltonian for nuclei indexed by $j$ with gyromagnetic
-ratio $\gamma_j$ and spin operators $\v I_j$; and
-\begin{align}
-  H_{\t{nn}} = \sum_{j<k}\f{\gamma_j\gamma_k}{4\pi r_{jk}^3}
-  \p{\v I_j\c\v I_k-3\sp{\v I_j\c\uv r_{jk}}\sp{\v I_k\c\uv r_{jk}}}
-\end{align}
-is the internuclear coupling with $\v r_{jk}\equiv\v r_j-\v r_k$. We
-will hereafter neglect internuclear coupling in all analytical work,
-though we will keep $H_{\t{nn}}$ in any numerical results.
+\section{Simulation details}
 
-Changing into the rotating frame of $H_\NV^{\t{GS}}$ affects only the
-hyperfine Hamiltonian, which becomes
-\begin{align}
-  \tilde H_{\t{hf}} = S_z\sum_j \v A_j\c\v I_j,
-\end{align}
-where we define the hyperfine field
-\begin{align}
-  \v A_j = \f{\gamma_e\gamma_j}{4\pi r_j^3}\p{\uv z - 3\sp{\uv
-  r_j\c\uv z}\uv r_j}.
-\end{align}
-The system Hamiltonian is thus
-\begin{align}
-  \tilde H_{\t{sys}} = S_z\sum_j \v A_j\c\v I_j
-  -\sum_j\gamma_j\v B\c\v I_j.
-\end{align}
+In the simulation, the nuclear spins for the DPS are located at
+$\vec{r}_{1}=[0.08925,0.08925,0.80325]$ nm and
+$\vec{r}_{2}=[0.1785,1.071,0.1785]$ nm, giving the hyperfine
+components $A_{1}^{\perp}=2\pi\times55.4$ kHz,
+$A_{2}^{\perp}=2\pi\times22.2$ kHz, and
+$A_{1}^{\parallel}=-2\pi\times16.9$ kHz and
+$A_{2}^{\parallel}=-2\pi\times10.2$ kHz. The nuclear spins for the DFS
+are located at $\vec{r}_{1}=[0.1785,0.1785,1.071]$ nm and
+$\vec{r}_{2}=[0.1785,1.071,0.1785]$ nm, giving the hyperfine
+components $A^{\perp}=2\pi\times22.2$ kHz and
+$A^{\parallel}=2\pi\times10.2$ kHz.
 
-When NV electron spin is restricted to the span of
-$\set{\ket0,\ket{m_s}}$ with $m_s\in\set{1,-1}$,
-\begin{align}
-  S_z = \f{m_s}2\p{\sigma_\NV^z+\mathbf1},
-\end{align}
-where $\sigma_\NV^z\equiv\op{m_s}-\op{0}$ and
-$\mathbf1\equiv\op{m_s}+\op{0}$. Defining the interaction Hamiltonian
-\begin{align}
-  H_{\t{int}} = \f12m_s\sigma_\NV^z\sum_j\v A_j\c\v I_j
-\end{align}
-the effective larmor frequency
-\begin{align}
-  \v\omega_j = \gamma_j\v B - \f{m_s}2\v A_j,
-\end{align}
-and the effective Zeeman Hamiltonian
-\begin{align}
-  H_{\t{nZ}}^{\t{eff}} = -\sum_j\p{\gamma_j\v B - \f{m_s}2\v A_j}\c\v I_j
-  = -\sum_j\v\omega_j\c\v I_j,
-\end{align}
-the system Hamiltonian can be written as
-\begin{align}
-  \tilde H_{\t{sys}} = H_{\t{int}} + H_{\t{nZ}}^{\t{eff}}.
-  \label{eq:S_H_sys_int_nZ}
-\end{align}
+In the simulation for Fig.~1 (d), we use a magnetic field $B_{z}=200$
+G and apply the AXY sequence with 200 robust composite pulses (i.e.,
+1000 elementary $\pi$ pulses). The 1st harmonic is used to address the
+nuclear spins, by using $f_{1_{{\rm DD}}}=0.2$. The RF Rabi frequency
+on the nuclear spins is $\Omega=2\pi\times1$ kHz.
 
-Moving into the rotating frame of $H_{\t{nZ}}^{\t{eff}}$, the entire
-system is described by the Hamiltonian
-\begin{align}
-  \tilde H_{\t{int}} = \f12m_s\sigma_\NV^z
-  \sum_j\v\A_j\p{t}\c\v I_j,
-  \label{eq:S_H_int_no_DD}
-\end{align}
-where $\v\A_j\p{t}$ is the vector $\v A_j$ rotated about $\uv\omega_j$
-by an angle $\omega_jt$. Written explicitly,
-\begin{align}
-  \v\A_j\p{t} = \v A_j^\parallel + \v A_j^\perp\cos\p{\omega_jt}
-  + \v A_j^{\perp\perp}\sin\p{\omega_jt},
-  \label{eq:S_A_rot}
-\end{align}
-where
-\begin{align}
-  \v A_j^\parallel\equiv\p{\v A_j\c\uv\omega_j}\uv\omega_j
-\end{align}
-is the projection of $\v A_j$ along $\v \omega_j$,
-\begin{align}
-  \v A_j^\perp\equiv\v A_j-\v A_j^\parallel
-\end{align}
-is the projection of $\v A_j$ onto the plane orthogonal to
-$\v\omega_j$, and
-\begin{align}
-  \v A_j^{\perp\perp}\equiv\uv\omega_j\times\v A_j^\perp
-\end{align}
-is the vector $\v A_j^\perp$ rotated about $\uv\omega_j$ by $\pi/2$.
-
-
-\section{Dynamic decoupling and nuclear spin addressing}
-\label{sec:S_dynamic_decoupling}
-
-Dynamic decoupling schemes effectively prepend a modulation function
-\begin{align}
-  F\p{t}=\sum_kf_k\cos\p{k\omega_{DD}t-\phi_{DD}}
-\end{align}
-with fundamental frequency $\omega_{DD}$, phase $\phi_{DD}$, and range
-$\set{1,-1}$ to $\sigma_\NV^z$, so that the system Hamiltonian reads
-\begin{align}
-  \tilde H_{\t{int}} =
-  \f12m_sF\p{t}\sigma_\NV^z\sum_j\v\A_j\p{t}\c\v I_j.
-\end{align}
-At a resonance $k_{DD}\omega_{DD}\equiv\omega_r\gg A_j$, the secular
-approximation allows one to neglect $\v A_j^\parallel$ and express
-\begin{align}
-  \tilde H_{\t{int}} = \f14 f_{k_{DD}} m_s\sigma_\NV^z
-  \sum_{j:\omega_j=\omega_r} A_j^\perp\v I_j\c\uv n_j,
-  \label{eq:S_H_int_resonance}
-\end{align}
-where $\uv n_j$ is a unit vector in the direction of $\v A_j^\perp$
-rotated about $\uv\omega_j$ by $\phi_{DD}$, i.e.
-\begin{align}
-  \uv n_j = \uv A_j^\perp\cos\phi_{DD} +
-  \uv A_j^{\perp\perp}\sin\phi_{DD}.
-\end{align}
-One can concisely write Eq. (\ref{eq:S_H_int_resonance}) with
-\begin{align}
-  h_j^{\t{int}}\equiv f_{k_{DD}}m_sA_j^\perp/4
-\end{align}
-as
-\begin{align}
-  \tilde H_{\t{int}} = \sum_{j:\omega_j=\omega_r}
-  h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j.
-  \label{eq:S_H_int}
-\end{align}
-
-When the harmonics of $F\p{t}$ are off resonance with all $\omega_j$
-and $\omega_{DD}\gg A_j$ for all $j$, the secular approximation allows
-one to neglect $\tilde H_{\t{int}}$ entirely. In this case, one can
-apply an auxiliary magnetic field
-$\tilde{\v B}_{\t{ctl}}\p{t}=\v
-B_{\t{ctl}}\cos\p{\omega_{\t{ctl}}t-\phi_{\t{ctl}}}$ and shift into
-the rotating frame of $H_{\t{nZ}}^{\t{eff}}$, much like the frame
-shift between Eqs. (\ref{eq:S_H_sys_int_nZ}) and
-(\ref{eq:S_H_int_no_DD}), to realize the Hamiltonian
-\begin{align}
-  \tilde H_{\t{sys}}^{\t{ctl}} =
-  -\sum_j\gamma_j\v\B_{\t{ctl},j}\p{t}
-  \cos\p{\omega_{\t{ctl}}t-\phi_{\t{ctl}}}\c\v I_j,
-\end{align}
-with $\v\B_{\t{ctl},j}\p{t}$ defined using $\v B_{\t{ctl}}$ and
-$\v\omega_j$ the same way that $\v\A_j\p{t}$ was defined using
-$\v A_j$ and $\v\omega_j$ in Eq. (\ref{eq:S_A_rot}), i.e. as
-$\v B_{\t{ctl}}$ rotated about $\uv\omega_j$ by an angle $\omega_jt$:
-\begin{align}
-  \v\B_{\t{ctl},j}\p{t} = \v B_{\t{ctl},j}^\parallel
-  + \v B_{\t{ctl},j}^\perp\cos\p{\omega_jt}
-  + \v B_{\t{ctl},j}^{\perp\perp}\sin\p{\omega_jt},
-\end{align}
-where
-\begin{align}
-  \v B_{\t{ctl},j}^\parallel
-  \equiv \p{\v B_{\t{ctl}} \c\uv\omega_j}\uv\omega_j,
-  && \v B_{\t{ctl},j}^\perp
-  \equiv \v B_{\t{ctl}} - \v B_{\t{ctl},j}^\parallel,
-  && \v B_{\t{ctl},j}^{\perp\perp}
-  \equiv \uv\omega_j\times\v B_{\t{ctl}}^\perp.
-\end{align}
-
-When $\omega_{\t{ctl}}\gg\gamma_jB_{\t{ctl}}$, the secular
-approximation allows one to neglect $\v B_{\t{ctl},j}^\parallel$ and
-express
-\begin{align}
-  \tilde H_{\t{ctl}} = -\f12\sum_{j:\omega_j=\omega_{\t{ctl}}}
-  \gamma_jB_{\t{ctl},j}^\perp \v I_j\c\uv m_j,
-  \label{eq:S_H_ctl_resonance}
-\end{align}
-where $\uv m_j$ is the direction of $\v B_{\t{ctl},j}^\perp$ rotated
-about $\uv\omega_j$ by $\phi_{\t{ctl}}$, i.e.
-\begin{align}
-  \uv m_j = \uv B_{\t{ctl},j}^\perp\cos\phi_{\t{ctl}} +
-  \uv B_{\t{ctl},j}^{\perp\perp}\sin\phi_{\t{ctl}}.
-\end{align}
-One can concisely write Eq. (\ref{eq:S_H_ctl_resonance}) with
-\begin{align}
-  h_j^{\t{ctl}}\equiv-\gamma_jB_{\t{ctl},j}^\perp/2
-\end{align}
-as
-\begin{align}
-  \tilde H_{\t{ctl}} = \sum_{j:\omega_j=\omega_{\t{ctl}}}
-  h_j^{\t{ctl}}\v I_j\c\uv m_j.
-  \label{eq:S_H_ctl}
-\end{align}
-
-In both Eqs. (\ref{eq:S_H_int}) and (\ref{eq:S_H_ctl}), one can choose
-$\phi_{DD}$ and $\phi_{\t{ctl}}$ such that $\uv n_j\p\phi$ and
-$\uv m_j\p{\phi_{\t{ctl}}}$ lie anywhere in the plane perpendicular to
-$\uv\omega_j$. One can also tune $h_j^{\t{int}}$ and $h_j^{\t{ctl}}$
-respectively via free parameters in the AXY-$n$ sequence and
-$\v B_{\t{ctl}}$. These controls, together with rotations of the NV
-electron spin, allow one to realize a universal set of quantum
-gates. An exception to this statement is when two or more nuclei have
-the same effective larmor frequency $\omega_j$, in which case they are
-addressed simultaneously in Eqs. (\ref{eq:S_H_int}) and
-(\ref{eq:S_H_ctl}).
-
-
-\section{Addressing larmor pairs}
-\label{sec:S_addressing_pairs}
-
-We call two spins indexed by $j$ and $k$ elements of a \emph{larmor
-  set} if their effective larmor frequencies are equal,
-i.e. $\omega_j=\omega_k$, and refer to a larmor set with exactly two
-spins as a \emph{larmor pair}. The problem with individually
-addressing elements of a larmor set is manifest in
-Eqs. (\ref{eq:S_H_int}) and (\ref{eq:S_H_ctl}), wherein the previously
-developed procedure for nuclear spin addressing does not single out
-any nuclei. Nonetheless, under certain conditions it is possible to
-individually address elements of a larmor set by applying additional
-control fields.
-
-When employing a dynamic decoupling protocol on resonance with an
-effective larmor frequency $\omega_r$, one can apply an additional
-magnetic decoupling field
-$\tilde{\v B}_{\t{dec}}\p{t}=\v B_{\t{dec}}\cos\p{\omega_r
-  t-\phi_{\t{dec}}}$ and realize, in the frame of $H_\NV^{\t{GS}}$,
-the system Hamiltonian
-\begin{align}
-  \tilde H_{\t{sys}}^{\t{dec}}
-  = H_{\t{int}} + H_{\t{nZ}}^{\t{eff}} + H_{\t{dec}},
-\end{align}
-where
-\begin{align}
-  H_{\t{dec}} = -\sum_j\gamma_j\v B_{\t{dec}}\c\v I_j
-  \cos\p{\omega_rt-\phi_{\t{dec}}}.
-\end{align}
-
-In the frame of $H_{\t{nZ}}^{\t{eff}}=-\sum_j\v\omega_j\c\v I_j$, the
-decoupling Hamiltonian becomes
-\begin{align}
-  \tilde H_{\t{dec}} = -\sum_j\gamma_j\v\B_{\t{dec},j}
-  \c\v I_j \cos\p{\omega_rt-\phi_{\t{dec}}}
-  \label{eq:S_H_dec_eff_full}
-\end{align}
-with
-\begin{align}
-  \v\B_{\t{dec},j} = \v B_{\t{dec},j}^\parallel
-  + \v B_{\t{dec},j}^\perp\cos\p{\omega_j t}
-  + \v B_{\t{dec},j}^{\perp\perp}\sin\p{\omega_j t}
-\end{align}
-and
-\begin{align}
-  \v B_{\t{dec},j}^\parallel
-  \equiv \p{\v B_{\t{dec}}\c\uv\omega_j}\uv\omega_j,
-  && \v B_{\t{dec},j}^\perp
-  \equiv \v B_{\t{dec}} - \v B_{\t{dec},j}^\parallel,
-  && \v B_{\t{dec},j}^{\perp\perp}
-  \equiv \uv\omega_j\times\v B_{\t{dec}}^\perp.
-\end{align}
-If $\omega_r,\omega_j\gg \gamma_jB_{\t{dec}}$, then we can neglect
-$\v B_{\t{dec},j}^\parallel$ in Eq. (\ref{eq:S_H_dec_eff_full}) by the
-secular approximation, and by the rotating approximation express
-\begin{align}
-  \tilde H_{\t{dec}} = -\sum_{j:\omega_j=\omega_r}
-  \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_{\t{dec}} +
-  \v B_{\t{dec},j}^{\perp\perp}\sin\phi_{\t{dec}}}\c\v I_j.
-\end{align}
-Defining
-\begin{align}
-  \v\nu_j = \f12\gamma_j\p{\v B_{\t{dec},j}^\perp\cos\phi_{\t{dec}}
-  + \v B_{\t{dec},j}^{\perp\perp}\sin\phi_{\t{dec}}},
-\end{align}
-we can express
-\begin{align}
-  \tilde H_{\t{dec}} = -\sum_{j:\omega_j=\omega_r}\v\nu_j\c\v I_j.
-\end{align}
-The system Hamiltonian in the frame of $H_{\t{nZ}}^{\t{eff}}$ thus
-takes the form
-\begin{align}
-  \tilde H_{\t{sys}}^{\t{dec}} = \tilde H_{\t{int}} + \tilde H_{\t{dec}}
-  = \sum_{j:\omega_j=\omega_r}
-  \p{h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv n_j - \v\nu_j\c\v I_j}.
-\end{align}
-
-In the frame of $\tilde H_{\t{dec}}$, the entire system is governed by
-the Hamiltonian
-\begin{align}
-  \tilde H_{\t{int}}^{\t{dec}} = \sum_{j:\omega_j=\omega_r}
-  h_j^{\t{int}}\sigma_\NV^z\v I_j\c\tilde{\v n}_j\p{t},
-  \label{eq:S_H_int_dec_full}
-\end{align}
-where $\tilde{\v n}_j\p{t}$ is the unit vector $\uv n_j$ rotated about
-$\uv\nu_j$ by $\nu_jt$, i.e.
-\begin{align}
-  \tilde{\v n}_j\p{t} = \v n_j^\parallel +
-  \v n_j^\perp\cos\p{\nu_jt} + \v n_j^{\perp\perp}\sin\p{\nu_jt},
-\end{align}
-with
-\begin{align}
-  \v n_j^\parallel &\equiv \p{\uv n_j\c\uv\nu_j}\uv\nu_j, \\
-  \v n_j^\perp &\equiv \uv n_j - \uv n_j^\parallel, \\
-  \v n_j^{\perp\perp} &\equiv \uv\nu_j\times\uv n_j.
-\end{align}
-If $\omega_j\gg\nu_j\gg h_j^{\t{int}}$, the secular approximation
-allows us to neglect $\v n_j^\perp$ and $\v n_j^{\perp\perp}$ in
-Eq. (\ref{eq:S_H_int_dec_full}), leaving
-\begin{align}
-  \tilde H_{\t{int}}^{\t{dec}}
-  = \sum_{j:\omega_j=\omega_r}
-  \tilde h_j^{\t{int}}\sigma_\NV^z\v I_j\c\uv\nu_j,
-  \label{eq:S_H_int_dec}
-\end{align}
-where
-\begin{align}
-  \tilde h_j^{\t{int}}
-  = h_j^{\t{int}}\uv n_j\c\uv\nu_j.
-\end{align}
-Letting $\theta_j$ and $\theta_{\t{dec}}$ respectively be the angular
-positions of $\uv A_j^\perp$ and $\uv B_{\t{dec}}^\perp$ in the plane
-perpendicular to $\uv\omega_j$, we can say that
-\begin{align}
-  \tilde h_j^{\t{int}} = h_j^{\t{int}}\cos\p{\theta_j-\eta},
-\end{align}
-where $\eta=-\phi_{DD}+\theta_{\t{dec}}+\phi_{\t{dec}}$.
-
-In words, the decoupling field $\tilde{\v B}_{\t{dec}}\p{t}$ modifies
-$\tilde H_{\t{int}}$ in Eq. (\ref{eq:S_H_int}) by suppressing the
-components of $\uv n_j$ (i.e. $\uv A_j^\perp$ rotated about
-$\uv\omega_j$ by $\phi_{DD}$) which are perpendicular to the
-respective $\uv\nu_j$ (i.e.  $\uv B_{\t{dec},j}^\perp$ rotated about
-$\uv\omega_j$ by $\phi_{\t{dec}}$). The utility of this decoupling
-field lies in the fact that when $\uv n_j$ and $\uv\nu_j$ are
-orthogonal, the interaction with spin $j$ is suppressed as
-$\tilde h_j^{\t{int}}=0$. Considering a single larmor pair, one can
-therefore apply a decoupling field to eliminate one of the two terms
-in Eq. (\ref{eq:S_H_int_dec}) and realize an effective Hamiltonian
-which couples the NV electron spin to only one nuclear spin. This
-scheme fails for larmor pairs with mutually parallel $\v A_j^\perp$.
-
-The tools developed in this paper do not allow for single-spin
-operations on elements of a larmor pair. Such operations must
-therefore be either forgone, or else realized via composite operations
-making use of Eqs. (\ref{eq:S_H_ctl}) and (\ref{eq:S_H_int_dec}). The
-same is true of spin-spin coupling between the NV electron spin and a
-single element of a larmor set with more than two nuclei.
-
-
-\section{Identifying and locating larmor pairs}
-\label{sec:S_locating_pairs}
-
-Larmor pairs can be identified and located via NV coherence
-measurements as in \cite{wang2016positioning}. When the AXY-$n$
-sequence is on resonance with a larmor pair, the NV coherence reads
-\begin{align}
-  L = \cos^2\xi,
-\end{align}
-where the phase $\xi = h^{\t{int}}t = f_{k_{DD}}m_sA_j^\perp t/4$.
-Applying a decoupling field as in section \ref{sec:S_addressing_pairs}
-modifies $h_j^{\t{int}}\to h_j^{\t{int}}\cos\p{\theta_j-\eta}$, which
-makes the NV coherence
-($\eta=-\phi_{DD}+\theta_{\t{dec}}+\phi_{\t{dec}}$)
-\begin{align}
-  L
-  = \cos\p{\xi\cos\sp{\theta_1-\eta}}\cos\p{\xi\cos\sp{\theta_2-\eta}}.
-\end{align}
-Defining
-\begin{align}
-  \alpha_- = \f12\p{\sp{\theta_1-\eta}-\sp{\theta_2-\eta}}
-  = \f12\p{\theta_1-\theta_2},
-  && \alpha_+ = \f12\p{\sp{\theta_1-\eta}+\sp{\theta_2-\eta}}
-     = \f12\p{\theta_1+\theta_2} - \eta,
-\end{align}
-we can expand
-\begin{align}
-  L
-  = \f12\p{\cos\sp{2\xi\cos\alpha_+\cos\alpha_-}
-  + \cos\sp{2\xi\sin\alpha_+\sin\alpha_-}}.
-\end{align}
-When $\alpha_+$ is an integer multiple of $\pi/2$, this coherence
-simplifies to ($n\in\mathbb Z$)
-\begin{align}
-  \label{eq:S_L_simplified}
-  L\p{\alpha_+=n\pi} = \f12\p{1 + \cos\sp{2\xi\cos\alpha_-}},
-  && L\p{\alpha_+=n\pi+\f\pi2}
-     = \f12\p{1 + \cos\sp{2\xi\sin\alpha_-}}.
-\end{align}
-By collecting data on $L\p{\xi,\eta}$, one can identify fixed angles
-$\bar\eta$ at which $L_{\bar\eta}\p\xi\equiv L\p{\xi,\bar\eta}$ takes
-the form above. Knowing $L_{\bar\eta}\p\xi$ is then sufficient to
-deduce the values of $\theta_1$ and $\theta_2$ up to a degeneracy
-which does not affect nuclear spin addressing protocols. To find the
-angles $\set{\theta_j}$ and understand this degeneracy, we first note
-that changing these angles by $\pi$ as $\theta_j\to\theta_j+\pi$ does
-not affect any protocols, so we can safely enforce all
-$\theta_j\in\sp{0,\pi}$ and in turn $\alpha_\pm\in\sp{0,\pi}$. The
-coherence $L\p{\xi,\eta}$ then takes the forms in
-(\ref{eq:S_L_simplified}) when $\alpha_+\in\set{0,\pi/2}$, in which
-case a fourier transform of $L_{\bar\eta}\p\xi$ can be used to
-identify the coherence modes
-\begin{align}
-  \omega_L\p{\alpha_+=0}=2\xi\cos\alpha_-,
-  && \omega_L\p{\alpha_+=\pi/2}=2\xi\sin\alpha_-,
-\end{align}
-and in turn the angles
-\begin{align}
-  \alpha_-\p{\alpha_+=0} = \acos\p{\f1{2\xi}\omega_L\p{\alpha_+=0}},
-  && \alpha_-\p{\alpha_+=\f\pi2}
-     = \asin\p{\f1{2\xi}\omega_L\p{\alpha_+=\f\pi2}}.
-\end{align}
-When $\alpha_+=0$, the angles $\theta_1$ and $\theta_2$ are then
-\begin{align}
-  \label{eq:S_nuclear_angles}
-  \theta_1 = \bar\eta\p{\alpha_+=0} + \alpha_-\p{\alpha_+=0},
-  && \theta_2 = \bar\eta\p{\alpha_+=0} - \alpha_-\p{\alpha_+=0},
-\end{align}
-The obvious problem with this recipe for $\set{\theta_j}$ is the fact
-that measuring $L_{\bar\eta}\p\xi$ does not allow one to distinguish
-the case of $\alpha_+=0$ from $\alpha_+=\pi/2$, as the form of
-$L_{\bar\eta}\p\xi$ is identical in both cases. As it turns out, in
-finding $\theta_1$ and $\theta_2$ via the prescription above, one is
-free to simply assume without consequence that $\alpha_+=0$ whenever
-the coherence $L_{\bar\eta}\p\xi$ takes the form in
-(\ref{eq:S_L_simplified}). Incorrectly identifying the value of
-$\alpha_+'=\pi/2-\alpha_+$ instead of $\alpha_+$ will result in the
-deduction of $\alpha_-'=\pi/2-\alpha_-$ instead of $\alpha_-$. The
-prescriptions in (\ref{eq:S_nuclear_angles}) then yield
-\begin{align}
-  \bar\eta\p{\alpha_+'=0} + \alpha_-'\p{\alpha_+'=0}
-  = \sp{\bar\eta\p{\alpha_+=0} - \f\pi2}
-  + \sp{\f\pi2 - \alpha_-\p{\alpha_+=0}}
-  = \bar\eta\p{\alpha_+=0} - \alpha_-\p{\alpha_+=0} = \theta_2
-\end{align}
-and similarly
-\begin{align}
-  \bar\eta\p{\alpha_+'=0} - \alpha_-'\p{\alpha_+'=0} = \theta_1.
-\end{align}
-Using $\alpha_\pm'$ instead of $\alpha_\pm$ to find $\set{\theta_j}$
-thus amounts to merely relabeling nuclei, which has no physical
-consequence.
-
-
-\section{Coherent SWAP with a singlet-triplet qubit}
-
-In the following section, we will consider an addressable larmor pair
-with effective larmor frequencies $\omega$. We will use the basis
-$\set{\ket\u\equiv\ket 0, \ket\d\equiv\ket{m_s}}$ for the spin states
-of the NV electron, and the standard basis
-$\set{\ket{\u\u}, \ket{\u\d}, \ket{\d\u}, \ket{\d\d}}$ for the spin
-states of the nuclei. We will refer to the logical qubit consisting of
-the basis states $\set{\ket{\u\d},\ket{\d\u}}$ as the anti-correlated
-(AC) qubit, and the logical qubit consisting of the basis states
-$\set{\ket\S,\ket\T}$ as the singlet-triplet (ST) qubit, where
-\begin{align}
-  \ket\S \equiv \f1{\sqrt2}\p{\ket{\u\d}-\ket{\d\u}},
-  &&  \ket\T \equiv \f1{\sqrt2}\p{\ket{\u\d}+\ket{\d\u}}.
-\end{align}
-
-A SWAP operation between two qubits indexed by 1 and 2 can be realized
-via the composite operation
-\begin{align}
-  \SWAP^{1,2} = \cNOT^{2\to1}\cNOT^{1\to2}\cNOT^{2\to1},
-\end{align}
-where $\cNOT^{j\to k}$ is the controlled-NOT gate, which flips the
-state of qubit $k$ conditionally on the state of qubit $j$. The
-$\cNOT^{j\to k}$ gate is realized via
-\begin{align}
-  \cNOT^{j\to k} = \exp\p{-j\f\pi2I_j^z} \exp\p{-j\f\pi2I_k^x}
-  \exp\p{j\pi I_j^z I_k^x}.
-\end{align}
-
-If we wish to perform a SWAP operation between the NV electron spin
-and an ST qubit, it is easier to first realize the operation
-\begin{align}
-  \SWAP^{\NV,\AC}
-  = {\cNOT^{\AC\to\NV}}^\dagger\cNOT^{\NV\to\AC}\cNOT^{\AC\to\NV},
-  \label{eq:S_SWAP_NVAC_sketch}
-\end{align}
-where
-\begin{align}
-  \cNOT^{\AC\to\NV} = \cNOT^{1\to\NV},
-  && \cNOT^{\NV\to\AC} = \cNOT^{\NV\to2}\cNOT^{\NV\to1}.
-\end{align}
-For later convenience, Eq. (\ref{eq:S_SWAP_NVAC_sketch}) makes use of
-the fact that ${\cNOT^{j\to k}}^\dagger=\cNOT^{j\to k}$. Therefore
-(with $\v I_\NV=\v\sigma_\NV/2$),
-\begin{align}
-  \SWAP^{\NV,\AC}
-  &= \exp\p{-j\f\pi2 I_\NV^x} \exp\p{j\f\pi2 I_1^{z'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_1^{x'}}
-    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 I_\NV^z} \exp\p{-j\f\pi2 I_2^{x''}}
-    \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_1^{z'}}
-    \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}},
-    \label{eq:S_SWAP_NVAC_full}
-\end{align}
-where we make explicit the fact that the the spin of nuclei 1 and 2
-may be given in their own respective bases
-$\set{\uv x',\uv y',\uv z'}$ and $\set{\uv x'',\uv y'',\uv z''}$. We
-can evaluate the first and last rotations of spin 1 in
-Eq. (\ref{eq:S_SWAP_NVAC_full}) and combine factors to get
-\begin{align}
-  \SWAP^{\NV,\AC}
-  &= \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 \sigma_\NV^x I_1^{z'}}
-    \tag*{} \\
-  &~~\times \exp\p{-j\pi I_\NV^z} \exp\p{j\f\pi2\sp{I_1^{y'}-I_2^{x''}}}
-    \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-    \exp\p{j\f\pi2 \sigma_\NV^z I_2^{x''}} \tag*{} \\
-  &~~\times \exp\p{j\f\pi2 \sigma_\NV^x I_1^{z'}}
-    \exp\p{-j\f\pi2 I_\NV^x}.
-\end{align}
-Letting
-\begin{align}
-  \uv x' = \uv y'' &= \uv A_1^\perp, \\
-  \uv y' = -\uv x'' &= \uv A_1^{\perp\perp}, \\
-  \uv z' = \uv z'' &= \uv\omega_1\approx\uv z, \label{eq:S_w=z}
-\end{align}
-where the approximation in Eq. (\ref{eq:S_w=z}) holds for
-$\gamma_1B\gg A_1/2$,
-\begin{align}
-  \SWAP^{\NV,\AC}
-  &= \exp\p{j\f\pi2 I_\NV^x}
-    \exp\p{-j\f\pi2 \sigma_\NV^x I_1^z} \tag*{} \\
-  &~~\times \exp\p{-j\pi I_\NV^z}
-    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
-  &~~\times \exp\p{j\f\pi2 \sigma_\NV^x I_1^z} \exp\p{-j\f\pi2 I_\NV^x}.
-    \label{eq:S_SWAP_NVAC_sxsz}
-\end{align}
-As we cannot directly realize the coupling $\sigma_x^\NV I_z^1$, we
-must perform rotations as
-\begin{align}
-  \exp\p{-j\f\pi2 \sigma_\NV^x I_1^z}
-  = \exp\p{-j\f\pi2 I_\NV^y} \exp\p{j\f\pi2 I_1^{y'}}
-  \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-  \exp\p{-j\f\pi2 I_1^{y'}} \exp\p{j\f\pi2 I_\NV^y}.
-\end{align}
-Substituting this identity into Eq. (\ref{eq:S_SWAP_NVAC_sxsz}) yields
-\begin{align}
-  \SWAP^{\NV,\AC}
-  &= \exp\p{j\f\pi2 I_\NV^x} \exp\p{-j\f\pi2 I_\NV^y} \tag*{} \\
-  &~~\times \exp\p{j\f\pi2\sum_jI_j^{y'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-    \exp\p{j\f\pi2 I_\NV^y} \tag*{} \\
-  &~~\times \exp\p{-j\pi I_\NV^z}
-    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 I_\NV^y}
-    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
-    \exp\p{-j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
-  &~~\times \exp\p{j\f\pi2 I_\NV^y} \exp\p{-j\f\pi2 I_\NV^x},
-    \label{eq:S_SWAP_NVAC}
-\end{align}
-where we have canceled out two rotations of the form
-$\exp\p{\pm j\pi/2~I_1^{y'}}$ and inserted two rotations of the form
-$\exp\p{\pm j\pi/2~I_2^{y'}}$ with no net effect.
-
-The $\SWAP^{\NV,\ST}$ can be realized using the $\SWAP^{\NV,\AC}$ gate
-via
-\begin{align}
-  \SWAP^{\NV,\ST} = R_\NV^\dagger \SWAP^{\NV,\AC} R_\NV,
-\end{align}
-where the rotation $R_\NV$ takes $\ket\u\to\p{\ket\u-\ket\d}/\sqrt2$
-and $\ket\d\to\p{\ket\u+\ket\d}/\sqrt2$. Written explicitly,
-\begin{align}
-  R_\NV = \exp\p{j\f\pi2 I_\NV^y}.
-\end{align}
-We therefore have that
-\begin{align}
-  \SWAP^{\NV,\ST}
-  &= \exp\p{j\pi\v I_\NV\c\uv a} \tag*{} \\
-  &~~\times \exp\p{j\f\pi2\sum_jI_j^{y'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{x'}}
-    \exp\p{j\f\pi2 I_\NV^y} \tag*{} \\
-  &~~\times \exp\p{-j\pi I_\NV^z}
-    \exp\p{j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 \sigma_\NV^z I_1^{y'}}
-    \exp\p{-j\f\pi2 \sigma_\NV^z I_2^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\f\pi2 I_\NV^y}
-    \exp\p{j\f\pi2 \sigma_\NV^z I_1^{x'}}
-    \exp\p{-j\f\pi2\sum_jI_j^{y'}} \tag*{} \\
-  &~~\times \exp\p{-j\pi\v I_\NV\c\uv a},
-    \label{eq:S_SWAP_NVST}
-\end{align}
-where $\v a = \uv x - \uv y$ and we have used the fact that
-\begin{align}
-  \exp\p{j\f\pi2 I^y} \exp\p{-j\f\pi2 I^x}
-  \exp\p{j\f\pi2 I^y}
-  = \exp\p{-j\pi\v I\c\uv a}.
-\end{align}
-
-In the subspace of interest, we have thus constructed the
-non-entangling SWAP operation
-\begin{align}
-  \SWAP^{\NV,\ST} = \op{\u\S}{\S\u} + \op{\u\T}{\d\S}
-  + \op{\d\S}{\u\T} + \op{\d\T}{\d\T}.
-\end{align}
-If $\gamma_1=\gamma_2$, i.e. if nuclei 1 and 2 are of the same
-species, all factors in Eq. (\ref{eq:S_SWAP_NVST}) can be realized
-directly via the protocols for Eq. (\ref{eq:S_H_ctl}) and
-Eq. (\ref{eq:S_H_int_dec}), as well as rotations of the NV electron
-spin.
-
-As a last note, it is possible to realize $\SWAP^{\NV,\ST}$ via cNOT
-operations between the NV and ST qubits directly, i.e. without
-performing $\SWAP^{\NV,\AC}$, but doing so requires performing many
-more individual spin addressing operations, which results in a
-substantially lower fidelity.
-
-\fixme{when we wish to read out the ST qubit, it is possible to do so
-  without performing the full coherent SWAP operation so long as we
-  are willing to discard the initial state of the NV center. Talk
-  about this.}
-
-
-\section{Robustness against noise}
-
-\fixme{Talk about the robustness of the ST qubit against dephasing via
-  the NV center, as well as its robustness against slowly varying
-  (frequencies $\nu\ll\gamma_jB$) external magnetic noise.}
-
-
-\section{Abundance of larmor pairs}
-
-For any given hyperfine cutoff $A_{\t{min}}$ and an isotopic abundance
-$n$ of $^{13}$C, we can compute exactly the probability
-$P\p{A_{\t{min}},n}$ of finding an addressable larmor pair for which
-$A_j\ge A_{\t{min}}$. The simulations developed for this paper can
-also be used to test the computation of $P\p{A_{\t{min}},n}$ via the
-Monte Carlo method of simply generating many NV systems and counting
-the proportion of them which contain an addressable larmor pair.
-
-
-\section{SWAP fidelities via AXY-$n$}
-
-\fixme{Discuss simulations and any relevant nuances therein. Present
-  histograms of $\SWAP^{\NV,\ST}$ fidelities and net operation times.}
-
-
-\bibliography{\jobname}
+In the simulation with optical illumination for
+Fig.~\ref{fig:FigCoherence}, we adopt the 11-levels Lindblad model of
+the experimental paper Ref.~\cite{Maurer2012Room-1}. The illumination
+power is 1.5 $\%$ of the saturation power  \cite{Maurer2012Room-1} and
+the magnetic field $B_{z}=0.4$ T.
+\begin{thebibliography}{10}
+\bibitem{Maurer2012Room-1} P. C. Maurer, G. Kucsko, C. Latta, L.
+Jiang, N. Y. Yao, S. D. Bennett, F. Pastawski, D. Hunger, N. Chisholm,
+M. Markham, D. J. Twitchen, J. I. Cirac, and M. D. Lukin, Room-Temperature
+Quantum Bit Memory Exceeding One Second, Science \textbf{336}, 1283
+(2012).\end{thebibliography}
 
 \end{document}
